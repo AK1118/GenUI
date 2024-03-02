@@ -98,11 +98,6 @@ export abstract class TextBoxBase extends ViewObject {
   private setFontDecorations(paint: Painter) {
     //设置字体大小
     paint.font = this.getFont();
-    //设置影音
-    if (this.textOptions.shadowColor)
-      paint.setShadow({
-        ...this.textOptions,
-      });
   }
   /**
    * @override
@@ -357,7 +352,6 @@ export abstract class TextBoxBase extends ViewObject {
       offsetY: number,
       textWidth: number
     ) => {
-      this.setFontDecorations(paint);
       paint.fillText(
         text,
         point.x + this.renderTextOffsetX,
@@ -394,6 +388,14 @@ export abstract class TextBoxBase extends ViewObject {
   protected afterRenderTextAndLines(paint: Painter) {}
   //渲染文字后
   protected renderTextAndLines(points, render): void {
+    this.paint.save();
+    //设置阴影
+    if (this.textOptions.shadowColor)
+      this.paint.setShadow({
+        ...this.textOptions,
+      });
+    this.setFontDecorations(this.paint);
+    console.log(this.paint.font)
     this.texts.forEach((textData, ndx) => {
       const point = points[ndx];
       if (!point) return;
@@ -406,6 +408,7 @@ export abstract class TextBoxBase extends ViewObject {
         });
       }
     });
+    this.paint.restore();
   }
   protected updateRectSize(size: Size): void {
     //拖拽时设置scale 等于设置大小，松开时再设置大小就会判断一样的值
