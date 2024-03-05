@@ -32,6 +32,8 @@ class ViewObjectRenderBox extends RenderBox {}
 abstract class BaseViewObject<
   D extends DecorationBase
 > extends OperationObserver {
+  //被移除禁用
+  public _disabledRemove: boolean = false;
   protected decoration: D;
   private _angleDisabled: boolean = false;
   public renderBox: RenderBox = new ViewObjectRenderBox();
@@ -50,6 +52,12 @@ abstract class BaseViewObject<
   }
   protected get didChanged(): boolean {
     return this._didChanged;
+  }
+  public disableRemove(): void {
+    this._disabledRemove = true;
+  }
+  public enableRemove(): void {
+    this._disabledRemove = false;
   }
   public disableRotate() {
     this._angleDisabled = true;

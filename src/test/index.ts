@@ -20,6 +20,7 @@ import Rectangle, {
   InteractiveImage,
 } from "@/core/viewObject/graphics/rectangle";
 import Group from "@/core/viewObject/group";
+import RectClipMask from "@/core/viewObject/mask/rect-clip-mask";
 import TextArea from "@/core/viewObject/text/text-area";
 import WriteRect from "@/core/viewObject/write/rect";
 import {
@@ -422,9 +423,9 @@ document.getElementById("export").addEventListener("click", () => {
     console.log(json);
     // window.localStorage.setItem("aa", json);
     console.log("导出成功");
-    controller2.importAll(json).then(e=>{
+    controller2.importAll(json).then((e) => {
       console.log("导入成功");
-    })
+    });
   });
 });
 
@@ -435,113 +436,7 @@ document.getElementById("input").addEventListener("input", (e: any) => {
 controller.render();
 
 async function main() {
-  const crop = new RectCrop({
-    width: 400,
-    height: 400,
-  });
-
-  crop.installMultipleButtons([
-    new VerticalButton("bottom"),
-    new HorizonButton("right"),
-  ]);
-  controller.load(crop);
-  controller.center(crop);
-  crop.setLayer(999);
-  // .map((_) => {
-  //   _.setSenseRadius(screenUtil1.setSp(30));
-  //   return _;
-  // })
-  const bg = await loadImg(
-    "https://th.bing.com/th/id/R.480a6d4abeab9dd27d76b91285a1fadd?rik=5VUtscE2LG%2bIoQ&riu=http%3a%2f%2fpic1.win4000.com%2fwallpaper%2f6%2f537ea1544f0e1.jpg&ehk=9JmVlCL0jY0tabBNx1oTgiHYYqOkmxBCoO3hdUmAtPQ%3d&risl=&pid=ImgRaw&r=0"
-  );
-  const bgBox = new ImageBox(
-    new XImage({
-      data: bg,
-      width: bg.width,
-      height: bg.height,
-      // url: bg.src,
-    })
-  );
-  bgBox.setLayer(3);
-  bgBox.setSize({
-    width: screenUtil1.fullWidth,
-    height: screenUtil1.fullHeight,
-  });
-  bgBox.makeFixed();
-  controller.center(bgBox);
-  controller.load(bgBox);
-
-  const textBox = new TextBox("杨", {
-    fontSize: screenUtil1.setSp(200),
-    weight: "bold",
-    color: "#bb6474",
-    fontFamily: "鸿雷行书简体",
-    shadowBlur: screenUtil1.setSp(3),
-    shadowOffsetX: screenUtil1.setSp(3),
-    shadowOffsetY: screenUtil1.setSp(3),
-    shadowColor: "#ccc",
-    lineHeight: 1,
-  });
-
-  textBox.setId("text1");
-  textBox.installMultipleButtons(
-    [
-      new DragButton(),
-      new RotateButton({
-        alignment: Alignment.topLeft,
-      }),
-      new MirrorButton({
-        alignment: Alignment.bottomLeft,
-      }),
-      new CustomButton({
-        child: new TextBox("换字", {
-          fontSize: screenUtil1.setSp(26),
-        }),
-      }).setId("huanzi"),
-    ].map((_) => {
-      _.setSenseRadius(screenUtil1.setSp(50));
-      return _;
-    })
-  );
-  textBox.setSelectedBorder;
-  textBox.setLayer(5);
-  // controller.load(textBox);
-  textBox.toCenter();
-
-  controller.cancelEvent();
-
-  canvas.addEventListener("touchstart", (e) => {
-    // console.log(e.targetTouches);
-    controller.down(e);
-  });
-  canvas.addEventListener("touchmove", (e) => {
-    // console.log(e.targetTouches);
-    controller.move(e);
-  });
-  canvas.addEventListener("touchend", (e) => {
-    // console.log(e.targetTouches);
-    controller.up(e);
-  });
-  // gesti.debug=true;
-
-  // const [closer, generator] = controller.addWrite({
-  //   type: "write",
-  //   lineWidth:screenUtil1.setSp(90),
-  // });
-  // const oo = [];
-  // generator((view) => {
-  //   oo.push(view);
-  // });
-  setTimeout(() => {
-    controller.hide(bgBox);
-    bgBox.setLayer(9999);
-    // controller.forceRender();
-  }, 3000);
-  setTimeout(() => {
-    controller.show(bgBox);
-    console.log(bgBox.getLayer());
-    console.log(crop.getLayer());
-  }, 6000);
+  
 }
 async function loadImg(src): Promise<HTMLImageElement> {
   const bg = new Image();

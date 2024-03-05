@@ -12,6 +12,7 @@ import {
   ViewObjectExportGraffiti,
   ViewObjectExportGraphics,
   ViewObjectExportImageBox,
+  ViewObjectExportRectClipMask,
   ViewObjectExportRectCrop,
   ViewObjectExportTextBox,
   ViewObjectExportTypes,
@@ -39,6 +40,7 @@ import DecorationBase from "./decoration-base";
 import Polygon from "../viewObject/graphics/polygon";
 import PolygonDecoration from "../lib/rendering/decorations/polygon-decoration";
 import RectCrop from "../viewObject/crop/rect-crop";
+import RectClipMask from "../viewObject/mask/rect-clip-mask";
 
 type ViewObjectHandler<T> = (entity: ViewObjectImportEntity) => T;
 
@@ -131,6 +133,10 @@ abstract class DeserializerBase {
     rectCrop: (entity) => {
       const _entity = this.formatEntity<ViewObjectExportRectCrop>(entity);
       return RectCrop.reserve(_entity);
+    },
+    rectClipMask: (entity) => {
+      const _entity = this.formatEntity<ViewObjectExportRectClipMask>(entity);
+      return RectClipMask.reserve(_entity);
     },
   };
 

@@ -21,6 +21,7 @@ import ScreenUtils from "./utils/screenUtils/ScreenUtils";
 import GestiController from "./core/lib/controller";
 import Polygon from "./core/viewObject/graphics/polygon";
 import RectCrop from "./core/viewObject/crop/rect-crop";
+import RectClipMask from "./core/viewObject/mask/rect-clip-mask";
 
 
 //Hooks
@@ -38,7 +39,7 @@ export { OffScreenCanvasBuilder };
 //Vector
 export { Alignment };
 //View
-export { Rectangle,Polygon, InteractiveImage, ImageBox, XImage, TextBox, WriteViewObj,RectCrop };
+export { Rectangle,Polygon, InteractiveImage, ImageBox, XImage, TextBox, WriteViewObj,RectCrop,RectClipMask };
 //Enum
 export { ViewObjectFamily };
 //Config

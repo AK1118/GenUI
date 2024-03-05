@@ -395,7 +395,6 @@ export abstract class TextBoxBase extends ViewObject {
         ...this.textOptions,
       });
     this.setFontDecorations(this.paint);
-    console.log(this.paint.font)
     this.texts.forEach((textData, ndx) => {
       const point = points[ndx];
       if (!point) return;

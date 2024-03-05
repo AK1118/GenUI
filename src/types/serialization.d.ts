@@ -2,6 +2,7 @@ import {
   Alignment,
   GraffitiTypes,
   ImageChunk,
+  RectClipMaskOption,
   RectCropOption,
   ScreenUtilOption,
   TextOptions,
@@ -71,7 +72,8 @@ declare module "Serialization" {
     | "group"
     | "graphicsRectangle"
     | "graphicsPolygon"
-    | "rectCrop";
+    | "rectCrop"
+    | "rectClipMask";
 
   export interface ViewObjectExportEntity {
     base: ViewObjectExportBaseInfo;
@@ -104,6 +106,9 @@ declare module "Serialization" {
 
   interface ViewObjectExportRectCrop extends ViewObjectExportEntity {
     option: RectCropOption;
+  }
+  interface ViewObjectExportRectClipMask extends ViewObjectExportEntity {
+    option: RectClipMaskOption;
   }
 
   //图形导出

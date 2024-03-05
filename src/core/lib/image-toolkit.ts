@@ -497,6 +497,7 @@ class ImageToolkit extends ImageToolkitBase implements GestiController {
               this.screenUtils.devicePixelRatio ??
               info.screen?.devicePixelRatio ??
               1,
+            deviceCanvasRatio: this.screenUtils.deviceCanvasRatio,
             canvasWidth: this.canvasRect.size.width,
             canvasHeight: this.canvasRect.size.height,
           });

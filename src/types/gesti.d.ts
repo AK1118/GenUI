@@ -850,6 +850,12 @@ export class RectCrop extends ViewObject {
    */
   get value(): RectCropValue;
 }
+/**
+ * 遮罩
+ */
+export class RectClipMask extends ViewObject {
+  constructor(option: RectClipMaskOption);
+}
 interface RectCropOption {
   width: number;
   height: number;
@@ -859,7 +865,11 @@ interface RectCropOption {
   lineDash?: Iterable<number>;
   lineWidth?: number;
 }
-
+interface RectClipMaskOption {
+  width: number;
+  height: number;
+  maskColor?: string;
+}
 /**
  * ### 离屏画布构建器
  * - 在使用缓存,序列化传输时使用
