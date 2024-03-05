@@ -86,6 +86,10 @@ abstract class DeserializerBase {
         option.lineWidth = this.adaptScreenFontSize(option.lineWidth);
       if (option.maxFontSize)
         option.maxFontSize = this.adaptScreenFontSize(option.maxFontSize);
+      if (option.strokeLineWidth)
+        option.strokeLineWidth = this.adaptScreenFontSize(
+          option.strokeLineWidth
+        );
       // if (option.shadowOffsetX)
       //   option.shadowOffsetX = this.adaptScreenSizeWidth(option.shadowOffsetX);
       // if (option.shadowOffsetY)

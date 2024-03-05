@@ -9,7 +9,7 @@ import {
   Shadow,
   TextHandler,
   TextOptions,
-} from "../../../types/gesti";
+} from "@/types/gesti";
 import Vector from "../../lib/vector";
 import { Point } from "../../lib/vertex";
 import Platform from "../tools/platform";
@@ -25,7 +25,7 @@ import {
   getOffscreenCanvasWidthPlatform,
   waitingLoadImg,
 } from "@/utils/canvas";
-import { BoxDecorationOption } from "Graphics";
+import LineGradientDecoration from "@/core/lib/graphics/gradients/lineGradientDecoration";
 /**
  * 普通模式，矩形根据文字而定
  * 拖拽模式，文字根据缩放倍数而定
@@ -46,6 +46,9 @@ export abstract class TextBoxBase extends ViewObject {
     shadowBlur: 0,
     shadowOffsetX: 0,
     shadowOffsetY: 0,
+    stroke: false,
+    strokeColor: "black",
+    fill: true,
   };
   get textWrap(): boolean {
     return true;
@@ -352,11 +355,40 @@ export abstract class TextBoxBase extends ViewObject {
       offsetY: number,
       textWidth: number
     ) => {
-      paint.fillText(
-        text,
-        point.x + this.renderTextOffsetX,
-        point.y + offsetY + this.renderTextOffsetY
-      );
+      const {
+        fill: isFill,
+        stroke: isStroke,
+        fillGradient,
+        strokeGradient,
+        strokeLineWidth,
+      } = this.textOptions;
+
+      if (isFill) {
+        if (fillGradient) {
+          const gradient = new LineGradientDecoration(fillGradient);
+          paint.fillStyle = gradient.getGradient(paint, this.size);
+        }
+        paint.fillText(
+          text,
+          point.x + this.renderTextOffsetX,
+          point.y + offsetY + this.renderTextOffsetY
+        );
+        paint.fill();
+      }
+      if (isStroke) {
+        paint.strokeStyle = this.textOptions.strokeColor;
+        if (strokeGradient) {
+          const gradient = new LineGradientDecoration(strokeGradient);
+          paint.strokeStyle = gradient.getGradient(paint, this.size);
+        }
+        paint.lineWidth = strokeLineWidth;
+        paint.strokeText(
+          text,
+          point.x + this.renderTextOffsetX,
+          point.y + offsetY + this.renderTextOffsetY
+        );
+        paint.stroke();
+      }
     };
     paint.save();
     this.beforeRenderTextAndLines(paint);

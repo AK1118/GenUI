@@ -436,7 +436,26 @@ document.getElementById("input").addEventListener("input", (e: any) => {
 controller.render();
 
 async function main() {
-  
+  const text = new TextBox("成功", {
+    fontSize: screenUtil1.setSp(90),
+    stroke: true,
+    fill: false,
+    weight: "bold",
+    strokeColor: "red",
+    strokeLineWidth:screenUtil1.setSp(10)
+    // fillGradient: {
+    //   begin: Alignment.topLeft,
+    //   end: Alignment.bottomRight,
+    //   colors: ["orange", "red"],
+    // },
+    // strokeGradient: {
+    //   begin: Alignment.topLeft,
+    //   end: Alignment.bottomRight,
+    //   colors: ["black", "blue"],
+    // },
+  });
+  controller.load(text);
+  controller.center(text);
 }
 async function loadImg(src): Promise<HTMLImageElement> {
   const bg = new Image();

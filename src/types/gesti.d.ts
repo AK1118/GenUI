@@ -4,6 +4,8 @@ import {
   GenerateGraphicsOption,
   GeneratePolygonOption,
   GenerateRectAngleOption,
+  LineGradientDecoration,
+  LineGradientDecorationOption,
   PolygonDecorationOption,
 } from "./graphics";
 import {
@@ -337,6 +339,18 @@ export interface TextOptions extends Shadow {
    * @description 最大宽度
    */
   maxWidth?: number;
+  //描边
+  stroke?: boolean;
+  //填充
+  fill?: boolean;
+  //描边颜色
+  strokeColor?: string;
+  //填充渐变
+  fillGradient?: LineGradientDecorationOption;
+  //描边渐变
+  strokeGradient?: LineGradientDecorationOption;
+  //描边线条宽度
+  strokeLineWidth?: number;
 }
 
 declare interface createImageOptions {
