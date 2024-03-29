@@ -41,6 +41,7 @@ import Polygon from "../viewObject/graphics/polygon";
 import PolygonDecoration from "../lib/rendering/decorations/polygon-decoration";
 import RectCrop from "../viewObject/crop/rect-crop";
 import RectClipMask from "../viewObject/mask/rect-clip-mask";
+import LineGradientDecoration from "../lib/graphics/gradients/lineGradientDecoration";
 
 type ViewObjectHandler<T> = (entity: ViewObjectImportEntity) => T;
 
@@ -196,7 +197,6 @@ abstract class DeserializerBase {
     const rect: Rect = Rect.format(base.rect);
     const relativeRect: Rect = Rect.format(base.relativeRect);
     const buttons: ExportButton[] = base.buttons;
-
     //还原另一端的屏幕适配器
     const otherScreenUtils = this.otherScreenUtils;
     const screenUtil = this.kit.getScreenUtil();
@@ -221,6 +221,7 @@ abstract class DeserializerBase {
     //设置2D矢量数据
     this.setVectorData(view, base);
     //设置盒子装饰器
+    
     view.setDecorationEntity(await this.formatBoxDecoration(base?.decoration));
     this.installButton(view, buttons);
     return view;
@@ -249,6 +250,7 @@ abstract class DeserializerBase {
           decorationOption.borderRadius as number
         );
       }
+     
       return await decoration.format(decorationOption);
     } else if (_decoration.type === "polygon") {
       let d: PolygonDecorationOption = _decoration;

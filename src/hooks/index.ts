@@ -3,7 +3,7 @@ import Gesti from "../core/lib/gesti";
 import GestiReader from "../core/bases/deserializer-base";
 import TextBox from "../core/viewObject/text/text";
 import Widgets from "../static/widgets";
-import XImage from "../core/lib/ximage";
+import XImage, { XImageOption } from "../core/lib/ximage";
 import {
   createImageBoxView,
   createTextBoxView,
@@ -117,7 +117,7 @@ const createImageBox = (xImage: XImage) => createImageBoxView(xImage);
  * @param option
  * @returns
  */
-const createXImage = (option: createImageOptions) => createXImageFun(option);
+const createXImage = (option: XImageOption) => createXImageFun(option);
 /**
  * @description 文字控制
  * @param text

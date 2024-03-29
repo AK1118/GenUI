@@ -97,7 +97,10 @@ class Polygon extends GraphicsBase<GeneratePolygonOption, PolygonDecoration> {
     // Implement export logic
     const exportEntity: ViewObjectExportGraphics<GeneratePolygonOption> = {
       option: this.option,
-      base: await this.getBaseInfo(),
+      base: {
+        ...(await this.getBaseInfo()),
+        decoration: await this.decoration.export(),
+      },
       type: "graphicsPolygon",
     };
     return Promise.resolve(exportEntity);

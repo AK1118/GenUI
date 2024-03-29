@@ -1,10 +1,11 @@
 import DecorationBase from "@/core/bases/decoration-base";
 import { PolygonDecorationOption } from "@/types/graphics";
 import Painter from "../../painter";
-import Rect from "../../rect";
+import Rect, { Size } from "../../rect";
 import LineGradientDecoration from "../../graphics/gradients/lineGradientDecoration";
 import XImage from "../../ximage";
 import { reverseXImage } from "@/utils/utils";
+import { applyBoxFit } from "../../painting/box-fit";
 
 class PolygonDecoration extends DecorationBase<PolygonDecorationOption> {
   private points: Array<Vector>;
@@ -64,7 +65,22 @@ class PolygonDecoration extends DecorationBase<PolygonDecorationOption> {
       const image = backgroundImage.data;
       //圆角时需要裁剪
       paint.clip();
-      paint.drawImage(image, 0, 0, width, height);
+      if (backgroundImage.fit == undefined) {
+        paint.drawImage(image, 0, 0, width, height);
+      } else {
+        const fittedSizes = applyBoxFit(
+          backgroundImage.fit,
+          new Size(backgroundImage.fixedWidth, backgroundImage.fixedHeight),
+          rect.size
+        );
+        paint.drawImage(
+          image,
+          0,
+          0,
+          fittedSizes.destination.width,
+          fittedSizes.destination.height
+        );
+      }
     }
 
     paint.restore();
@@ -85,9 +101,9 @@ class PolygonDecoration extends DecorationBase<PolygonDecorationOption> {
       });
       entity.backgroundImage = ximage;
     }
-   
+
     this.option = entity;
-    this.points=entity.points;
+    this.points = entity.points;
     return Promise.resolve(this);
   }
 }

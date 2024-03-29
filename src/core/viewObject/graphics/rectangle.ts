@@ -29,14 +29,11 @@ import {
   ViewObjectImportGraphics,
 } from "Serialization";
 
-class Rectangle extends GraphicsBase<
-  GenerateRectAngleOption,
-  BoxDecoration
-> {
-  public originFamily: ViewObjectFamily=ViewObjectFamily.graphicsPolygon;
+class Rectangle extends GraphicsBase<GenerateRectAngleOption, BoxDecoration> {
+  public originFamily: ViewObjectFamily = ViewObjectFamily.graphicsPolygon;
   family: ViewObjectFamily = ViewObjectFamily.graphicsRectangle;
   constructor(option: GenerateRectAngleOption) {
-    super(option,(option)=>{
+    super(option, (option) => {
       return new BoxDecoration(option);
     });
     this.option.type = "rectangle";
@@ -47,10 +44,10 @@ class Rectangle extends GraphicsBase<
   get value(): any {
     throw new Error("Method not implemented.");
   }
-  setDecoration(option: BoxDecorationOption,extension: boolean = true,): void {
-    super.setDecoration<BoxDecorationOption>(option,extension,"box");
+  setDecoration(option: BoxDecorationOption, extension: boolean = true): void {
+    super.setDecoration<BoxDecorationOption>(option, extension, "box");
   }
-  
+
   drawImage(paint: Painter): void {
     this.renderGraphics(paint);
   }
@@ -63,7 +60,10 @@ class Rectangle extends GraphicsBase<
   async export(painter?: Painter): Promise<ViewObjectExportGraphics> {
     const exportEntity: ViewObjectExportGraphics<GenerateRectAngleOption> = {
       option: this.option,
-      base: await this.getBaseInfo(),
+      base: {
+        ...(await this.getBaseInfo()),
+        decoration: await this.decoration.export(),
+      },
       type: "graphicsRectangle",
     };
     return Promise.resolve(exportEntity);
@@ -76,9 +76,7 @@ class Rectangle extends GraphicsBase<
   }
   public static async reserve(
     entity: ViewObjectImportGraphics<GenerateRectAngleOption>
-  ): Promise<
-    GraphicsBase<GenerateRectAngleOption, BoxDecoration>
-  > {
+  ): Promise<GraphicsBase<GenerateRectAngleOption, BoxDecoration>> {
     const option = entity.option;
     const rectAngle: Rectangle = new Rectangle(option);
     return Promise.resolve(rectAngle);

@@ -12,7 +12,7 @@ import Vector from "./vector";
 import ImageBox from "../viewObject/image";
 import TextBox from "../viewObject/text/text";
 import WriteFactory from "../viewObject/write/write-factory";
-import { ViewObject as ViewObjectD } from "@/types/gesti";
+import { ViewObject as ViewObjectD, XImageOption } from "@/types/gesti";
 import XImage from "./ximage";
 import {
   ViewObjectExportEntity,
@@ -170,10 +170,6 @@ abstract class ImageToolkitBase {
      */
     this.debug("Update the Canvas");
     this.callHook("onUpdate", null);
-    // if (this.preRenderFinished) {
-    //   this.preRenderFinished = !this.paint.hasDrawFunction;
-
-    // }
     this.paint.clearRect(
       0,
       0,
@@ -200,20 +196,13 @@ abstract class ImageToolkitBase {
         this.cleaning(item);
         item.render(this.paint);
         this.paint.drawSync();
-        // if (this.paint.hasDrawFunction)
-        //   this.paint.draw().then((e) => {
-        //     this.preRenderFinished = true;
-        //   });
+        this.currentViewObjectState[ndx] = 1;
       } else if (this.currentViewObjectState[ndx] == 1) {
         //标记过后不会再次标记
         this.currentViewObjectState[ndx] = 0;
         item.cancel();
         this.callHook("onHide", item);
         this.paint.drawSync();
-        // if (this.paint.hasDrawFunction)
-        //   this.paint.draw().then((e) => {
-        //     this.preRenderFinished = true;
-        //   });
       }
     });
     this.selectedViewObject?.performRenderSelected(this.paint);
@@ -673,7 +662,7 @@ class ImageToolkit extends ImageToolkitBase implements GestiController {
       | ImageData
       | ImageBitmap
       | OffscreenCanvas,
-    options?: createImageOptions
+    options?: XImageOption
   ): Promise<XImage> {
     throw new Error("Method not implemented.");
   }
@@ -944,8 +933,8 @@ class ImageToolkit extends ImageToolkitBase implements GestiController {
    * @returns
    */
   public addImage(ximage: XImage): Promise<ViewObject> {
-    this.debug("Add a Ximage");
-    if (ximage.constructor.name != "XImage") throw Error("不是XImage类");
+    this.debug("Add a XImage");
+    if (ximage.constructor.name != "XImage") throw Error("Invalid value,this value must be an instance of XImage");
     const image: XImage = ximage;
     const imageBox: ImageBox = new ImageBox(image);
     imageBox.center(this.canvasRect.size);

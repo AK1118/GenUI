@@ -45,7 +45,7 @@ class RectClipMask extends ViewObject {
       y = this.position.y;
     const hw = this.halfWidth,
       hh = this.halfHeight;
-    const { width, height } = this.kit.getCanvasRect().size;
+    const { width, height } = this.getKit().getCanvasRect().size;
     paint.fillStyle = this.option.maskColor;
     paint.fillRect(-x, -y, width * 2, y - hh);
     paint.fillRect(hw, -hh, width * 2, height * 2);

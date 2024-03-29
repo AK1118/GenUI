@@ -4,6 +4,7 @@ import {
   ImportAllInterceptor,
   ScreenUtilOption,
   TextOptions,
+  XImageOption,
 } from "@/types/gesti";
 import ViewObject from "../abstract/view-object";
 import { ViewObjectFamily } from "../enums";
@@ -190,7 +191,7 @@ interface ImageToolKitController {
      * @param options 
      * 
     *   {
-                data?: HTMLImageElement | SVGImageElement | HTMLVideoElement | HTMLCanvasElement | Blob | ImageData | ImageBitmap | OffscreenCanvas, options?: createImageOptions,
+                data?: HTMLImageElement | SVGImageElement | HTMLVideoElement | HTMLCanvasElement | Blob | ImageData | ImageBitmap | OffscreenCanvas, options?: XImageOption,
                 width?: number,
                 height?: number,
                 scale?: number,
@@ -208,7 +209,7 @@ interface ImageToolKitController {
       | ImageData
       | ImageBitmap
       | OffscreenCanvas,
-    options?: createImageOptions
+    options?: XImageOption
   ): Promise<XImage>;
   /**
    * @description 添加文字

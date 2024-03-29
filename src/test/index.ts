@@ -1,14 +1,16 @@
-import { ImageIcon, LockIcon } from "@/composite/icons";
+import { DefaultIcon, ImageIcon, LockIcon } from "@/composite/icons";
 import ViewObject from "@/core/abstract/view-object";
 import GestiController from "@/core/lib/controller";
 import LineGradientDecoration from "@/core/lib/graphics/gradients/lineGradientDecoration";
 import Painter from "@/core/lib/painter";
 import Alignment from "@/core/lib/painting/alignment";
+import BoxFit from "@/core/lib/painting/box-fit";
 import Plugins from "@/core/lib/plugins";
 import OffScreenCanvasGenerator from "@/core/lib/plugins/offScreenCanvasGenerator";
 import { RenderViewElement } from "@/core/lib/rendering/element";
 import { Row } from "@/core/lib/rendering/flex";
 import { Container, RenderViewWidget } from "@/core/lib/rendering/widget";
+import Vector from "@/core/lib/vector";
 import CustomButton from "@/core/viewObject/buttons/customButton";
 import DragButton from "@/core/viewObject/buttons/dragbutton";
 import RotateButton from "@/core/viewObject/buttons/rotateButton";
@@ -137,7 +139,7 @@ const ximage = new XImage({
   scale: 1,
   // url: img.src,
 });
-
+console.log("哈哈")
 const imageBox = new ImageBox(ximage);
 imageBox.setSize({
   width: screenUtil1.fullWidth,
@@ -421,7 +423,7 @@ document.getElementById("export").addEventListener("click", () => {
   controller.cancelAll();
   exportAll(gesti).then((json) => {
     console.log(json);
-    // window.localStorage.setItem("aa", json);
+     window.localStorage.setItem("aa", json);
     console.log("导出成功");
     controller2.importAll(json).then((e) => {
       console.log("导入成功");
@@ -436,27 +438,146 @@ document.getElementById("input").addEventListener("input", (e: any) => {
 controller.render();
 
 async function main() {
-  const text = new TextBox("成功", {
-    fontSize: screenUtil1.setSp(90),
+  const text = new TextBox(`你好`, {
+    fontSize: screenUtil1.setSp(300),
     stroke: true,
-    fill: false,
+    fill: true,
     weight: "bold",
-    strokeColor: "red",
-    strokeLineWidth:screenUtil1.setSp(10)
-    // fillGradient: {
-    //   begin: Alignment.topLeft,
-    //   end: Alignment.bottomRight,
-    //   colors: ["orange", "red"],
-    // },
-    // strokeGradient: {
-    //   begin: Alignment.topLeft,
-    //   end: Alignment.bottomRight,
-    //   colors: ["black", "blue"],
-    // },
+    strokeColor: "white",
+    strokeLineWidth: screenUtil1.setSp(20),
+    fillGradient: {
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: ["orange", "red"],
+    },
+    shadowBlur: 2,
+    shadowColor: "#000",
+    shadowOffsetX: 2,
+    shadowOffsetY: 2,
+    fillShadow: true,
+    strokeShadow: true,
   });
-  controller.load(text);
+  text.installButton(new DragButton());
+  // controller.load(text);
   controller.center(text);
+
+  const clipWidth = 450,
+    clipHeight = 420,
+    clipX = 175,
+    clipY = 185;
+  const fixedImg=await loadImg("https://s.cn.bing.net/th?id=OJ.ctIMyEUgdeHZwQ&w=120&h=160&c=8&rs=1&pid=academic");
+  
+  
+  const roundedXImage = new XImage({
+    data: fixedImg,
+    width: fixedImg.width,
+    height: fixedImg.height,
+    url: fixedImg.src,
+    fit:BoxFit.fitHeight
+  });
+  const rr = new Rectangle({
+    width:screenUtil1.setWidth(750),
+    height:screenUtil1.setHeight(300),
+    decoration:{
+      backgroundImage:roundedXImage
+    }
+  })//new ImageBox(roundedXImage);
+  const scale = screenUtil1.fullWidth / fixedImg.width;
+  const rectClip = new RectClipMask({
+    width: clipWidth * scale,
+    height: clipHeight * scale,
+  });
+  rectClip.setPosition(
+    clipX * scale + rectClip.width * 0.5,
+    clipY * scale + rectClip.height * 0.5
+  );
+  rr.installMultipleButtons([
+    new DragButton({
+      angleDisabled: true,
+      buttonOption: {
+        alignment: Alignment.topLeft,
+        icon: new DefaultIcon(),
+      },
+    }),
+    new DragButton({
+      angleDisabled: true,
+      buttonOption: {
+        alignment: Alignment.topRight,
+        icon: new DefaultIcon(),
+      },
+    }),
+    new DragButton({
+      angleDisabled: true,
+      buttonOption: {
+        alignment: Alignment.bottomRight,
+        icon: new DefaultIcon(),
+      },
+    }),
+    (() => {
+      class MyButton extends DragButton {
+        protected drawButton(
+          position: Vector,
+          size: Size,
+          radius: number,
+          paint: Painter
+        ): void {
+          paint.save();
+          paint.beginPath();
+          paint.arc(position.x, position.y, radius, 0, Math.PI * 2);
+          paint.lineWidth = 1;
+          paint.strokeStyle = "#69e7ff";
+          paint.fillStyle = "#ffffff";
+          paint.fill();
+          paint.stroke();
+          paint.closePath();
+          paint.restore();
+        }
+      }
+      const button = new MyButton({
+        angleDisabled: true,
+        buttonOption: {
+          alignment: Alignment.bottomLeft,
+          icon: new DefaultIcon(),
+        },
+      });
+      button.displayBackground = false;
+      return button;
+    })(),
+    new RotateButton({
+      alignment: Alignment.format(-0.6, 1.2),
+    }),
+    new CloseButton({
+      icon: new ImageIcon(
+        new XImage({
+          data: img,
+          width: screenUtil1.setSp(30),
+          height:screenUtil1.setSp(30),
+          // url: img.src,
+        })
+      ),
+      alignment: Alignment.format(0, 1.2),
+    }),
+  ]);
+  controller.load(rr);
+  // controller.load(rectClip);
+
+  controller.center(rr);
+  //屏蔽双指
+  controller.cancelGesture();
+  controller.updateText(text.value,{
+    color:'red'
+  })
+  console.log("拿到矩形", rectClip.value);
+  // setInterval(()=>{
+  //   rr.replaceXImage(Math.random()>.5?ximage:roundedXImage);
+  // },1000)
 }
+controller.addListener("onHide",(view)=>{
+  console.log("删除");
+  setTimeout(()=>{
+    // controller.show(view);
+  },1000)
+});
 async function loadImg(src): Promise<HTMLImageElement> {
   const bg = new Image();
   bg.src = src; //;

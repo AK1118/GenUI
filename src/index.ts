@@ -22,6 +22,7 @@ import GestiController from "./core/lib/controller";
 import Polygon from "./core/viewObject/graphics/polygon";
 import RectCrop from "./core/viewObject/crop/rect-crop";
 import RectClipMask from "./core/viewObject/mask/rect-clip-mask";
+import BoxFit from "./core/lib/painting/box-fit";
 
 
 //Hooks
@@ -41,7 +42,7 @@ export { Alignment };
 //View
 export { Rectangle,Polygon, InteractiveImage, ImageBox, XImage, TextBox, WriteViewObj,RectCrop,RectClipMask };
 //Enum
-export { ViewObjectFamily };
+export { ViewObjectFamily,BoxFit };
 //Config
 export { GestiConfig };
 //Controller

@@ -12,6 +12,7 @@ import {
   ImportAllInterceptor,
   ScreenUtilOption,
   TextOptions,
+  XImageOption,
 } from "@/types/gesti";
 import ScreenUtils from "@/utils/screenUtils/ScreenUtils";
 import Gesti from "./gesti";
@@ -354,7 +355,7 @@ abstract class GesteControllerImpl implements GestiControllerInterface {
       | ImageData
       | ImageBitmap
       | OffscreenCanvas,
-    options?: createImageOptions
+    options?: XImageOption
   ): Promise<XImage> {
     return new Promise(async (r, e) => {
       try {

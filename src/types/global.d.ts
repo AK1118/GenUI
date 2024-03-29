@@ -21,6 +21,7 @@ declare class Size {
     height: number;
   };
 }
+
 declare interface CanvasRenderingContext2D {
   draw(): void;
 }
@@ -75,98 +76,103 @@ declare interface GestiEventFunction {
   (params: GestiEventParams): void;
 }
 
-declare interface createImageOptions {
-  /**
-   * 图片数据源，确保你的数据源能正确的显示到canvas上后再添加进来
-   */
-  data?:
-    | HTMLImageElement
-    | SVGImageElement
-    | HTMLVideoElement
-    | HTMLCanvasElement
-    | Blob
-    | ImageData
-    | ImageBitmap
-    | OffscreenCanvas;
-  originData?: any;
-  options?: createImageOptions;
-  /**
-   * 宽度
-   */
-  width?: number;
-  /**
-   * 高度
-   */
-  height?: number;
-  /**
-   * 缩放倍数
-   */
-  scale?: number;
-  /**
-   * 最大放大倍数
-   */
-  maxScale?: number;
-  /**
-   * 最小缩小倍数
-   */
-  minScale?: number;
-  /**
-   * 图片原始宽度
-   */
-  fixedWidth?: number;
-  /**
-   * 图片原始高度
-   */
-  fixedHeight?: number;
-  /**
-   * 图片网络地址
-   */
-  url?: string;
-}
+// declare interface XImageOption {
+//   /**
+//    * 图片数据源，确保你的数据源能正确的显示到canvas上后再添加进来
+//    */
+//   data?:
+//     | HTMLImageElement
+//     | SVGImageElement
+//     | HTMLVideoElement
+//     | HTMLCanvasElement
+//     | Blob
+//     | ImageData
+//     | ImageBitmap
+//     | OffscreenCanvas;
+//   originData?: any;
+//   // options?: XImageOption;
+//   /**
+//    * 宽度
+//    */
+//   width?: number;
+//   /**
+//    * 高度
+//    */
+//   height?: number;
+//   /**
+//    * 缩放倍数
+//    */
+//   scale?: number;
+//   /**
+//    * 最大放大倍数
+//    */
+//   maxScale?: number;
+//   /**
+//    * 最小缩小倍数
+//    */
+//   minScale?: number;
+//   /**
+//    * 图片原始宽度
+//    */
+//   fixedWidth?: number;
+//   /**
+//    * 图片原始高度
+//    */
+//   fixedHeight?: number;
+//   /**
+//    * 图片网络地址
+//    */
+//   url?: string;
+// }
 
-declare interface XImageOptions {
-  /**
-   * 图片数据源
-   */
-  data?:
-    | HTMLImageElement
-    | SVGImageElement
-    | HTMLVideoElement
-    | HTMLCanvasElement
-    | Blob
-    | ImageData
-    | ImageBitmap
-    | OffscreenCanvas;
-  originData?: any;
-  /**
-   * 宽度
-   */
-  width?: number;
-  /**
-   * 高度
-   */
-  height?: number;
-  /**
-   * 缩放倍数
-   */
-  scale?: number;
-  /**
-   * 最大放大倍数
-   */
-  maxScale?: number;
-  /**
-   * 最小缩小倍数
-   */
-  minScale?: number;
-  /**
-   * 图片原始宽度
-   */
-  fixedWidth?: number;
-  /**
-   * 图片原始高度
-   */
-  fixedHeight?: number;
-}
+// declare interface XImageOptions {
+//   //   /**
+// //    * 图片数据源，确保你的数据源能正确的显示到canvas上后再添加进来
+// //    */
+// //   data?:
+// //     | HTMLImageElement
+// //     | SVGImageElement
+// //     | HTMLVideoElement
+// //     | HTMLCanvasElement
+// //     | Blob
+// //     | ImageData
+// //     | ImageBitmap
+// //     | OffscreenCanvas;
+// //   originData?: any;
+// //   // options?: XImageOption;
+// //   /**
+// //    * 宽度
+// //    */
+// //   width?: number;
+// //   /**
+// //    * 高度
+// //    */
+// //   height?: number;
+// //   /**
+// //    * 缩放倍数
+// //    */
+// //   scale?: number;
+// //   /**
+// //    * 最大放大倍数
+// //    */
+// //   maxScale?: number;
+// //   /**
+// //    * 最小缩小倍数
+// //    */
+// //   minScale?: number;
+// //   /**
+// //    * 图片原始宽度
+// //    */
+// //   fixedWidth?: number;
+// //   /**
+// //    * 图片原始高度
+// //    */
+// //   fixedHeight?: number;
+// //   /**
+// //    * 图片网络地址
+// //    */
+// //   url?: string;
+// }
 
 declare type Boundary = {
   x: number;

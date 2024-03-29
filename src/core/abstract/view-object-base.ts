@@ -163,10 +163,12 @@ abstract class BaseViewObject<
   //元素唯一id
   public _id: string;
   //image kit 对象
-  protected kit: ImageToolkit;
+  private kit: ImageToolkit;
   //对象层级 => 对象在数组中的位置
   private layer: number = null;
-
+  protected setKit(kit: ImageToolkit) {
+    this.kit = kit;
+  }
   //初始化时的尺寸，用于计算scaleWidth,和scaleHeight
   private _fixedSize: Size = Size.zero;
   get fixedSize(): Size {

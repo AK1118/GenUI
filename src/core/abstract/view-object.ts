@@ -51,7 +51,7 @@ abstract class ViewObject<D extends DecorationBase = DecorationBase>
   abstract get value(): any;
 
   public initialization(kit: ImageToolkit): void {
-    this.kit = kit;
+    this.setKit(kit);
     //初始化一些数据，准备挂载
     this.ready(kit);
     //添加监听
@@ -347,7 +347,7 @@ abstract class ViewObject<D extends DecorationBase = DecorationBase>
 
   public toCenter(axis?: CenterAxis): void {
     if (!this.mounted) return;
-    this.kit.center(this, axis);
+    this.getKit().center(this, axis);
   }
 
   protected _didChangeSize(size: Size): void {

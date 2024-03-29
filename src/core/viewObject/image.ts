@@ -25,6 +25,7 @@ import {
 } from "@/utils/canvas";
 import { reverseXImage } from "@/utils/utils";
 import { BoxDecorationOption } from "Graphics";
+import BoxFit, { applyBoxFit } from "../lib/painting/box-fit";
 /**
  * 可设置背景，且背景
  */
@@ -60,19 +61,30 @@ class ImageBox extends ViewObject {
     const { width, height } = xImage.toJson();
     const oldPosition: Vector = this.rect.position.copy();
     this.rect.setPosition(oldPosition);
-    this.rect.setSize(width*this.absoluteScale, height*this.absoluteScale);
+    this.rect.setSize(width * this.absoluteScale, height * this.absoluteScale);
     this.forceUpdate();
   }
-
+  protected onMounted(): void {
+    super.onMounted();
+    if (this.mounted&&this.ximage.fit!=BoxFit.none&&this.ximage.fit!=undefined) {
+      const kit = this.getKit();
+      const size = kit.getCanvasRect().size;
+      const fittedSizes = applyBoxFit(this.ximage.fit, this.size, size);
+      this.setSize({
+        width: fittedSizes.destination.width,
+        height: fittedSizes.destination.height,
+      });
+    }
+  }
   //@Override
   public drawImage(paint: Painter): void {
-      paint.drawImage(
-        this.image,
-        this.rect.position.x >> 0,
-        this.rect.position.y >> 0,
-        this.rect.size.width >> 0,
-        this.rect.size.height >> 0
-      );
+    paint.drawImage(
+      this.image,
+      this.rect.position.x >> 0,
+      this.rect.position.y >> 0,
+      this.rect.size.width >> 0,
+      this.rect.size.height >> 0
+    );
   }
 
   async export(): Promise<ViewObjectExportImageBox> {

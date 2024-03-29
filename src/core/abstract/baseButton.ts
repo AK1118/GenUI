@@ -286,6 +286,8 @@ export abstract class BaseButton implements RenderObject {
       backgroundColor: this.background,
       iconColor: this.iconColor,
       displayBackground: this.displayBackground,
+      icon:this.icon,
+      
     };
     return Promise.resolve(entity);
   }

@@ -1,6 +1,8 @@
 import {
   Alignment,
+  BoxFit,
   GraffitiTypes,
+  Icon,
   ImageChunk,
   RectClipMaskOption,
   RectCropOption,
@@ -22,6 +24,7 @@ declare module "Serialization" {
     data?: Array<ImageChunk>;
     width: number;
     height: number;
+    fit?:any,
   }
 
   interface ExportRect {
@@ -41,6 +44,7 @@ declare module "Serialization" {
     backgroundColor?: string;
     displayBackground?: boolean;
     option?: O;
+    icon?:Icon
   }
 
   export interface ViewObjectExportBaseInfo {

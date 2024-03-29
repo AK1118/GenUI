@@ -176,12 +176,19 @@ declare class Vector {
 }
 
 declare class Size {
-  width: number;
-  height: number;
   constructor(width: number, height: number);
+  static get zero(): Size;
+  get width(): number;
+  get height(): number;
   toVector(): Vector;
   copy(): Size;
-  static get zero(): Size;
+  equals(size: Size | { width?: number; height?: number }): boolean;
+  public setWidth(width: number): void;
+  public setHeight(height: number): void;
+  public toObject(): {
+    width: number;
+    height: number;
+  };
 }
 
 type ButtonOption = {
@@ -351,9 +358,13 @@ export interface TextOptions extends Shadow {
   strokeGradient?: LineGradientDecorationOption;
   //描边线条宽度
   strokeLineWidth?: number;
+  //描边阴影
+  strokeShadow?: boolean;
+  //填充阴影
+  fillShadow?: boolean;
 }
 
-declare interface createImageOptions {
+declare interface XImageOption {
   /**
    * 图片数据源，确保你的数据源能正确的显示到canvas上后再添加进来
    */
@@ -367,7 +378,6 @@ declare interface createImageOptions {
     | ImageBitmap
     | OffscreenCanvas;
   originData?: any;
-  options?: createImageOptions;
   /**
    * 宽度
    */
@@ -400,6 +410,40 @@ declare interface createImageOptions {
    * 图片网络地址
    */
   url?: string;
+
+  fit?: BoxFit;
+}
+
+export declare enum BoxFit {
+  /**enum BoxFit {
+  /**
+   * ## 将源图像拉伸以填充目标框，可能会扭曲源图像的宽高比。
+   */
+  fill,
+  /**
+   * ## 尽可能大地将源图像完全包含在目标框内。
+   */
+  contain,
+  /**
+   * ## 尽可能小地将源图像完全覆盖目标框。
+   */
+  cover,
+  /**
+   * ##  确保显示源的全宽度，不考虑是否导致源在垂直方向上溢出目标框。
+   */
+  fitWidth,
+  /**
+   * ## 确保显示源的全高度，不考虑是否导致源在水平方向上溢出目标框。
+   */
+  fitHeight,
+  /**
+   * ## 不会做出任何动作
+   */
+  none,
+  /**
+   * ## 将源在目标框内对齐（默认为居中），并且在必要时将源缩小以确保其适合于框内。如果这会缩小图像，则与 `contain` 相同；否则与 `none` 相同。
+   */
+  scaleDown,
 }
 
 interface Rect {
@@ -566,7 +610,7 @@ export abstract class ViewObject {
 }
 
 export class XImage {
-  constructor(params: createImageOptions);
+  constructor(params: XImageOption);
   originData: any;
   data: any;
   width: number;
@@ -577,15 +621,12 @@ export class XImage {
   fixedWidth: number;
   fixedHeight: number;
   url: string;
+  fit:any
   //矩形位置大小信息
   toJson(): RectParams;
   toJSON(): any;
   export(): Promise<ExportXImage>;
 }
-// class Group {
-//   remove(id: string): void;
-//   removeById(viewObject: ViewObject): void;
-// }
 
 export type FontStyleType = "normal" | "italic" | "oblique";
 export type FontWeight =

@@ -44,9 +44,9 @@ class Painter implements Painter {
   }
   public setShadow(option?: Shadow) {
     this.shadowColor = option?.shadowColor;
-    this.shadowBlur = option?.shadowBlur;
-    this.shadowOffsetX = option?.shadowOffsetX;
-    this.shadowOffsetY = option?.shadowOffsetY;
+    this.shadowBlur = option?.shadowBlur || 0;
+    this.shadowOffsetX = option?.shadowOffsetX || 0;
+    this.shadowOffsetY = option?.shadowOffsetY || 0;
   }
   set shadowOffsetX(shadowOffsetX: number) {
     this.paint.shadowOffsetX = shadowOffsetX;

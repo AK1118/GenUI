@@ -12,6 +12,7 @@ import Painter from "@/core/lib/painter";
 // import CutterWeChat from "./cutters/cutter-WeChat";
 import CutterH5 from "./cutters/cutter-H5";
 import XImage from "@/core/lib/ximage";
+import BoxFit from "@/core/lib/painting/box-fit";
 
 const uint8ArrayToChunks = (
   uint8Array: Uint8Array,
@@ -139,11 +140,12 @@ export const coverUnit = (value: number): number => {
 interface ReverseXImageOption {
   url?: string;
   data?: ImageChunk[];
+  fit?: BoxFit;
   fixedWidth: number;
   fixedHeight: number;
 }
 const reverseXImage = async (option: ReverseXImageOption): Promise<XImage> => {
-  const { url, data, fixedHeight, fixedWidth } = option;
+  const { url, data, fixedHeight, fixedWidth, fit } = option;
   const chunks: Array<ImageChunk> = data;
   if (url) {
     //网络路径存在，不负责请求，任务交由开发者，通过回调函数获取用户传入的XImage
@@ -157,16 +159,17 @@ const reverseXImage = async (option: ReverseXImageOption): Promise<XImage> => {
     //微信小程序
     // if (Platform.isWeChatMiniProgram) return reverseWeChat(option);
     const cutter = new CutterH5();
-    const source: ImageData = cutter.merge(
+    const source: ImageData = cutter.merge(fixedWidth, fixedHeight, chunks);
+    const imageBitmap: ImageBitmap = (await getMergedImageData(
+      source,
       fixedWidth,
-      fixedHeight,
-      chunks
-    );
-    const imageBitmap: ImageBitmap = await getMergedImageData(source,fixedWidth,fixedWidth) as any;
+      fixedWidth
+    )) as any;
     const ximage = new XImage({
       data: imageBitmap,
       width: fixedWidth,
       height: fixedHeight,
+      fit: fit,
     });
     return ximage;
   }
@@ -200,16 +203,17 @@ const reverseXImage = async (option: ReverseXImageOption): Promise<XImage> => {
 // };
 
 const fetchXImage = async (option: ReverseXImageOption): Promise<XImage> => {
-  const { url, data, fixedHeight, fixedWidth } = option;
+  const { url, data, fixedHeight, fixedWidth, fit } = option;
   const platform: PlatformType = Platform.platform;
-   const offCanvas = getOffscreenCanvasWidthPlatform(fixedWidth, fixedHeight);
-  const image =await getImage(url,fixedHeight,fixedWidth,offCanvas);
+  const offCanvas = getOffscreenCanvasWidthPlatform(fixedWidth, fixedHeight);
+  const image = await getImage(url, fixedHeight, fixedWidth, offCanvas);
   if (image) {
     await waitingLoadImg(image);
     return new XImage({
       data: image,
       height: fixedHeight,
       width: fixedWidth,
+      fit,
       url,
     });
   }

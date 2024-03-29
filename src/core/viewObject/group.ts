@@ -57,7 +57,7 @@ abstract class GroupBase extends ViewObject {
   }
   private initializationChildren(): void {
     this.views.forEach((_) => {
-      !_.mounted && this.kit.mount(_);
+      !_.mounted && this.getKit().mount(_);
       this.onAddObj(_);
     });
   }
@@ -186,7 +186,7 @@ abstract class GroupBase extends ViewObject {
     this.hide();
   }
   protected onMount(): void {
-    this.kit?.layerBottom?.(this);
+    this.getKit()?.layerBottom?.(this);
   }
   /**
    * @description 根据子元素设置大小

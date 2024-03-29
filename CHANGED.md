@@ -10,6 +10,7 @@
 - 控制器新增 show 和 hide 方法，用于控制图层的显示与隐藏
 - RectCrop 对象，裁剪框，可通过该实例获取被框选区域矩形数据(非 ImageData)
 - 控制器新增 setLayer 用于设置图层,forceRender 新增强制重新排序
+- XImage 新增可选参数 fit
 - 文字新增艺术字属性:
 ``` Typescript
   //描边

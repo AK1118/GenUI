@@ -9,6 +9,7 @@ import {
   ViewObject,
   ViewObjectFamily,
   XImage,
+  XImageOption,
 } from "./gesti";
 export declare type GraffitiType =
   | "circle"
@@ -205,7 +206,7 @@ interface ImageToolKitController {
      * @param options 
      * 
     *   {
-                data?: HTMLImageElement | SVGImageElement | HTMLVideoElement | HTMLCanvasElement | Blob | ImageData | ImageBitmap | OffscreenCanvas, options?: createImageOptions,
+                data?: HTMLImageElement | SVGImageElement | HTMLVideoElement | HTMLCanvasElement | Blob | ImageData | ImageBitmap | OffscreenCanvas, options?: XImageOption,
                 width?: number,
                 height?: number,
                 scale?: number,
@@ -223,7 +224,7 @@ interface ImageToolKitController {
       | ImageData
       | ImageBitmap
       | OffscreenCanvas,
-    options?: createImageOptions
+    options?: XImageOption
   ): Promise<XImage>;
   /**
    * @description 添加文字
@@ -418,7 +419,7 @@ declare class GestiController implements GestiControllerInterface {
       | ImageData
       | ImageBitmap
       | OffscreenCanvas,
-    options?: createImageOptions
+    options?: XImageOption
   ): Promise<XImage>;
   addText(text: string, options?: TextOptions): Promise<ViewObject>;
   addListener(

@@ -9,6 +9,22 @@ class LineGradientDecoration extends GradientDecorationBase<LineGradientDecorati
     this.option = option;
     this.type = "lineGradient";
     this.option.type = "lineGradient";
+    this.checkAlignments();
+  }
+  private checkAlignments(): void {
+    const {
+      begin,
+      end,
+    }: {
+      begin: any;
+      end: any;
+    } = this.option;
+    const isAlignmentInstance = (obj: unknown): boolean => {
+      return obj instanceof Alignment;
+    };
+    if (isAlignmentInstance(begin) && isAlignmentInstance(end)) return;
+    this.option.begin = Alignment.format(begin.x, begin.y);
+    this.option.end = Alignment.format(end.x, end.y);
   }
   generateGradient(paint: Painter, size: Size): CanvasGradient {
     // const begin:Alignment=Alignment.topLeft;

@@ -9,18 +9,17 @@ import {
 import XImage from "../../ximage";
 import GradientDecorationBase from "@/core/bases/gradient-base";
 import Painter from "../../painter";
-import Rect from "../../rect";
+import Rect, { Size } from "../../rect";
 import Serializable from "@/core/interfaces/Serialization";
 import LineGradientDecoration from "../../graphics/gradients/lineGradientDecoration";
 import { reverseXImage } from "@/utils/utils";
 import DecorationBase from "@/core/bases/decoration-base";
-
-
+import { applyBoxFit } from "../../painting/box-fit";
 
 class BoxDecoration extends DecorationBase<BoxDecorationOption> {
   constructor(option?: BoxDecorationOption) {
     super(option);
-    if(this.option)this.option.type="box";
+    if (this.option) this.option.type = "box";
   }
   render(paint: Painter, rect: Rect): void {
     const { width, height } = rect.size;
@@ -48,7 +47,22 @@ class BoxDecoration extends DecorationBase<BoxDecorationOption> {
       if (borderRadius) {
         paint.clip();
       }
-      paint.drawImage(image, 0, 0, width, height);
+      if (backgroundImage.fit == undefined) {
+        paint.drawImage(image, 0, 0, width, height);
+      } else {
+        const fittedSizes = applyBoxFit(
+          backgroundImage.fit,
+          new Size(backgroundImage.fixedWidth, backgroundImage.fixedHeight),
+          rect.size
+        );
+        paint.drawImage(
+          image,
+          0,
+          0,
+          fittedSizes.destination.width,
+          fittedSizes.destination.height
+        );
+      }
     }
     paint.closePath();
     paint.restore();
@@ -80,16 +94,18 @@ class BoxDecoration extends DecorationBase<BoxDecorationOption> {
     if (gradient?.type == "lineGradient") {
       entity.gradient = LineGradientDecoration.format(gradient as any);
     }
+   
     if (backgroundImage) {
       const ximage: XImage = await reverseXImage({
         url: backgroundImage.url,
         data: backgroundImage.data,
+        fit:backgroundImage.fit,
         fixedHeight: backgroundImage.height,
         fixedWidth: backgroundImage.width,
       });
       entity.backgroundImage = ximage;
     }
-
+    
     this.option = entity;
 
     return Promise.resolve(this);

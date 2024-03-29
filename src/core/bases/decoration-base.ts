@@ -21,9 +21,16 @@ class DecorationBase<O extends DecorationOption = BoxDecorationOption>
     if (this.option?.backgroundImage) {
       const ximageExport: ExportXImage =
         await this.option?.backgroundImage.export();
-      this.option.backgroundImage = ximageExport as any;
+      const _option = { ...this.option };
+      _option.backgroundImage = ximageExport as any;
+      return Promise.resolve({
+        ...this.option,
+        backgroundImage: ximageExport as any,
+      });
     }
-    return Promise.resolve(this.option);
+    return Promise.resolve({
+      ...this.option,
+    });
   }
   public render(paint: Painter, rect: Rect): void {}
   protected performRender(paint: Painter, rect: Rect): void {}

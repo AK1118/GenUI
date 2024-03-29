@@ -49,6 +49,7 @@ export abstract class TextBoxBase extends ViewObject {
     stroke: false,
     strokeColor: "black",
     fill: true,
+    fillShadow: true,
   };
   get textWrap(): boolean {
     return true;
@@ -101,14 +102,40 @@ export abstract class TextBoxBase extends ViewObject {
   private setFontDecorations(paint: Painter) {
     //设置字体大小
     paint.font = this.getFont();
+    const {
+      fill: isFill,
+      stroke: isStroke,
+      fillGradient,
+      strokeGradient,
+      strokeLineWidth,
+      fillShadow,
+      strokeShadow,
+    } = this.textOptions;
+    if (isStroke) {
+      paint.strokeStyle = this.textOptions.strokeColor;
+      if (strokeGradient) {
+        const gradient = new LineGradientDecoration(strokeGradient);
+        paint.strokeStyle = gradient.getGradient(paint, this.size);
+      }
+      paint.lineWidth = strokeLineWidth;
+    }
+    if (isFill) {
+      if (fillGradient) {
+        const gradient = new LineGradientDecoration(fillGradient);
+        paint.fillStyle = gradient.getGradient(paint, this.size);
+      }
+    }
+    if (fillShadow || strokeShadow) {
+      if (this.textOptions.shadowColor) {
+        this.paint.setShadow({
+          ...this.textOptions,
+        });
+      }
+    }
   }
   /**
    * @override
    */
-  // public mount(): void {
-  //   this.computeTextSingle(true);
-  //   this.setMount(true);
-  // }
   protected onMounted(): void {
     this.computeTextSingle(false);
   }
@@ -358,36 +385,30 @@ export abstract class TextBoxBase extends ViewObject {
       const {
         fill: isFill,
         stroke: isStroke,
-        fillGradient,
-        strokeGradient,
-        strokeLineWidth,
+        strokeShadow,
+        fillShadow,
       } = this.textOptions;
-
-      if (isFill) {
-        if (fillGradient) {
-          const gradient = new LineGradientDecoration(fillGradient);
-          paint.fillStyle = gradient.getGradient(paint, this.size);
-        }
-        paint.fillText(
-          text,
-          point.x + this.renderTextOffsetX,
-          point.y + offsetY + this.renderTextOffsetY
-        );
-        paint.fill();
-      }
       if (isStroke) {
-        paint.strokeStyle = this.textOptions.strokeColor;
-        if (strokeGradient) {
-          const gradient = new LineGradientDecoration(strokeGradient);
-          paint.strokeStyle = gradient.getGradient(paint, this.size);
-        }
-        paint.lineWidth = strokeLineWidth;
+        paint.save();
+        if (!strokeShadow) paint.setShadow({});
         paint.strokeText(
           text,
           point.x + this.renderTextOffsetX,
           point.y + offsetY + this.renderTextOffsetY
         );
         paint.stroke();
+        paint.restore();
+      }
+      if (isFill) {
+        paint.save();
+        if (!fillShadow) paint.setShadow({});
+        paint.fillText(
+          text,
+          point.x + this.renderTextOffsetX,
+          point.y + offsetY + this.renderTextOffsetY
+        );
+        paint.fill();
+        paint.restore()
       }
     };
     paint.save();
@@ -421,11 +442,6 @@ export abstract class TextBoxBase extends ViewObject {
   //渲染文字后
   protected renderTextAndLines(points, render): void {
     this.paint.save();
-    //设置阴影
-    if (this.textOptions.shadowColor)
-      this.paint.setShadow({
-        ...this.textOptions,
-      });
     this.setFontDecorations(this.paint);
     this.texts.forEach((textData, ndx) => {
       const point = points[ndx];

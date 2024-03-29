@@ -50,6 +50,7 @@ export class Size {
   }
 }
 
+
 class Rect extends ObserverObj {
   public onDrag: onDragFunction;
   public beforeDrag: onDragFunction;

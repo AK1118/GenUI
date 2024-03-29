@@ -1,6 +1,6 @@
 import ImageBox from "../core/viewObject/image";
 import TextBox from "../core/viewObject/text/text";
-import XImage from "../core/lib/ximage";
+import XImage, { XImageOption } from "../core/lib/ximage";
 import { TextOptions } from "@/types/gesti";
 
 function createTextBoxView(text: string, options?: TextOptions): TextBox {
@@ -14,7 +14,7 @@ function createImageBoxView(ximage: XImage): ImageBox {
   return imageBox;
 }
 
-function createXImageFun(args:XImageOptions){
+function createXImageFun(args:XImageOption){
     const xImage=new XImage(args);
     return xImage;
 }
