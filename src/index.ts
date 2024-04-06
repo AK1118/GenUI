@@ -23,6 +23,8 @@ import Polygon from "./core/viewObject/graphics/polygon";
 import RectCrop from "./core/viewObject/crop/rect-crop";
 import RectClipMask from "./core/viewObject/mask/rect-clip-mask";
 import BoxFit from "./core/lib/painting/box-fit";
+import BoxDecoration from "./core/lib/rendering/decorations/box-decoration";
+import PolygonDecoration from "./core/lib/rendering/decorations/polygon-decoration";
 
 
 //Hooks
@@ -34,7 +36,7 @@ export * from "./composite/icons";
 //Buttons
 export * from "./composite/buttons";
 //Graphic
-export { LineGradientDecoration, ScreenUtils };
+export { LineGradientDecoration, ScreenUtils,BoxDecoration,PolygonDecoration };
 //Plugins
 export { OffScreenCanvasBuilder };
 //Vector
@@ -47,4 +49,5 @@ export { ViewObjectFamily,BoxFit };
 export { GestiConfig };
 //Controller
 export { GestiController };
+
 export default Gesti;

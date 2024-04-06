@@ -12,6 +12,10 @@ const copyAllTargets = [
     src: "LICENSE",
     dest: "dist",
   },
+  // {
+  //   src:'index.js',
+  //   dest:"dist",
+  // },
   ...allTypes.map((_) => ({
     src: _.replace(/\\/g, "/"),
     dest: DEST_PATH,

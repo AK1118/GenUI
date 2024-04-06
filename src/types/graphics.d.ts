@@ -121,4 +121,9 @@ interface GenerateCircleOption extends GenerateGraphicsOption {
 
 export class Decoration {}
 
-export class BoxDecoration extends Decoration {}
+export class BoxDecoration extends Decoration {
+  constructor(option?: BoxDecorationOption);
+}
+export class PolygonDecoration extends Decoration {
+  constructor(option?: PolygonDecorationOption);
+}

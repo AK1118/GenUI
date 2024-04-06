@@ -621,7 +621,7 @@ export class XImage {
   fixedWidth: number;
   fixedHeight: number;
   url: string;
-  fit:any
+  fit: any;
   //矩形位置大小信息
   toJson(): RectParams;
   toJSON(): any;
@@ -858,6 +858,14 @@ export class CustomButton extends Button {
 export class SizeButton extends Button {
   constructor(alignment: Alignment, option?: ButtonOption);
 }
+/**
+ * 创建一个自定义事件按钮
+ */
+export class EventButton extends CustomButton {}
+/**
+ * 创建一个等比例缩放按钮
+ */
+export class ARButton extends SizeButton {}
 export class UnLockButton extends Button {
   constructor(option?: ButtonOption);
 }

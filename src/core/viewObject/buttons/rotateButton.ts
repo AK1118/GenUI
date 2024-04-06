@@ -44,19 +44,30 @@ class RotateButton extends BaseButton {
     this.oldRadius = Vector.mag(this.relativeRect.position);
   }
   effect(currentButtonRect: Rect): void {
+    // 计算按钮的偏移量
     const [offsetX, offsetY] = currentButtonRect.position
       .sub(this.master.position)
       .toArray();
+    
+    // 计算按钮的角度变化
     let angle = Math.atan2(offsetY, offsetX) - this.oldAngle;
+    
+    // 将角度转换为 0 到 2π 的范围
+    angle = angle < 0 ? angle + 2 * Math.PI : angle;
+
+    // 将角度限制在45度的倍数附近
     {
-      let _angle = +angle.toFixed(2);
-      const _45 = 0.78;
-      const limit = 0.1;
-      const scale = (angle / 0.78) >> 0;
-      angle = Math.abs(_angle - scale * _45) < limit ? scale * _45 : _angle;
+      const _45 = Math.PI / 4; // 45度对应的弧度值
+      const limit = 0.1; // 误差范围
+      const scale = Math.round(angle / _45); // 计算角度是否接近45度的倍数
+      // 如果角度接近45度的倍数，则旋转到这个45度的倍数角度
+      angle = Math.abs(angle - scale * _45) < limit ? scale * _45 : angle;
     }
+    
+    // 设置按钮的角度
     this.master.rect.setAngle(angle);
-  }
+}
+
   public get getOldAngle(): number {
     return this.oldAngle;
   }

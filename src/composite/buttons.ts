@@ -20,4 +20,6 @@ export {
   VerticalButton,
   SizeButton,
   CustomButton,
+  SizeButton as ARButton,
+  CustomButton as EventButton,
 };

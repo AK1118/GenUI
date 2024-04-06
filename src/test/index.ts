@@ -139,7 +139,7 @@ const ximage = new XImage({
   scale: 1,
   // url: img.src,
 });
-console.log("哈哈")
+console.log("哈哈");
 const imageBox = new ImageBox(ximage);
 imageBox.setSize({
   width: screenUtil1.fullWidth,
@@ -423,7 +423,7 @@ document.getElementById("export").addEventListener("click", () => {
   controller.cancelAll();
   exportAll(gesti).then((json) => {
     console.log(json);
-     window.localStorage.setItem("aa", json);
+    window.localStorage.setItem("aa", json);
     console.log("导出成功");
     controller2.importAll(json).then((e) => {
       console.log("导入成功");
@@ -465,23 +465,24 @@ async function main() {
     clipHeight = 420,
     clipX = 175,
     clipY = 185;
-  const fixedImg=await loadImg("https://s.cn.bing.net/th?id=OJ.ctIMyEUgdeHZwQ&w=120&h=160&c=8&rs=1&pid=academic");
-  
-  
+  const fixedImg = await loadImg(
+    "https://s.cn.bing.net/th?id=OJ.ctIMyEUgdeHZwQ&w=120&h=160&c=8&rs=1&pid=academic"
+  );
+
   const roundedXImage = new XImage({
     data: fixedImg,
     width: fixedImg.width,
     height: fixedImg.height,
     url: fixedImg.src,
-    fit:BoxFit.fitHeight
+    fit: BoxFit.fitHeight,
   });
   const rr = new Rectangle({
-    width:screenUtil1.setWidth(750),
-    height:screenUtil1.setHeight(300),
-    decoration:{
-      backgroundImage:roundedXImage
-    }
-  })//new ImageBox(roundedXImage);
+    width: screenUtil1.setWidth(750),
+    height: screenUtil1.setHeight(300),
+    decoration: {
+      backgroundImage: roundedXImage,
+    },
+  }); //new ImageBox(roundedXImage);
   const scale = screenUtil1.fullWidth / fixedImg.width;
   const rectClip = new RectClipMask({
     width: clipWidth * scale,
@@ -551,7 +552,7 @@ async function main() {
         new XImage({
           data: img,
           width: screenUtil1.setSp(30),
-          height:screenUtil1.setSp(30),
+          height: screenUtil1.setSp(30),
           // url: img.src,
         })
       ),
@@ -564,19 +565,19 @@ async function main() {
   controller.center(rr);
   //屏蔽双指
   controller.cancelGesture();
-  controller.updateText(text.value,{
-    color:'red'
-  })
+  controller.updateText(text.value, {
+    color: "red",
+  });
   console.log("拿到矩形", rectClip.value);
   // setInterval(()=>{
   //   rr.replaceXImage(Math.random()>.5?ximage:roundedXImage);
   // },1000)
 }
-controller.addListener("onHide",(view)=>{
+controller.addListener("onHide", (view) => {
   console.log("删除");
-  setTimeout(()=>{
+  setTimeout(() => {
     // controller.show(view);
-  },1000)
+  }, 1000);
 });
 async function loadImg(src): Promise<HTMLImageElement> {
   const bg = new Image();
@@ -586,3 +587,15 @@ async function loadImg(src): Promise<HTMLImageElement> {
   return Promise.resolve(bg);
 }
 main();
+if (controller.initialized) {
+  controller.cancelEvent();
+  document.addEventListener("mousedown", (e)=>{
+    controller.down(e);
+  });
+  document.addEventListener("mousemove", (e)=>{
+    controller.move(e);
+  });
+  document.addEventListener("mouseup", (e)=>{
+    controller.up(e);
+  });
+}
