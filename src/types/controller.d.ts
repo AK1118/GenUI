@@ -447,7 +447,7 @@ declare class GestiController implements GestiControllerInterface {
   getViewObjectByIdSync<T extends ViewObject>(id: string): T;
   getAllViewObject(): Promise<ViewObject[]>;
   getAllViewObjectSync(): ViewObject[];
-  generateScreenUtils(option: ScreenUtilOption): ScreenUtils;
+  generateScreenUtils(option?: ScreenUtilOption): ScreenUtils;
 }
 
 export default GestiController;

@@ -92,8 +92,14 @@ abstract class GesteControllerImpl implements GestiControllerInterface {
   getViewObjectByIdSync<T extends ViewObject>(id: string): T {
     return this.kit.getViewObjectByIdSync<T>(id);
   }
-  generateScreenUtils(option: ScreenUtilOption): ScreenUtils {
-    return this.kit.generateScreenUtils(option);
+  generateScreenUtils(option?: ScreenUtilOption): ScreenUtils {
+    const canvasSize = this.kit.getCanvasRect();
+    const { width: canvasWidth, height: canvasHeight } = canvasSize.size;
+    return this.kit.generateScreenUtils({
+      canvasWidth,
+      canvasHeight,
+      ...(option ?? {}),
+    });
   }
   /**
    * @description 设置某个对象的位置

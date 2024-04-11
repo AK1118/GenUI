@@ -367,8 +367,6 @@ const controller2 = gesti2.initialization({
 console.log(controller2);
 
 controller2.generateScreenUtils({
-  canvasWidth: canvas2.width,
-  canvasHeight: canvas2.height,
   devicePixelRatio: dev,
   designWidth: 750,
   designHeight: 750,
@@ -561,7 +559,6 @@ async function main() {
   ]);
   controller.load(rr);
   // controller.load(rectClip);
-
   controller.center(rr);
   //屏蔽双指
   controller.cancelGesture();
@@ -586,16 +583,18 @@ async function loadImg(src): Promise<HTMLImageElement> {
   await waitingLoadImg(bg);
   return Promise.resolve(bg);
 }
-main();
+for (let index = 0; index < 1; index++) {
+  main();
+}
 if (controller.initialized) {
   controller.cancelEvent();
-  document.addEventListener("mousedown", (e)=>{
+  document.addEventListener("mousedown", (e) => {
     controller.down(e);
   });
-  document.addEventListener("mousemove", (e)=>{
+  document.addEventListener("mousemove", (e) => {
     controller.move(e);
   });
-  document.addEventListener("mouseup", (e)=>{
+  document.addEventListener("mouseup", (e) => {
     controller.up(e);
   });
 }

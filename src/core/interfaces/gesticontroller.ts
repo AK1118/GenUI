@@ -279,7 +279,7 @@ interface ImageToolKitController {
   /**
    * 设置屏幕适配器
    */
-  generateScreenUtils(option: ScreenUtilOption): ScreenUtils;
+  generateScreenUtils(option?: ScreenUtilOption): ScreenUtils;
   /**
    * 获取该控制器的屏幕适配器
    */

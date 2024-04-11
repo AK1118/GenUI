@@ -284,7 +284,6 @@ class ImageToolkit extends ImageToolkitBase implements GestiController {
     );
     return this.screenUtils;
   }
-
   remove(view?: ViewObject): boolean {
     const _view = view || this.selectedViewObject;
     if (!_view) return false;
@@ -934,7 +933,8 @@ class ImageToolkit extends ImageToolkitBase implements GestiController {
    */
   public addImage(ximage: XImage): Promise<ViewObject> {
     this.debug("Add a XImage");
-    if (ximage.constructor.name != "XImage") throw Error("Invalid value,this value must be an instance of XImage");
+    if (ximage.constructor.name != "XImage")
+      throw Error("Invalid value,this value must be an instance of XImage");
     const image: XImage = ximage;
     const imageBox: ImageBox = new ImageBox(image);
     imageBox.center(this.canvasRect.size);

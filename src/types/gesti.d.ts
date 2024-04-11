@@ -726,8 +726,8 @@ export type CenterAxis = "vertical" | "horizon";
  * - 设计稿大小，默认 750*750
  */
 export interface DesignSizeOption {
-  designWidth?: number;
-  designHeight?: number;
+  designWidth: number;
+  designHeight: number;
 }
 /**
  * - 屏幕(画布大小)
@@ -737,7 +737,9 @@ export interface CanvasSizeOption {
   canvasHeight: number;
 }
 
-export interface ScreenUtilOption extends DesignSizeOption, CanvasSizeOption {
+export interface ScreenUtilOption
+  extends Partial<DesignSizeOption>,
+    Partial<CanvasSizeOption> {
   //dpr
   devicePixelRatio?: number;
   //设备与画布比值
@@ -817,14 +819,8 @@ declare abstract class BaseButton {
   constructor(option?: ButtonOption);
 }
 
-export abstract class Button extends BaseButton {
+declare abstract class Button extends BaseButton {
   get btnLocation(): Alignment;
-  protected drawButton(
-    position: Vector,
-    size: Size,
-    radius: number,
-    paint: Painter
-  ): void;
   public setLocation(location: Alignment): void;
   public setBackgroundColor(color: string): void;
   public hideBackground(): void;
