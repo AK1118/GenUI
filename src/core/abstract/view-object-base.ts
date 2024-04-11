@@ -23,6 +23,7 @@ import {
 } from "Graphics";
 import DecorationBase from "../bases/decoration-base";
 import PolygonDecoration from "../lib/rendering/decorations/polygon-decoration";
+import Constraints from "../lib/rendering/constraints";
 
 class ViewObjectRenderBox extends RenderBox {}
 
@@ -41,6 +42,10 @@ abstract class BaseViewObject<
   protected offScreenPainter: Painter;
   private _isCache: boolean = false;
   private _didChanged: boolean = false;
+  private _scaleConstraints: ValueConstraints<number> = {
+    min: 0.1,
+    max: Infinity,
+  };
   protected get canRenderCache(): boolean {
     return this._isCache && this.offScreenCreated;
   }
@@ -52,6 +57,13 @@ abstract class BaseViewObject<
   }
   protected get didChanged(): boolean {
     return this._didChanged;
+  }
+  //约束倍数变换大小
+  public setScaleConstraints(constraints: ValueConstraints<number>): void {
+    this._scaleConstraints = constraints;
+  }
+  protected getScaleConstraints():ValueConstraints<number>{
+    return this._scaleConstraints;
   }
   public disableRemove(): void {
     this._disabledRemove = true;

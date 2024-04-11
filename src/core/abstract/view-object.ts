@@ -302,12 +302,12 @@ abstract class ViewObject<D extends DecorationBase = DecorationBase>
   private readonly narrowScale: number = 1 / 1.1;
   public enlarge() {
     this.deltaScale = this.enlargeScale;
-    this.rect.setDeltaScale(this.deltaScale);
+    this.setDeltaScale(this.deltaScale);
     this.doScale();
   }
   public narrow() {
     this.deltaScale = this.narrowScale;
-    this.rect.setDeltaScale(this.deltaScale);
+    this.setDeltaScale(this.deltaScale);
     this.doScale();
   }
   private doScale() {
@@ -319,8 +319,18 @@ abstract class ViewObject<D extends DecorationBase = DecorationBase>
    * @param deltaScale
    */
   public setDeltaScale(deltaScale: number) {
+    const constraints = this.getScaleConstraints();
+    const nextAbsScale = this.absoluteScale*deltaScale;
     this.delta.update(this.position);
     this.deltaScale = deltaScale;
+    if (nextAbsScale < constraints.min) {
+      this.rect.setAbsoluteScale(constraints.min);
+      return;
+    }
+    if (nextAbsScale > constraints.max) {
+      this.rect.setAbsoluteScale(constraints.max);
+      return;
+    }
     this.rect.setDeltaScale(deltaScale);
   }
 

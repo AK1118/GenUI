@@ -593,20 +593,39 @@ export abstract class ViewObject {
    * - 颜色，dash,padding，lineWidth
    */
   public setSelectedBorder(option: SelectedBorderStyle): void;
-  //使用缓存
+  /**
+   * 使用缓存
+   */
   public useCache(): void;
-  //不使用缓存
+  /**
+   * 不使用缓存
+   */
   public unUseCache(): void;
-  //使固定，不能被手指拖拽操作等
+  /**
+   * 使固定，不能被手指拖拽操作等
+   */
   public makeFixed(): void;
-  //解除固定
+  /**
+   * 解除固定
+   */
   public makeUnfixed(): void;
-  //禁用旋转
+  /**
+   * 禁用旋转
+   */
   public disableRotate(): void;
-  //启动旋转
+  /**
+   * 启动旋转
+   */
   public enableRotate(): void;
-  //是否旋转
+  /**
+   * 是否可被旋转
+   */
   get angleDisabled(): boolean;
+  /**
+   * 约束缩放倍数
+   * @param constraints 
+   */
+  setScaleConstraints(constraints: ValueConstraints<number>): void;
 }
 
 export class XImage {

@@ -565,6 +565,7 @@ async function main() {
   controller.updateText(text.value, {
     color: "red",
   });
+  
   console.log("拿到矩形", rectClip.value);
   // setInterval(()=>{
   //   rr.replaceXImage(Math.random()>.5?ximage:roundedXImage);
