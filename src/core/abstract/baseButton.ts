@@ -64,7 +64,7 @@ export abstract class BaseButton implements RenderObject {
   public get id(): string {
     return this._id;
   }
-  
+
   get mounted(): boolean {
     return this._mounted;
   }
@@ -150,7 +150,6 @@ export abstract class BaseButton implements RenderObject {
   render(paint: Painter): void {
     this.draw(paint);
   }
-  abstract onSelected(): void;
   public initialization(master: ViewObject) {
     this.master = master;
     this.beforeMounted();
@@ -239,7 +238,7 @@ export abstract class BaseButton implements RenderObject {
   get position(): Vector {
     return this.rect.position;
   }
-  setSenseRadius(senseRadius: number) : BaseButton{
+  setSenseRadius(senseRadius: number): BaseButton {
     this.senseRadius = senseRadius;
     this.radius = senseRadius;
     if (!this.mounted) return;
@@ -261,7 +260,7 @@ export abstract class BaseButton implements RenderObject {
   /**
    * @description 关闭背景
    */
-  public hideBackground() : BaseButton{
+  public hideBackground(): BaseButton {
     this.displayBackground = false;
     return this;
   }
@@ -286,8 +285,7 @@ export abstract class BaseButton implements RenderObject {
       backgroundColor: this.background,
       iconColor: this.iconColor,
       displayBackground: this.displayBackground,
-      icon:this.icon,
-      
+      icon: this.icon,
     };
     return Promise.resolve(entity);
   }

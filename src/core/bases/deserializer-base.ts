@@ -42,6 +42,9 @@ import PolygonDecoration from "../lib/rendering/decorations/polygon-decoration";
 import RectCrop from "../viewObject/crop/rect-crop";
 import RectClipMask from "../viewObject/mask/rect-clip-mask";
 import LineGradientDecoration from "../lib/graphics/gradients/lineGradientDecoration";
+import EventButton, {
+  EventButtonOption,
+} from "../viewObject/buttons/eventButton";
 
 type ViewObjectHandler<T> = (entity: ViewObjectImportEntity) => T;
 
@@ -192,7 +195,9 @@ abstract class DeserializerBase {
       height: this.adaptScreenSizeHeight(size.height),
     };
   }
-  public async getObjectByJson(importEntity: ViewObjectImportEntity) {
+  public async getObjectByJson<T extends ViewObject>(
+    importEntity: ViewObjectImportEntity
+  ): Promise<T> {
     const base: ViewObjectImportBaseInfo = importEntity.base;
     const rect: Rect = Rect.format(base.rect);
     const relativeRect: Rect = Rect.format(base.relativeRect);
@@ -221,10 +226,10 @@ abstract class DeserializerBase {
     //设置2D矢量数据
     this.setVectorData(view, base);
     //设置盒子装饰器
-    
+
     view.setDecorationEntity(await this.formatBoxDecoration(base?.decoration));
     this.installButton(view, buttons);
-    return view;
+    return view as T;
   }
   private setVectorData(view: ViewObject, base): void {
     //屏幕适配包括   宽高 坐标
@@ -250,7 +255,7 @@ abstract class DeserializerBase {
           decorationOption.borderRadius as number
         );
       }
-     
+
       return await decoration.format(decorationOption);
     } else if (_decoration.type === "polygon") {
       let d: PolygonDecorationOption = _decoration;
@@ -264,6 +269,7 @@ abstract class DeserializerBase {
       throw Error("Invalid decoration");
     }
   }
+
   //安装按钮
   private async installButton(viewObject: ViewObject, buttons: ExportButton[]) {
     buttons.forEach(async (item: ExportButton) => {
@@ -277,11 +283,11 @@ abstract class DeserializerBase {
         );
 
       let button: BaseButton = new buttonConstructor();
-      if (buttonName === "CustomButton") {
-        const child: ViewObject = await this.getObjectByJson(item.option.child);
-        button = new Buttons.CustomButton({
-          child,
-        });
+      if (buttonName === "EventButton") {
+        const child = await this.getObjectByJson<EventButtonOption["child"]>(
+          item.option.child
+        );
+        button = new EventButton({ child });
       }
 
       button.setSenseRadius(this.adaptScreenFontSize(item.radius));

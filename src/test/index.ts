@@ -11,7 +11,7 @@ import { RenderViewElement } from "@/core/lib/rendering/element";
 import { Row } from "@/core/lib/rendering/flex";
 import { Container, RenderViewWidget } from "@/core/lib/rendering/widget";
 import Vector from "@/core/lib/vector";
-import CustomButton from "@/core/viewObject/buttons/customButton";
+import CustomButton from "@/core/viewObject/buttons/eventButton";
 import DragButton from "@/core/viewObject/buttons/dragbutton";
 import RotateButton from "@/core/viewObject/buttons/rotateButton";
 import SizeButton from "@/core/viewObject/buttons/sizeButton";
@@ -35,7 +35,9 @@ import {
   doUpdate,
 } from "@/hooks/index";
 import Gesti, {
+  ARButton,
   CloseButton,
+  EventButton,
   HorizonButton,
   ImageBox,
   LockButton,
@@ -463,8 +465,9 @@ async function main() {
     clipHeight = 420,
     clipX = 175,
     clipY = 185;
+    // "https://s.cn.bing.net/th?id=OJ.ctIMyEUgdeHZwQ&w=120&h=160&c=8&rs=1&pid=academic"
   const fixedImg = await loadImg(
-    "https://s.cn.bing.net/th?id=OJ.ctIMyEUgdeHZwQ&w=120&h=160&c=8&rs=1&pid=academic"
+    "https://images.unsplash.com/photo-1551963831-b3b1ca40c98e?w=164&h=164&fit=crop&auto=format"
   );
 
   const roundedXImage = new XImage({
@@ -472,7 +475,7 @@ async function main() {
     width: fixedImg.width,
     height: fixedImg.height,
     url: fixedImg.src,
-    fit: BoxFit.fitHeight,
+    fit: BoxFit.cover,
   });
   const rr = new Rectangle({
     width: screenUtil1.setWidth(750),
@@ -498,11 +501,12 @@ async function main() {
         icon: new DefaultIcon(),
       },
     }),
-    new DragButton({
-      angleDisabled: true,
-      buttonOption: {
+    new EventButton({
+      onClick: () => {
+        console.log("hello");
+      },
+      option: {
         alignment: Alignment.topRight,
-        icon: new DefaultIcon(),
       },
     }),
     new DragButton({
@@ -565,7 +569,7 @@ async function main() {
   controller.updateText(text.value, {
     color: "red",
   });
-  
+
   console.log("拿到矩形", rectClip.value);
   // setInterval(()=>{
   //   rr.replaceXImage(Math.random()>.5?ximage:roundedXImage);

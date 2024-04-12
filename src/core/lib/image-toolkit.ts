@@ -890,13 +890,11 @@ class ImageToolkit extends ImageToolkitBase implements GestiController {
     const _button: BaseButton | boolean =
       this.selectedViewObject.checkFuncButton(eventPosition);
     const result: any = _button;
-
     //确保是按钮 且 对象以及被选中
     if (result instanceof Button && this.selectedViewObject.selected) {
       this._inObjectArea = true;
       const button: BaseButton = result;
       if (button.trigger == FuncButtonTrigger.drag) {
-        button.onSelected();
         this.drag.catchViewObject(button.rect, eventPosition);
       } else if (button.trigger == FuncButtonTrigger.click) {
         button.effect();

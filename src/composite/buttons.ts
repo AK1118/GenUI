@@ -7,7 +7,7 @@ import HorizonButton from "@/core/viewObject/buttons/horizonButton";
 import LockButton from "@/core/viewObject/buttons/lockbutton";
 import VerticalButton from "@/core/viewObject/buttons/verticalButton";
 import SizeButton from "@/core/viewObject/buttons/sizeButton";
-import CustomButton from "@/core/viewObject/buttons/customButton";
+import CustomButton from "@/core/viewObject/buttons/eventButton";
 
 export {
   DragButton,
