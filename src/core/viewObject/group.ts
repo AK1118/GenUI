@@ -7,11 +7,12 @@
 import { FetchXImageForImportCallback, ViewObjectExportEntity, ViewObjectExportImageBox, ViewObjectImportBaseInfo, ViewObjectImportImageBox } from "@/types/serialization";
 import ViewObject from "../abstract/view-object";
 import { ViewObjectFamily } from "../enums";
-import ImageToolkit from "../lib/image-toolkit";
+import ImageToolkit from "../lib/image-tool-kit/image-toolkit";
 import Painter from "../lib/painter";
 import Rect, { Size } from "../lib/rect";
 import Vector from "../lib/vector";
 import { BoxDecorationOption } from "Graphics";
+import ImageToolkitAdapterController from "../lib/image-tool-kit/adpater";
 /**
  *
  */
@@ -19,9 +20,9 @@ abstract class GroupBase extends ViewObject {
   private beforeAngle: number = 0;
   private views: Array<ViewObject> = [];
 
-  public ready(kit: ImageToolkit): void {
+  public ready(adapter: ImageToolkitAdapterController): void {
     //将组合添加到最底层
-    kit.layerBottom(this);
+    adapter.layerBottom(this);
   }
   add(obj: ViewObject): number {
     if (!obj)

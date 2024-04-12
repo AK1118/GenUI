@@ -1,16 +1,19 @@
 import GestiConfig, { GestiConfigOption } from "../../config/gestiConfig";
 import GestiController from "./controller";
 import { ViewObjectFamily } from "../enums";
-import ImageToolkit from "./image-toolkit";
+import ImageToolkit from "./image-tool-kit/image-toolkit";
 import XImage from "./ximage";
 import Plugins from "./plugins";
 import { InitializationOption, PluginKeys } from "Gesti";
 import GestiControllerInterface, {
   BindControllerInterface,
 } from "../interfaces/gesticontroller";
+import ImageToolkitAdapterController, {
+  SimpleImageToolkitAdapterController,
+} from "./image-tool-kit/adpater";
 
 class Gesti implements BindControllerInterface {
-  private _kit: ImageToolkit;
+  private adapter: ImageToolkitAdapterController;
   public static config: GestiConfig;
   constructor(config?: GestiConfigOption) {
     Gesti.config = new GestiConfig(config);
@@ -22,16 +25,16 @@ class Gesti implements BindControllerInterface {
   bindGesti(gesti: Gesti): void {
     throw new Error("Method not implemented.");
   }
-  private _controller: GestiController;
-  public get kit(): ImageToolkit {
-    return this._kit;
+  get simpleAdapter() {
+    return this.adapter;
   }
+  private _controller: GestiController;
   get controller(): GestiController {
     return this._controller || (this._controller = new GestiController(this));
   }
 
   set debug(value: boolean) {
-    if (this._kit) this._kit.isDebug = value;
+    // if (this._kit) this._kit.isDebug = value;
   }
 
   public static mount(option: InitializationOption): [Gesti, GestiController] {
@@ -52,7 +55,8 @@ class Gesti implements BindControllerInterface {
     if (option.rect.canvasWidth === 0 || option.rect.canvasHeight === 0)
       throw Error("Both 'canvasWidth' and 'canvasHeight' must be non-zero.");
     this._controller && this.dispose();
-    if (option.rect) this._kit = new ImageToolkit(option);
+    if (option.rect)
+      this.adapter = new SimpleImageToolkitAdapterController(option);
     this.initialized = true;
     return this.controller;
   }
@@ -85,7 +89,7 @@ class Gesti implements BindControllerInterface {
    */
   public setConfig(config?: GestiConfigOption): void {
     Gesti.config.setParams(config);
-    this._kit.render();
+    this.adapter.render();
   }
   /**
    * @deprecated
@@ -94,12 +98,12 @@ class Gesti implements BindControllerInterface {
   public destroy(): void {
     this.controller?.destroyGesti();
     this._controller = null;
-    this._kit = null;
+    this.adapter = null;
   }
   public dispose(): void {
     this.controller?.destroyGesti();
     this._controller = null;
-    this._kit = null;
+    this.adapter = null;
     this.initialized = false;
   }
 

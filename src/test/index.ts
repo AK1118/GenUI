@@ -1,4 +1,4 @@
-import { DefaultIcon, ImageIcon, LockIcon } from "@/composite/icons";
+import { CloseIcon, DefaultIcon, ImageIcon, LockIcon } from "@/composite/icons";
 import ViewObject from "@/core/abstract/view-object";
 import GestiController from "@/core/lib/controller";
 import LineGradientDecoration from "@/core/lib/graphics/gradients/lineGradientDecoration";
@@ -465,7 +465,7 @@ async function main() {
     clipHeight = 420,
     clipX = 175,
     clipY = 185;
-    // "https://s.cn.bing.net/th?id=OJ.ctIMyEUgdeHZwQ&w=120&h=160&c=8&rs=1&pid=academic"
+  // "https://s.cn.bing.net/th?id=OJ.ctIMyEUgdeHZwQ&w=120&h=160&c=8&rs=1&pid=academic"
   const fixedImg = await loadImg(
     "https://images.unsplash.com/photo-1551963831-b3b1ca40c98e?w=164&h=164&fit=crop&auto=format"
   );
@@ -507,6 +507,7 @@ async function main() {
       },
       option: {
         alignment: Alignment.topRight,
+        icon: new CloseIcon(),
       },
     }),
     new DragButton({
@@ -570,7 +571,7 @@ async function main() {
     color: "red",
   });
 
-  console.log("拿到矩形", rectClip.value);
+  console.log("拿到矩形", controller.getCanvasSize());
   // setInterval(()=>{
   //   rr.replaceXImage(Math.random()>.5?ximage:roundedXImage);
   // },1000)

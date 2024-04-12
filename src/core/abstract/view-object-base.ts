@@ -6,7 +6,7 @@ import { Point } from "../lib/vertex";
 import Button, { BaseButton } from "./baseButton";
 import OperationObserver from "./operation-observer";
 import { ViewObjectFamily } from "../enums";
-import ImageToolkit from "../lib/image-toolkit";
+import ImageToolkit from "../lib/image-tool-kit/image-toolkit";
 import { Delta } from "../../utils/event/event";
 import { ViewObjectExportEntity } from "@/types/serialization";
 import {
@@ -24,6 +24,7 @@ import {
 import DecorationBase from "../bases/decoration-base";
 import PolygonDecoration from "../lib/rendering/decorations/polygon-decoration";
 import Constraints from "../lib/rendering/constraints";
+import ImageToolkitAdapterController from "../lib/image-tool-kit/adpater";
 
 class ViewObjectRenderBox extends RenderBox {}
 
@@ -62,7 +63,7 @@ abstract class BaseViewObject<
   public setScaleConstraints(constraints: ValueConstraints<number>): void {
     this._scaleConstraints = constraints;
   }
-  protected getScaleConstraints():ValueConstraints<number>{
+  protected getScaleConstraints(): ValueConstraints<number> {
     return this._scaleConstraints;
   }
   public disableRemove(): void {
@@ -175,10 +176,10 @@ abstract class BaseViewObject<
   //元素唯一id
   public _id: string;
   //image kit 对象
-  private kit: ImageToolkit;
+  private kit: ImageToolkitAdapterController;
   //对象层级 => 对象在数组中的位置
   private layer: number = null;
-  protected setKit(kit: ImageToolkit) {
+  protected setKit(kit: ImageToolkitAdapterController) {
     this.kit = kit;
   }
   //初始化时的尺寸，用于计算scaleWidth,和scaleHeight
@@ -294,16 +295,13 @@ abstract class BaseViewObject<
     );
   }
 
-  public getKit(): ImageToolkit {
-    return this.kit;
-  }
   public get absoluteScale(): number {
     return this.renderBox.absoluteScale;
   }
   /**
    * 被加入gesti内时调用
    */
-  protected ready(kit: ImageToolkit): void {}
+  protected ready(kit: ImageToolkitAdapterController): void {}
 
   /**
    * 重置按钮
@@ -414,6 +412,9 @@ abstract class BaseViewObject<
     id: string
   ): Promise<ButtonType | undefined> {
     return Promise.resolve(this.getButtonByIdSync(id));
+  }
+  protected getKit(): ImageToolkitAdapterController {
+    return this.kit;
   }
 }
 

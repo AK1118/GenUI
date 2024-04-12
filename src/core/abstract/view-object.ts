@@ -8,7 +8,7 @@ import OperationObserver from "./operation-observer";
 import AuxiliaryLine from "../../tools/auxiliary-lines";
 import GestiConfig from "../../config/gestiConfig";
 import { ViewObjectFamily } from "../enums";
-import ImageToolkit from "../lib/image-toolkit";
+import ImageToolkit from "../lib/image-tool-kit/image-toolkit";
 import { Delta } from "../../utils/event/event";
 import BaseViewObject from "./view-object-base";
 import {
@@ -25,6 +25,7 @@ import { BoxDecorationOption, Decoration } from "Graphics";
 import { CenterAxis } from "@/types/controller";
 import DecorationBase from "../bases/decoration-base";
 import { SelectedBorderStyle } from "@/types/gesti";
+import ImageToolkitAdapterController from "../lib/image-tool-kit/adpater";
 /**
  *
  * 缓存要做到 数据层缓存，渲染层缓存
@@ -50,7 +51,7 @@ abstract class ViewObject<D extends DecorationBase = DecorationBase>
   //获取对象值
   abstract get value(): any;
 
-  public initialization(kit: ImageToolkit): void {
+  public initialization(kit: ImageToolkitAdapterController): void {
     this.setKit(kit);
     //初始化一些数据，准备挂载
     this.ready(kit);
@@ -320,7 +321,7 @@ abstract class ViewObject<D extends DecorationBase = DecorationBase>
    */
   public setDeltaScale(deltaScale: number) {
     const constraints = this.getScaleConstraints();
-    const nextAbsScale = this.absoluteScale*deltaScale;
+    const nextAbsScale = this.absoluteScale * deltaScale;
     this.delta.update(this.position);
     this.deltaScale = deltaScale;
     if (nextAbsScale < constraints.min) {

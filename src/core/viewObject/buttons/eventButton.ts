@@ -24,9 +24,12 @@ class EventButton extends BaseButton {
   readonly name: ButtonNames = "EventButton";
   trigger: FuncButtonTrigger = FuncButtonTrigger.click;
   public onClick: VoidFunction;
-  constructor({ onClick, option }: Partial<EventButtonOption>) {
+  constructor(eventButtonOption?: Partial<EventButtonOption>) {
+    
+    const { onClick, option, child } = eventButtonOption ?? {};
+    console.log("细节",eventButtonOption)
     super(option);
-    this.onClick = onClick;
+    this.onClick = onClick ?? (() => {});
   }
   setMaster(master: RenderObject): void {}
   effect(currentButtonRect?: Rect): void {

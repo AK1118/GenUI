@@ -1,6 +1,6 @@
 import ViewObject from "../../abstract/view-object";
 import { ViewObjectFamily } from "../../enums";
-import ImageToolkit from "../../lib/image-toolkit";
+import ImageToolkit from "../../lib/image-tool-kit/image-toolkit";
 import Painter from "../../lib/painter";
 import Rect, { Size } from "../../lib/rect";
 import {
@@ -26,6 +26,7 @@ import {
   waitingLoadImg,
 } from "@/utils/canvas";
 import LineGradientDecoration from "@/core/lib/graphics/gradients/lineGradientDecoration";
+import ImageToolkitAdapterController from "@/core/lib/image-tool-kit/adpater";
 /**
  * 普通模式，矩形根据文字而定
  * 拖拽模式，文字根据缩放倍数而定
@@ -408,7 +409,7 @@ export abstract class TextBoxBase extends ViewObject {
           point.y + offsetY + this.renderTextOffsetY
         );
         paint.fill();
-        paint.restore()
+        paint.restore();
       }
     };
     paint.save();
@@ -614,8 +615,8 @@ class TextViewBase extends TextBoxBase implements TextHandler {
   setWeight(weight: FontWeight): void {
     this.textOptions.weight = weight;
   }
-  public ready(kit: ImageToolkit): void {
-    this.paint = kit.getPainter();
+  public ready(adapter: ImageToolkitAdapterController): void {
+    this.paint = adapter.getPainter();
     this.computeTextSingle(true);
   }
   readonly family: ViewObjectFamily = ViewObjectFamily.text;

@@ -32,7 +32,7 @@ import {
   PolygonDecorationOption,
 } from "Graphics";
 // import Circle from "../viewObject/graphics/circle";
-import ImageToolkit from "../lib/image-toolkit";
+import ImageToolkit from "../lib/image-tool-kit/image-toolkit";
 import ScreenUtils from "@/utils/screenUtils/ScreenUtils";
 import { ImageChunk } from "Gesti";
 import BoxDecoration from "../lib/rendering/decorations/box-decoration";
@@ -67,7 +67,8 @@ abstract class DeserializerBase {
     LockButton: Buttons.LockButton,
     SizeButton: Buttons.SizeButton,
     VerticalButton: Buttons.VerticalButton,
-    CustomButton: Buttons.CustomButton,
+    EventButton: Buttons.EventButton,
+    CustomButton: Buttons.EventButton,
   };
 
   //entity转换为对应实体ViewObject对象映射器
@@ -284,10 +285,13 @@ abstract class DeserializerBase {
 
       let button: BaseButton = new buttonConstructor();
       if (buttonName === "EventButton") {
-        const child = await this.getObjectByJson<EventButtonOption["child"]>(
-          item.option.child
-        );
-        button = new EventButton({ child });
+        let child;
+        if (item.option?.child) {
+          child = await this.getObjectByJson<EventButtonOption["child"]>(
+            item.option.child
+          );
+        }
+        button = new EventButton({ ...item, child });
       }
 
       button.setSenseRadius(this.adaptScreenFontSize(item.radius));
