@@ -26,6 +26,7 @@ import Painter from "./painter";
 declare type CenterAxis = "vertical" | "horizon";
 
 abstract class GesteControllerImpl implements GestiControllerInterface {
+  readonly key: string = Math.random().toString(16).substring(2);
   /**
    * @ImageToolkit
    * @private

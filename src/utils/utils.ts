@@ -152,7 +152,7 @@ const reverseXImage = async (option: ReverseXImageOption): Promise<XImage> => {
     const xImage: XImage = await fetchXImage(option);
     if (!xImage)
       throw Error(
-        "Your platform does not support fetching this URL for ximage; you could run 'ImageBox.setFetchXImageCallback' to customize the fetch method and resolve this error."
+        "Your platform does not support fetching this URL for XImage; you could run 'ImageBox.setFetchXImageCallback' to customize the fetch method and resolve this error."
       );
     return xImage;
   } /*使用数据切片合并图片*/ else if (chunks && chunks?.length != 0) {
