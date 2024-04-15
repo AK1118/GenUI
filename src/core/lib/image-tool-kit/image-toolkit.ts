@@ -262,6 +262,7 @@ class ImageToolkit extends ImageToolkitBase {
       this._inObjectArea = true;
       const button: BaseButton = result;
       if (button.trigger == FuncButtonTrigger.drag) {
+        button.onSelected();
         this.drag.catchViewObject(button.rect, eventPosition);
       } else if (button.trigger == FuncButtonTrigger.click) {
         button.effect();

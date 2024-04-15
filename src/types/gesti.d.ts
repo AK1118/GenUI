@@ -19,6 +19,18 @@ export declare interface SelectedBorderStyle {
   lineWidth?: number;
   padding?: number;
 }
+declare type IconNames =
+| "closeIcon"
+| "defaultIcon"
+| "deleteIcon"
+| "dragIcon"
+| "imageIcon"
+| "lockIcon"
+| "mirrorIcon"
+| "rotateIcon"
+| "scaleIcon"
+| "unlockIcon";
+
 interface Shadow {
   shadowColor?: string;
   shadowBlur?: number;

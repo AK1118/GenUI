@@ -135,6 +135,8 @@ class XImage implements Serializable<{}> {
       fit:this.fit,
       width: this.fixedWidth,
       height: this.fixedHeight,
+      fixedWidth:this.fixedWidth,
+      fixedHeight:this.fixedHeight,
     };
   }
   toJson(): RectParams {

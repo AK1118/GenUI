@@ -1,8 +1,10 @@
 import IconBase from "@/core/lib/icon";
 import Painter from "@/core/lib/painter";
 import Vector from "@/core/lib/vector";
+import { IconNames } from "@/types/gesti";
 
 class RotateIcon extends IconBase{
+    name: IconNames="rotateIcon";
     get data(): number[][][] {
        return []
     }

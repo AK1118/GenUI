@@ -1,10 +1,9 @@
-import GestiConfig, { GestiConfigOption } from "../../config/gestiConfig";
 import GestiController from "./controller";
 import { ViewObjectFamily } from "../enums";
 import ImageToolkit from "./image-tool-kit/image-toolkit";
 import XImage from "./ximage";
 import Plugins from "./plugins";
-import { InitializationOption, PluginKeys } from "Gesti";
+import { GestiConfigOption, InitializationOption, PluginKeys } from "Gesti";
 import GestiControllerInterface, {
   BindControllerInterface,
 } from "../interfaces/gesticontroller";
@@ -14,9 +13,8 @@ import ImageToolkitAdapterController, {
 
 class Gesti implements BindControllerInterface {
   private adapter: ImageToolkitAdapterController;
-  public static config: GestiConfig;
   constructor(config?: GestiConfigOption) {
-    Gesti.config = new GestiConfig(config);
+    // Gesti.config = new GestiConfig(config);
   }
   initialized: boolean = false;
   bindController(controller: GestiController): void {
@@ -87,10 +85,10 @@ class Gesti implements BindControllerInterface {
    * @description 设置配置，跟构造函数一样
    * @param config
    */
-  public setConfig(config?: GestiConfigOption): void {
-    Gesti.config.setParams(config);
-    this.adapter.render();
-  }
+  // public setConfig(config?: GestiConfigOption): void {
+  //   Gesti.config.setParams(config);
+  //   this.adapter.render();
+  // }
   /**
    * @deprecated
    * @description 建议使用 dispose

@@ -3,6 +3,7 @@ import Rect from "../lib/rect";
 import ImageBox from "../viewObject/image";
 import TextBox from "../viewObject/text/text";
 import WriteViewObj from "../viewObject/write";
+import * as Icons from "@/composite/icons"
 import Button, { BaseButton } from "../abstract/baseButton";
 import Group from "../viewObject/group";
 import * as Buttons from "@/composite/buttons";
@@ -34,7 +35,6 @@ import {
 // import Circle from "../viewObject/graphics/circle";
 import ImageToolkit from "../lib/image-tool-kit/image-toolkit";
 import ScreenUtils from "@/utils/screenUtils/ScreenUtils";
-import { ImageChunk } from "Gesti";
 import BoxDecoration from "../lib/rendering/decorations/box-decoration";
 import DecorationBase from "./decoration-base";
 import Polygon from "../viewObject/graphics/polygon";
@@ -45,6 +45,7 @@ import LineGradientDecoration from "../lib/graphics/gradients/lineGradientDecora
 import EventButton, {
   EventButtonOption,
 } from "../viewObject/buttons/eventButton";
+import { IconNames } from "@/types/gesti";
 
 type ViewObjectHandler<T> = (entity: ViewObjectImportEntity) => T;
 
@@ -283,7 +284,7 @@ abstract class DeserializerBase {
           this.buttonMap[item.type]
         );
 
-      let button: BaseButton = new buttonConstructor();
+      let button: BaseButton = new buttonConstructor(item as any);
       if (buttonName === "EventButton") {
         let child;
         if (item.option?.child) {
@@ -291,7 +292,7 @@ abstract class DeserializerBase {
             item.option.child
           );
         }
-        button = new EventButton({ ...item, child });
+        button = new EventButton(item as any);
       }
 
       button.setSenseRadius(this.adaptScreenFontSize(item.radius));
@@ -299,8 +300,8 @@ abstract class DeserializerBase {
       button.setIconColor(item.iconColor);
       button.setId(item.id);
       viewObject.installButton(button);
-      const location: { x: number; y: number } = item.alignment as any;
-      button.setLocation(Alignment.format(location.x, location.y));
+      const alignment: { x: number; y: number } = item.alignment as any;
+      button.setLocation(Alignment.format(alignment.x, alignment.y));
     });
   }
 }

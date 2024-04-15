@@ -21,5 +21,5 @@ export {
   SizeButton,
   CustomButton,
   SizeButton as ARButton,
-  CustomButton as EventButton,
+  CustomButton as EventButton
 };

@@ -5,11 +5,31 @@ import CatchPointUtil from "../../utils/event/catchPointUtil";
 import ViewObject from "./view-object";
 import Rect from "../lib/rect";
 import Vector from "../lib/vector";
-import { Icon } from "../lib/icon";
+import IconBase, { Icon } from "../lib/icon";
 import DefaultIcon from "@/static/icons/defaultIcon";
-import GestiConfig from "@/config/gestiConfig";
 import Alignment from "../lib/painting/alignment";
 import { ExportButton } from "Serialization";
+import { IconNames } from "@/types/gesti";
+import * as Icons from "@/composite/icons";
+
+const iconMap = {
+  defaultIcon: Icons.DefaultIcon,
+  closeIcon: Icons.CloseIcon,
+  deleteIcon: Icons.DeleteIcon,
+  dragIcon: Icons.DragIcon,
+  imageIcon: Icons.ImageIcon,
+  lockIcon: Icons.LockIcon,
+  mirrorIcon: Icons.MirrorIcon,
+  rotateIcon: Icons.RotateIcon,
+  scaleIcon: Icons.ScaleIcon,
+  unlockIcon: Icons.UnLockIcon,
+};
+
+export const IconFormat = (name: IconNames, args: any) => {
+  const IconConstruct = iconMap[name];
+  console.log("获取", name);
+  return new IconConstruct(args);
+};
 export type ButtonOption = {
   alignment?: Alignment;
   icon?: Icon;
@@ -29,15 +49,19 @@ export abstract class BaseButton implements RenderObject {
   get btnLocation(): Alignment {
     return this.buttonAlignment;
   }
+  public onSelected() {}
   private customIcon: Icon;
   //是否显示背景，按钮默认有一个白色背景
   public displayBackground: boolean = true;
   public background: string = "rgba(255,255,255,.8)";
   private _id: string = "";
+  private option: any;
   constructor(option?: ButtonOption) {
     if (!option) return;
     this.customAlignment = option?.alignment;
+    const icon = option?.icon ?? this.icon;
     this.customIcon = option?.icon;
+    this.option = option ?? {};
   }
   protected abstract buttonAlignment: Alignment;
   abstract readonly name: ButtonNames;
@@ -154,7 +178,13 @@ export abstract class BaseButton implements RenderObject {
     this.master = master;
     this.beforeMounted();
     this.location = this.setLocationByAlignment(this.customAlignment);
-    this.icon = this.customIcon || this.icon;
+    const icon = this.customIcon || this.icon;
+    if (icon instanceof IconBase) {
+      this.icon = icon;
+    } else {
+      this.icon = IconFormat(icon.name, icon);
+    }
+
     //icon的大小等于半径
     this.icon.setSize(this.radius);
     this.computeSelfLocation();
@@ -286,6 +316,7 @@ export abstract class BaseButton implements RenderObject {
       iconColor: this.iconColor,
       displayBackground: this.displayBackground,
       icon: this.icon,
+      ...this.option,
     };
     return Promise.resolve(entity);
   }

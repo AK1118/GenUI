@@ -242,9 +242,7 @@ console.log(rect.size);
 
 doCenter(rect);
 const drag = new DragButton({
-  buttonOption: {
-    alignment: Alignment.bottomRight,
-  },
+  alignment: Alignment.bottomRight,
 });
 
 rect.setLayer(9);
@@ -311,22 +309,20 @@ const customButton = new CustomButton({
     });
     duobianx.setCount(Math.floor(Math.random() * (10 - 3 + 1)) + 3);
   },
-  option: {
-    alignment: Alignment.topRight,
-  },
+  alignment: Alignment.topRight,
 });
 customButton.setId("huanbian");
 label.installButton(new DragButton());
 polygon.setId("duobianx");
 polygon.installMultipleButtons(
   [
-    new HorizonButton("left"),
-    new VerticalButton("top"),
-    new VerticalButton("bottom"),
-    new HorizonButton("right"),
+    new HorizonButton(),
+    new VerticalButton(),
+    new VerticalButton(),
+    new HorizonButton(),
     new DragButton(),
     customButton,
-    new SizeButton(Alignment.topLeft),
+    new SizeButton(),
     new MirrorButton({
       alignment: Alignment.bottomLeft,
     }),
@@ -496,26 +492,23 @@ async function main() {
   rr.installMultipleButtons([
     new DragButton({
       angleDisabled: true,
-      buttonOption: {
-        alignment: Alignment.topLeft,
-        icon: new DefaultIcon(),
-      },
+      alignment: Alignment.topLeft,
+      icon: new DefaultIcon(),
     }),
     new EventButton({
+      // child: new TextBox("hello", {
+      //   fontSize: screenUtil1.setSp(13),
+      // }),
       onClick: () => {
         console.log("hello");
       },
-      option: {
-        alignment: Alignment.topRight,
-        icon: new CloseIcon(),
-      },
+      alignment: Alignment.topRight,
+      icon: new CloseIcon(),
     }),
     new DragButton({
       angleDisabled: true,
-      buttonOption: {
-        alignment: Alignment.bottomRight,
-        icon: new DefaultIcon(),
-      },
+      alignment: Alignment.bottomRight,
+      icon: new DefaultIcon(),
     }),
     (() => {
       class MyButton extends DragButton {
@@ -539,10 +532,8 @@ async function main() {
       }
       const button = new MyButton({
         angleDisabled: true,
-        buttonOption: {
-          alignment: Alignment.bottomLeft,
-          icon: new DefaultIcon(),
-        },
+        alignment: Alignment.bottomLeft,
+        icon: new DefaultIcon(),
       });
       button.displayBackground = false;
       return button;
@@ -553,10 +544,10 @@ async function main() {
     new CloseButton({
       icon: new ImageIcon(
         new XImage({
-          data: img,
+          data: fixedImg,
           width: screenUtil1.setSp(30),
           height: screenUtil1.setSp(30),
-          // url: img.src,
+           url: fixedImg.src,
         })
       ),
       alignment: Alignment.format(0, 1.2),

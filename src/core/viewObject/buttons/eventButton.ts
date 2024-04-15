@@ -13,30 +13,57 @@ import TextBox from "../text/text";
 import ImageBox from "../image";
 import Rectangle from "../graphics/rectangle";
 
-export interface EventButtonOption {
+export interface EventButtonOption extends ButtonOption {
   onClick: VoidFunction;
   child: TextBox | ImageBox | Rectangle;
-  option: ButtonOption;
 }
 
 class EventButton extends BaseButton {
   protected buttonAlignment: Alignment = Alignment.topRight;
   readonly name: ButtonNames = "EventButton";
   trigger: FuncButtonTrigger = FuncButtonTrigger.click;
+  private child: EventButtonOption["child"];
   public onClick: VoidFunction;
   constructor(eventButtonOption?: Partial<EventButtonOption>) {
-    
-    const { onClick, option, child } = eventButtonOption ?? {};
-    console.log("细节",eventButtonOption)
-    super(option);
+    const { onClick, child } = eventButtonOption ?? {};
+    super(eventButtonOption);
     this.onClick = onClick ?? (() => {});
+    this.child = child;
   }
   setMaster(master: RenderObject): void {}
   effect(currentButtonRect?: Rect): void {
     this.onClick?.();
   }
+  protected afterMounted(...args: any[]): void {
+    if (this.child) this.child!.initialization(this.master.getKit());
+  }
   updatePosition(vector: Vector): void {
     super.updateRelativePosition();
+  }
+  public async export<OO>(): Promise<ExportButton<OO>> {
+    const entity = await super.export<OO>();
+    if (this.child) {
+      const childEntity = (await this.child.export()) as ViewObjectExportEntity;
+      entity.option = {
+        child: childEntity,
+      } as OO;
+    }
+    return Promise.resolve(entity);
+  }
+  protected drawButton(
+    position: Vector,
+    size: Size,
+    radius: number,
+    paint: Painter
+  ): void {
+    if (!this.child?.mounted) {
+      super.drawButton(position, size, radius, paint);
+      return;
+    }
+    paint.save();
+    paint.translate(position.x, position.y);
+    this.child.render(paint);
+    paint.restore();
   }
 }
 

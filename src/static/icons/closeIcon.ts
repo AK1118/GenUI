@@ -1,6 +1,8 @@
 import IconBase from "@/core/lib/icon";
+import { IconNames } from "@/types/gesti";
 
 class CloseIcon extends IconBase {
+  name: IconNames="closeIcon";
   get isFill(): boolean {
     return false;
   }

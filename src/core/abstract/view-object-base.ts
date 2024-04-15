@@ -413,7 +413,7 @@ abstract class BaseViewObject<
   ): Promise<ButtonType | undefined> {
     return Promise.resolve(this.getButtonByIdSync(id));
   }
-  protected getKit(): ImageToolkitAdapterController {
+  public getKit(): ImageToolkitAdapterController {
     return this.kit;
   }
 }

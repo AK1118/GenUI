@@ -1,4 +1,4 @@
-import {  FuncButtonTrigger } from "../../enums";
+import { FuncButtonTrigger } from "../../enums";
 import Alignment from "@/core/lib/painting/alignment";
 import BaseButton, { ButtonOption } from "../../abstract/baseButton";
 import Painter from "../../lib/painter";
@@ -6,16 +6,21 @@ import Rect from "../../lib/rect";
 import Vector from "../../lib/vector";
 import Widgets from "../../../static/widgets";
 import ViewObject from "../../abstract/view-object";
-import GestiConfig from "../../../config/gestiConfig";
 import { Delta } from "../../../utils/event/event";
 import { Icon } from "@/core/lib/icon";
 import DragIcon from "@/static/icons/dragIcon";
+import { ExportButton } from "Serialization";
+
+interface DragButtonInterface extends ButtonOption {
+  angleDisabled: boolean;
+}
+
+export type DragButtonOption = Partial<DragButtonInterface>;
 
 class DragButton extends BaseButton {
-  
-  readonly name: ButtonNames="DragButton";
+  readonly name: ButtonNames = "DragButton";
   protected buttonAlignment: Alignment = Alignment.bottomRight;
-  protected icon: Icon=new DragIcon();
+  protected icon: Icon = new DragIcon();
   public trigger: FuncButtonTrigger = FuncButtonTrigger.drag;
   private preViewObjectRect: Rect = null;
   public oldAngle: number = 0;
@@ -25,13 +30,8 @@ class DragButton extends BaseButton {
   protected preMag: number = -1;
   private angleDisabled: boolean = false;
   key: string | number = +new Date();
-  constructor(
-    options?: {
-      angleDisabled?: boolean;
-      buttonOption?: ButtonOption,
-    }
-  ) {
-    super(options?.buttonOption);
+  constructor(options?: DragButtonOption) {
+    super(options);
     this.rect.onDrag = (currentButtonRect: Rect) => {
       /*拖拽缩放*/
       this.rect = currentButtonRect;
@@ -45,7 +45,6 @@ class DragButton extends BaseButton {
     this.updateRelativePosition();
     this.setAbsolutePosition(vector);
   }
-  public setAxis(axis: "ratio" | "horizontal" | "vertical" | "free") {}
   setMaster(master: ViewObject): void {
     this.master = master;
   }
@@ -69,6 +68,10 @@ class DragButton extends BaseButton {
       this.master.rect.setAngle(angle);
     }
     this.preMag = mag;
+  }
+  public async export<O = any>(): Promise<ExportButton<O>> {
+    const entity = await super.export();
+    return Promise.resolve(entity as any);
   }
 
   protected getButtonWidthMasterMag(currentButtonRect: Rect): number {

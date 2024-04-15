@@ -10,7 +10,6 @@ import ImageBox from "./core/viewObject/image";
 import TextBox from "./core/viewObject/text/text";
 import WriteViewObj from "./core/viewObject/write";
 import XImage from "./core/lib/ximage";
-import GestiConfig from "./config/gestiConfig";
 import Alignment from "./core/lib/painting/alignment";
 import Rectangle, {
   InteractiveImage,
@@ -46,7 +45,7 @@ export { Rectangle,Polygon, InteractiveImage, ImageBox, XImage, TextBox, WriteVi
 //Enum
 export { ViewObjectFamily,BoxFit };
 //Config
-export { GestiConfig };
+
 //Controller
 export { GestiController };
 
