@@ -126,7 +126,11 @@ class Painter implements Painter {
     this.paint.rect(x, y, w, h);
   }
   clip(fillRule?: "nonzero" | "evenodd") {
-    this.paint?.clip(fillRule);
+    if (fillRule) {
+      this.paint?.clip(fillRule);
+    } else {
+      this.paint?.clip();
+    }
   }
   arc(
     x: number,
