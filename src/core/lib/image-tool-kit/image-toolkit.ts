@@ -41,6 +41,7 @@ import DecorationBase from "../../bases/decoration-base";
 import ImageToolkitBase, { EventHandlerState } from "./image-toolkit-base";
 import { LayerOperationType } from "./utils";
 import { ListenerHook } from "../listener";
+import gestiEventManager from "@/utils/event/event-manager";
 
 class ImageToolkit extends ImageToolkitBase {
   constructor(option: InitializationOption) {
@@ -65,6 +66,27 @@ class ImageToolkit extends ImageToolkitBase {
   private bindEvent(): void {
     this.eventHandler = new GestiEventManager().getEvent(this);
     if (this.eventHandler == null) return;
+    // this.eventHandler
+    //   .down((v) => {
+    //     const event: Vector | Vector[] = this.correctEventPosition(v);
+    //     gestiEventManager.down(this.key, event);
+    //     this.render();
+    //   })
+    //   .move((v) => {
+    //     const event: Vector | Vector[] = this.correctEventPosition(v);
+    //     gestiEventManager.move(this.key, event);
+    //     this.render();
+    //   })
+    //   .up((v) => {
+    //     const event: Vector | Vector[] = this.correctEventPosition(v);
+    //     gestiEventManager.up(this.key, event);
+    //     this.render();
+    //   })
+    //   .wheel((e) => {
+    //     // const { deltaY } = e;
+    //     gestiEventManager.wheel(this.key, e);
+    //     this.render();
+    //   });
     this.eventHandler
       .down(this.onDown)
       .move(this.onMove)
@@ -78,9 +100,9 @@ class ImageToolkit extends ImageToolkitBase {
     this.debug(["Event Down,", event]);
 
     //手势解析处理
-    this.gesture.onDown(this.selectedViewObject, event);
+    this.gesture.onDown(this.focusedViewObject, event);
 
-    if (this.selectedViewObject ?? false) {
+    if (this.focusedViewObject ?? false) {
       if (Array.isArray(event) || this.checkFuncButton(event)) {
         return;
       }
@@ -91,7 +113,7 @@ class ImageToolkit extends ImageToolkitBase {
      *
      */
     let selectedTarget: ViewObject = CatchPointUtil.catchViewObject(
-      this.ViewObjectList,
+      this.layers,
       event
     );
     /**
@@ -102,7 +124,7 @@ class ImageToolkit extends ImageToolkitBase {
       if (selectedTarget.selected) {
         if (!selectedTarget.isLock)
           this.drag.catchViewObject(selectedTarget.rect, event);
-        this.selectedViewObject = this.handleSelectedTarget(event);
+        this.focusedViewObject = this.handleSelectedTarget(event);
         return;
       }
 
@@ -111,13 +133,13 @@ class ImageToolkit extends ImageToolkitBase {
         this.writeFactory.onDraw();
       }
 
-      this.selectedViewObject = this.handleSelectedTarget(event);
-      this.ViewObjectList.forEach((item) =>
+      this.focusedViewObject = this.handleSelectedTarget(event);
+      this.layers.forEach((item) =>
         item.key === selectedTarget.key ? "" : this.handleCancelView(item)
       );
     } else {
       //点击图像外取消选中上一个对象
-      this.handleCancelView(this.selectedViewObject);
+      this.handleCancelView(this.focusedViewObject);
       if (this.writeFactory.watching && !selectedTarget?.selected)
         return this.writeFactory.onDraw();
     }
@@ -131,10 +153,10 @@ class ImageToolkit extends ImageToolkitBase {
    * @param view
    */
   protected blurViewObject(view?: ViewObject) {
-    const _view = view || this.selectedViewObject;
+    const _view = view || this.focusedViewObject;
     if (_view) {
-      if (_view.key == this.selectedViewObject?.key) {
-        this.selectedViewObject = null;
+      if (_view.key == this.focusedViewObject?.key) {
+        this.focusedViewObject = null;
       }
       _view?.cancel();
       this.callHook("onCancel", _view);
@@ -156,7 +178,7 @@ class ImageToolkit extends ImageToolkitBase {
       }
 
       //手势解析处理
-      this.gesture.onMove(this.selectedViewObject, event);
+      this.gesture.onMove(this.focusedViewObject, event);
       //手势
       if (Array.isArray(event)) {
         this.gesture.update(event);
@@ -165,21 +187,21 @@ class ImageToolkit extends ImageToolkitBase {
       //拖拽
       this.drag.update(event);
       //有被选中对象才刷新
-      if (this.selectedViewObject != null) this.render();
+      if (this.focusedViewObject != null) this.render();
     } else {
       const event: Vector | Vector[] = this.correctEventPosition(v);
       //Hover检测
-      const selectedViewObject: ViewObject = CatchPointUtil.catchViewObject(
-        this.ViewObjectList,
+      const focusedViewObject: ViewObject = CatchPointUtil.catchViewObject(
+        this.layers,
         event
       );
       if (
-        selectedViewObject &&
-        this.hoverViewObject?.key != selectedViewObject.key
+        focusedViewObject &&
+        this.hoverViewObject?.key != focusedViewObject.key
       ) {
-        this.callHook("onHover", selectedViewObject);
-        this.hoverViewObject = selectedViewObject;
-      } else if (!selectedViewObject && this.hoverViewObject) {
+        this.callHook("onHover", focusedViewObject);
+        this.hoverViewObject = focusedViewObject;
+      } else if (!focusedViewObject && this.hoverViewObject) {
         this.callHook("onLeave", this.hoverViewObject);
         this.hoverViewObject = null;
       }
@@ -191,20 +213,20 @@ class ImageToolkit extends ImageToolkitBase {
     //判断是否选中对象
     this.eventHandlerState = EventHandlerState.up;
     //手势解析处理
-    this.gesture.onUp(this.selectedViewObject, event);
+    this.gesture.onUp(this.focusedViewObject, event);
     this.drag.cancel();
     //绘制完了新建一个viewObj图册对象
     const writeObj = this.writeFactory.done();
     writeObj.then((value: WriteViewObj) => {
       if (value) {
-        this.selectedViewObject?.cancel();
+        this.focusedViewObject?.cancel();
         this.callHook("onCreateGraffiti", value);
         this.addViewObject(value);
       }
     });
-    if (this.selectedViewObject) {
-      if (this._inObjectArea) this.selectedViewObject.onUpWithInner(this.paint);
-      else this.selectedViewObject.onUpWithOuter(this.paint);
+    if (this.focusedViewObject) {
+      if (this._inObjectArea) this.focusedViewObject.onUpWithInner(this.paint);
+      else this.focusedViewObject.onUpWithOuter(this.paint);
     }
     this.render();
     this._inObjectArea = false;
@@ -212,9 +234,9 @@ class ImageToolkit extends ImageToolkitBase {
 
   public onWheel(e: WheelEvent): void {
     const { deltaY } = e;
-    if (this.selectedViewObject != null) {
-      if (deltaY < 0) this.selectedViewObject.enlarge();
-      else this.selectedViewObject.narrow();
+    if (this.focusedViewObject != null) {
+      if (deltaY < 0) this.focusedViewObject.enlarge();
+      else this.focusedViewObject.narrow();
     }
     this.render();
   }
@@ -255,10 +277,10 @@ class ImageToolkit extends ImageToolkitBase {
 
   private checkFuncButton(eventPosition: Vector): boolean {
     const _button: BaseButton | boolean =
-      this.selectedViewObject.checkFuncButton(eventPosition);
+      this.focusedViewObject.checkFuncButton(eventPosition);
     const result: any = _button;
     //确保是按钮 且 对象以及被选中
-    if (result instanceof Button && this.selectedViewObject.selected) {
+    if (result instanceof Button && this.focusedViewObject.selected) {
       this._inObjectArea = true;
       const button: BaseButton = result;
       if (button.trigger == FuncButtonTrigger.drag) {
@@ -279,27 +301,27 @@ class ImageToolkit extends ImageToolkitBase {
    * @param event
    */
   private handleSelectedTarget(event: Vector | Vector[]): ViewObject {
-    const selectedViewObjectTarget: ViewObject = CatchPointUtil.catchViewObject(
-      this.ViewObjectList,
+    const focusedViewObjectTarget: ViewObject = CatchPointUtil.catchViewObject(
+      this.layers,
       event
     );
-    if (selectedViewObjectTarget ?? false) {
-      this.debug(["选中了", selectedViewObjectTarget]);
-      this.callHook("onSelect", selectedViewObjectTarget);
+    if (focusedViewObjectTarget ?? false) {
+      this.debug(["选中了", focusedViewObjectTarget]);
+      this.callHook("onSelect", focusedViewObjectTarget);
       this._inObjectArea = true;
       //之前是否有被选中图层 如果有就取消之前的选中
       if (
-        this.selectedViewObject &&
-        selectedViewObjectTarget.key != this.selectedViewObject.key
+        this.focusedViewObject &&
+        focusedViewObjectTarget.key != this.focusedViewObject.key
       ) {
-        this.handleCancelView(this.selectedViewObject);
+        this.handleCancelView(this.focusedViewObject);
       }
       //选中后变为选中状态
-      selectedViewObjectTarget.onSelected();
+      focusedViewObjectTarget.onSelected();
       //不允许在锁定时被拖拽选中进行操作
-      if (!selectedViewObjectTarget.isLock)
-        this.drag.catchViewObject(selectedViewObjectTarget.rect, event);
-      return selectedViewObjectTarget;
+      if (!focusedViewObjectTarget.isLock)
+        this.drag.catchViewObject(focusedViewObjectTarget.rect, event);
+      return focusedViewObjectTarget;
     }
     return null;
   }
@@ -309,14 +331,24 @@ class ImageToolkit extends ImageToolkitBase {
    * @returns number
    */
   protected getViewObjectCount(): number {
-    return this.ViewObjectList.length;
+    return this.layers.length;
   }
 
   protected addViewObject(obj: ViewObject): void {
     if (obj.getLayer() === null) obj.setLayer(this.getViewObjectCount() - 1);
     this.callHook("onLoad", obj);
-    this.tool.sortByLayer(this.ViewObjectList);
+    this.tool.sortByLayer(this.layers);
     this.render();
+  }
+  /**
+   * 是否可以被选中
+   * 上层被选中时，
+   */
+  public canFocus(view: ViewObject): boolean {
+    return (
+      this.focusedViewObject === null ||
+      this.focusedViewObject?.key === view.key
+    );
   }
 }
 

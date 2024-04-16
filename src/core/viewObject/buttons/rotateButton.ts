@@ -15,7 +15,6 @@ class RotateButton extends BaseButton {
   protected icon: Icon = new RotateIcon();
   public oldAngle: number = 0;
   public radius: number = 10;
-  key: string | number = +new Date();
   protected buttonAlignment: Alignment = Alignment.bottomCenter;
   constructor(buttonOption?: ButtonOption) {
     super(buttonOption);

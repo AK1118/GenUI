@@ -10,6 +10,8 @@ import { Delta } from "../../../utils/event/event";
 import { Icon } from "@/core/lib/icon";
 import DragIcon from "@/static/icons/dragIcon";
 import { ExportButton } from "Serialization";
+import CatchPointUtil from "@/utils/event/catchPointUtil";
+import Drag from "@/utils/event/drag";
 
 interface DragButtonInterface extends ButtonOption {
   angleDisabled: boolean;
@@ -29,7 +31,7 @@ class DragButton extends BaseButton {
   public radius: number = 10;
   protected preMag: number = -1;
   private angleDisabled: boolean = false;
-  key: string | number = +new Date();
+ 
   constructor(options?: DragButtonOption) {
     super(options);
     this.rect.onDrag = (currentButtonRect: Rect) => {
@@ -41,6 +43,7 @@ class DragButton extends BaseButton {
       this.angleDisabled = options.angleDisabled;
     }
   }
+  
   updatePosition(vector: Vector): void {
     this.updateRelativePosition();
     this.setAbsolutePosition(vector);

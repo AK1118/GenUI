@@ -6,7 +6,6 @@ import { Point } from "../lib/vertex";
 import Button, { BaseButton } from "./baseButton";
 import OperationObserver from "./operation-observer";
 import AuxiliaryLine from "../../tools/auxiliary-lines";
-import GestiConfig from "../../config/gestiConfig";
 import { ViewObjectFamily } from "../enums";
 import ImageToolkit from "../lib/image-tool-kit/image-toolkit";
 import { Delta } from "../../utils/event/event";
@@ -26,6 +25,7 @@ import { CenterAxis } from "@/types/controller";
 import DecorationBase from "../bases/decoration-base";
 import { SelectedBorderStyle } from "@/types/gesti";
 import ImageToolkitAdapterController from "../lib/image-tool-kit/adpater";
+import CatchPointUtil from "@/utils/event/catchPointUtil";
 /**
  *
  * 缓存要做到 数据层缓存，渲染层缓存
@@ -450,6 +450,24 @@ abstract class ViewObject<D extends DecorationBase = DecorationBase>
 
   public setOpacity(opacity: number): void {
     this.opacity = opacity;
+  }
+  onDown(e: Vector | Vector[]): void {
+   
+  }
+  onMove(e: Vector | Vector[]): void {
+    
+  }
+  onUp(e: Vector | Vector[]): void {
+    
+  }
+  public cancelDrag() {
+    this.drag.cancel();
+  }
+  onWheel(e: WheelEvent): void {
+    const { deltaY } = e;
+    if (this.selected)
+      if (deltaY < 0) this.enlarge();
+      else this.narrow();
   }
 }
 

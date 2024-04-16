@@ -25,6 +25,8 @@ import DecorationBase from "../bases/decoration-base";
 import PolygonDecoration from "../lib/rendering/decorations/polygon-decoration";
 import Constraints from "../lib/rendering/constraints";
 import ImageToolkitAdapterController from "../lib/image-tool-kit/adpater";
+import CatchPointUtil from "@/utils/event/catchPointUtil";
+import Drag from "@/utils/event/drag";
 
 class ViewObjectRenderBox extends RenderBox {}
 
@@ -34,6 +36,7 @@ class ViewObjectRenderBox extends RenderBox {}
 abstract class BaseViewObject<
   D extends DecorationBase
 > extends OperationObserver {
+  protected readonly drag = new Drag();
   //被移除禁用
   public _disabledRemove: boolean = false;
   protected decoration: D;
@@ -149,7 +152,7 @@ abstract class BaseViewObject<
   //是否被选中
   public selected: boolean = false;
   //图层唯一身份码
-  public readonly key: string | number = +new Date();
+  // public readonly key: string | number = +new Date();
   //是否处于镜像
   protected isMirror: boolean = false;
   //是否隐藏
@@ -416,6 +419,7 @@ abstract class BaseViewObject<
   public getKit(): ImageToolkitAdapterController {
     return this.kit;
   }
+  
 }
 
 export default BaseViewObject;

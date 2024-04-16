@@ -1,3 +1,4 @@
+import Vector from "@/core/lib/vector";
 type EventParams = Vector | Vector[];
 type EventCallbackFunction = (e: EventParams) => void;
 
@@ -24,13 +25,15 @@ interface GestiEventNotification {
 /**
  * 可被事件监听对象
  */
-abstract class SimpleGestiEventObject implements GestiEvent {
-  onDown: EventCallbackFunction;
-  onUp: EventCallbackFunction;
-  onMove: EventCallbackFunction;
-  onWheel(e: WheelEvent): void {
-    throw new Error("Method not implemented.");
+export abstract class SimpleGestiEventObject implements GestiEvent {
+  readonly key: string = Math.random().toString(16).substring(2);
+  constructor() {
+    gestiEventManager.register("test", this);
   }
+  onDown(e: EventParams) {}
+  onUp(e: EventParams) {}
+  onMove(e: EventParams) {}
+  onWheel(e: WheelEvent): void {}
 }
 
 /**
@@ -51,8 +54,17 @@ abstract class GestiEventManager implements GestiEventNotification {
     const stack = this.eventsStacks[key];
     if (!stack) {
       this.eventsStacks[key] = new Array<SimpleGestiEventObject>();
-      this.eventsStacks[key].push(object);
     }
+    this.eventsStacks[key].unshift(object);
+  }
+  public dispose(key?: string) {
+    if (key) {
+      this.eventsStacks[key] = null;
+    }
+    const keys = Object.keys(this.eventsStacks);
+    keys.forEach((_) => {
+      this.eventsStacks[_] = null;
+    });
   }
   protected notify(
     key: string,
@@ -95,6 +107,9 @@ class SimpleGestiEventManager extends GestiEventManager {
   private static instance: GestiEventManager;
   constructor() {
     super();
+  }
+
+  public static getInstance(): SimpleGestiEventManager {
     if (!SimpleGestiEventManager.instance) {
       SimpleGestiEventManager.instance = new SimpleGestiEventManager();
     }
@@ -103,6 +118,6 @@ class SimpleGestiEventManager extends GestiEventManager {
 }
 
 const gestiEventManager: SimpleGestiEventManager =
-  new SimpleGestiEventManager();
+  SimpleGestiEventManager.getInstance();
 
 export default gestiEventManager;

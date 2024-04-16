@@ -7,7 +7,7 @@ import Rect from "../rect";
 import Vector from "../vector";
 import WriteFactory from "../../viewObject/write/write-factory";
 import ScreenUtils from "@/utils/screenUtils/ScreenUtils";
-import {  GestiControllerListenerTypes } from "@/types/controller";
+import { GestiControllerListenerTypes } from "@/types/controller";
 import Listeners from "../listener";
 import _Tools from "./utils";
 export enum EventHandlerState {
@@ -16,6 +16,7 @@ export enum EventHandlerState {
   move,
 }
 abstract class ImageToolkitBase {
+  protected readonly key: string = "test"; // Math.random().toString(16).substring(2);
   //屏幕适配  默认不适配
   protected screenUtils: ScreenUtils;
   //所有图层集合
@@ -29,7 +30,7 @@ abstract class ImageToolkitBase {
   //手势处理识别器
   protected gesture: Gesture = new Gesture();
   //当前选中的图层
-  protected selectedViewObject: ViewObject = null;
+  protected focusedViewObject: ViewObject = null;
   //canvas偏移量
   protected offset: Vector;
   //画布矩形大小
@@ -54,13 +55,13 @@ abstract class ImageToolkitBase {
   //绘制对象工厂  //绘制对象，比如签字、矩形、圆形等
   protected writeFactory: WriteFactory;
   protected hoverViewObject: ViewObject = null;
-  protected setViewObjectList(viewObjectArray: Array<ViewObject>) {
+  protected setlayers(viewObjectArray: Array<ViewObject>) {
     this._viewObjectList = viewObjectArray;
   }
-  protected cleanViewObjectList(): void {
+  protected cleanlayers(): void {
     this._viewObjectList = [];
   }
-  get ViewObjectList(): Array<ViewObject> {
+  get layers(): Array<ViewObject> {
     return this._viewObjectList;
   }
   protected debug(message: any): void {
@@ -87,7 +88,7 @@ abstract class ImageToolkitBase {
     return this.canvasRect;
   }
   public getViewObjects() {
-    return this.ViewObjectList;
+    return this.layers;
   }
   //上一次是否渲染完成
   private preRenderFinished: boolean = true;
@@ -105,7 +106,7 @@ abstract class ImageToolkitBase {
     );
 
     //当前显示标记数组初始化数据，且需要实时更新
-    if (this.currentViewObjectState.length != this.ViewObjectList.length) {
+    if (this.currentViewObjectState.length != this.layers.length) {
       this.currentViewObjectState.push(1);
     }
     /**
@@ -117,7 +118,7 @@ abstract class ImageToolkitBase {
     //适配屏幕分辨率
     if (this.screenUtils)
       this.paint.scale(this.screenUtils.devScale, this.screenUtils.devScale);
-    this.ViewObjectList.forEach((item: ViewObject, ndx: number) => {
+    this.layers.forEach((item: ViewObject, ndx: number) => {
       if (!item.disabled) {
         //扫除
         this.cleaning(item);
@@ -132,11 +133,18 @@ abstract class ImageToolkitBase {
         this.paint.drawSync();
       }
     });
-    this.selectedViewObject?.performRenderSelected(this.paint);
+    this.focusedViewObject?.performRenderSelected(this.paint);
     this.paint.restore();
   }
   public getScreenUtil(): ScreenUtils {
     return this.screenUtils;
+  }
+  public focus(view: ViewObject) {
+    this.focusedViewObject = view;
+    this.callHook("onSelect", view);
+  }
+  public blur() {
+    this.focusedViewObject = null;
   }
 }
 

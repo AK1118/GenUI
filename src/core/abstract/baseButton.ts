@@ -11,6 +11,8 @@ import Alignment from "../lib/painting/alignment";
 import { ExportButton } from "Serialization";
 import { IconNames } from "@/types/gesti";
 import * as Icons from "@/composite/icons";
+import { SimpleGestiEventObject } from "@/utils/event/event-manager";
+import Drag from "@/utils/event/drag";
 
 const iconMap = {
   defaultIcon: Icons.DefaultIcon,
@@ -35,7 +37,10 @@ export type ButtonOption = {
   icon?: Icon;
 };
 //按钮抽象类
-export abstract class BaseButton implements RenderObject {
+export abstract class BaseButton
+  extends SimpleGestiEventObject
+  implements RenderObject
+{
   protected icon: Icon = new DefaultIcon({
     color: "#c1c1c1",
     size: 10,
@@ -57,6 +62,7 @@ export abstract class BaseButton implements RenderObject {
   private _id: string = "";
   private option: any;
   constructor(option?: ButtonOption) {
+    super();
     if (!option) return;
     this.customAlignment = option?.alignment;
     const icon = option?.icon ?? this.icon;
@@ -68,7 +74,6 @@ export abstract class BaseButton implements RenderObject {
   //隐藏
   disabled: boolean = false;
   rect: Rect = new Rect();
-  key: string | number;
   relativeRect: Rect = new Rect();
   master: ViewObject;
   //渲染UI按钮半径
@@ -88,7 +93,29 @@ export abstract class BaseButton implements RenderObject {
   public get id(): string {
     return this._id;
   }
+  private drag: Drag = new Drag();
+  onDown(e: Vector | Vector[]): void {
+    if (!Array.isArray(e)) {
+      const selected = CatchPointUtil.checkInsideArc(
+        this.position,
+        e,
+        this.radius
+      );
+      console.log(selected);
 
+      if (selected) {
+        this.drag.catchViewObject(this.rect, e);
+        this.master.cancelDrag();
+        this.master.onSelected();
+      }
+    }
+  }
+  onMove(e: Vector | Vector[]): void {
+    this.drag.update(e);
+  }
+  onUp(e: Vector | Vector[]): void {
+    this.drag.cancel();
+  }
   get mounted(): boolean {
     return this._mounted;
   }

@@ -132,331 +132,308 @@ const screenUtil1 = controller.generateScreenUtils({
   devicePixelRatio: dev,
 });
 
-const img: HTMLImageElement = document.querySelector("#dog");
-// controller.setScreenUtil();
-const ximage = new XImage({
-  data: img,
-  width: img.width,
-  height: img.height,
-  scale: 1,
-  // url: img.src,
-});
-console.log("哈哈");
-const imageBox = new ImageBox(ximage);
-imageBox.setSize({
-  width: screenUtil1.fullWidth,
-  height: screenUtil1.fullHeight,
-});
-imageBox.setId("第一");
-doCenter(imageBox);
-// loadToGesti(imageBox);
-controller.layerTop(imageBox);
-imageBox.toBackground();
-imageBox.setLayer(10);
-const str = `你好，这是一篇英语短文1234567890 😄 ⚪ Redux
- maintainer Mark Erikson appeared on the "Learn with Jason" show
- to explain how we recommend using Redux today. The show includes
-  a live-coded example app that shows how to use Redux Toolkit and
-  React-Redux hooks with TypeScript, as well as the new RTK Query data
-   fetching APIs.你好，这是一篇英语短文1234567890 😄 ⚪ Redux maintainer
-   Mark Erikson appeared on the "Learn with Jason" show to explain how we
-   recommend using Redux today. The show includes a live-coded example
-   app that shows how to use Redux Toolkit and React-Redux hooks with
-   TypeScript, as well as the new RTK Query data fetching APIs.`;
-const str1 = `祝你前程似锦`;
-const textBox2 = new TextBox(str1, {
-  color: "white",
-  fontSize: screenUtil1.setSp(60),
-  weight: "bold",
-  shadowBlur: 1,
-  shadowColor: "#a12528",
-  shadowOffsetX: 2,
-  shadowOffsetY: 2,
-  maxWidth: 10000,
-  fontFamily: "鸿雷行书简体",
-});
-const textBox = new TextBox(str1, {
-  color: "red",
-  weight: 900,
-  fontSize: screenUtil1.setSp(10),
-  // backgroundColor:'white',
-  maxWidth: 300,
-  fontStyle: "italic",
-  fontFamily: "鸿雷行书简体",
-});
+// const img: HTMLImageElement = document.querySelector("#dog");
+// // controller.setScreenUtil();
+// const ximage = new XImage({
+//   data: img,
+//   width: img.width,
+//   height: img.height,
+//   scale: 1,
+//   // url: img.src,
+// });
+// console.log("哈哈");
+// const imageBox = new ImageBox(ximage);
+// imageBox.setSize({
+//   width: screenUtil1.fullWidth,
+//   height: screenUtil1.fullHeight,
+// });
+// imageBox.setId("第一");
+// doCenter(imageBox);
+// // loadToGesti(imageBox);
+// controller.layerTop(imageBox);
+// imageBox.toBackground();
+// imageBox.setLayer(10);
+// const str = `你好，这是一篇英语短文1234567890 😄 ⚪ Redux
+//  maintainer Mark Erikson appeared on the "Learn with Jason" show
+//  to explain how we recommend using Redux today. The show includes
+//   a live-coded example app that shows how to use Redux Toolkit and
+//   React-Redux hooks with TypeScript, as well as the new RTK Query data
+//    fetching APIs.你好，这是一篇英语短文1234567890 😄 ⚪ Redux maintainer
+//    Mark Erikson appeared on the "Learn with Jason" show to explain how we
+//    recommend using Redux today. The show includes a live-coded example
+//    app that shows how to use Redux Toolkit and React-Redux hooks with
+//    TypeScript, as well as the new RTK Query data fetching APIs.`;
+// const str1 = `祝你前程似锦`;
+// const textBox2 = new TextBox(str1, {
+//   color: "white",
+//   fontSize: screenUtil1.setSp(60),
+//   weight: "bold",
+//   shadowBlur: 1,
+//   shadowColor: "#a12528",
+//   shadowOffsetX: 2,
+//   shadowOffsetY: 2,
+//   maxWidth: 10000,
+//   fontFamily: "鸿雷行书简体",
+// });
+// const textBox = new TextBox(str1, {
+//   color: "red",
+//   weight: 900,
+//   fontSize: screenUtil1.setSp(10),
+//   // backgroundColor:'white',
+//   maxWidth: 300,
+//   fontStyle: "italic",
+//   fontFamily: "鸿雷行书简体",
+// });
 
-const huanzi = new CustomButton({
-  child: new TextBox("换字", {
-    fontSize: screenUtil1.setSp(26),
-  }),
-});
-huanzi.setSenseRadius(screenUtil1.setSp(36));
-huanzi.setId("huanzi1");
-textBox2.installMultipleButtons(
-  [
-    new DragButton(),
-    new RotateButton({
-      alignment: Alignment.topLeft,
-    }),
-    new MirrorButton({
-      alignment: Alignment.bottomLeft,
-    }),
-    huanzi,
-  ].map((_) => {
-    _.setSenseRadius(screenUtil1.setSp(50));
-    return _;
-  })
-);
-textBox2.setId("text1");
-// textBox2.setDecoration({
-//   backgroundImage:null,
-// })
-// loadToGesti(textBox2);
-textBox2.toCenter();
-textBox2.setLayer(11);
+// const huanzi = new CustomButton({
+//   child: new TextBox("换字", {
+//     fontSize: screenUtil1.setSp(26),
+//   }),
+// });
+// huanzi.setSenseRadius(screenUtil1.setSp(36));
+// huanzi.setId("huanzi1");
+// textBox2.installMultipleButtons(
+//   [
+//     new DragButton(),
+//     new RotateButton({
+//       alignment: Alignment.topLeft,
+//     }),
+//     new MirrorButton({
+//       alignment: Alignment.bottomLeft,
+//     }),
+//     huanzi,
+//   ].map((_) => {
+//     _.setSenseRadius(screenUtil1.setSp(50));
+//     return _;
+//   })
+// );
+// textBox2.setId("text1");
+// // textBox2.setDecoration({
+// //   backgroundImage:null,
+// // })
+// // loadToGesti(textBox2);
+// textBox2.toCenter();
+// textBox2.setLayer(11);
 
-const gradient = new LineGradientDecoration({
-  colors: ["white", "black", "red"],
-  begin: Alignment.topLeft,
-  end: Alignment.bottomRight,
-});
-console.log("序列", JSON.stringify(gradient));
+// const gradient = new LineGradientDecoration({
+//   colors: ["white", "black", "red"],
+//   begin: Alignment.topLeft,
+//   end: Alignment.bottomRight,
+// });
+// console.log("序列", JSON.stringify(gradient));
 
-const rect: Rectangle = new Rectangle({
-  width: screenUtil1.setWidth(750),
-  height: screenUtil1.setHeight(750),
-  decoration: {
-    // borderRadius: screenUtil1.setWidth(50),
-    backgroundColor: "#ccc",
-    // gradient: gradient,
-    backgroundImage: new XImage({
-      data: img2,
-      width: img2.width,
-      height: img2.height,
-      url: img2.src,
-    }),
-  },
-});
-console.log(gesti);
-console.log(rect.size);
+// const rect: Rectangle = new Rectangle({
+//   width: screenUtil1.setWidth(750),
+//   height: screenUtil1.setHeight(750),
+//   decoration: {
+//     // borderRadius: screenUtil1.setWidth(50),
+//     backgroundColor: "#ccc",
+//     // gradient: gradient,
+//     backgroundImage: new XImage({
+//       data: img2,
+//       width: img2.width,
+//       height: img2.height,
+//       url: img2.src,
+//     }),
+//   },
+// });
+// console.log(gesti);
+// console.log(rect.size);
 
-doCenter(rect);
-const drag = new DragButton({
-  alignment: Alignment.bottomRight,
-});
+// doCenter(rect);
+// const drag = new DragButton({
+//   alignment: Alignment.bottomRight,
+// });
 
-rect.setLayer(9);
-rect.installButton(drag);
-const huantu = new CustomButton({
-  child: new TextBox("换图", {
-    fontSize: screenUtil1.setSp(26),
-  }),
-});
-huantu.setSenseRadius(screenUtil1.setSp(36));
-huantu.setId("huantu1");
-const buttons = [
-  huantu,
-  new RotateButton({
-    alignment: Alignment.topLeft,
-  }),
-  new DragButton(),
-  new MirrorButton({
-    alignment: Alignment.bottomLeft,
-  }),
-];
-buttons.forEach((_) => _.setSenseRadius(screenUtil1.setSp(50)));
-// rect.installMultipleButtons(buttons);
-// loadToGesti(rect);
+// rect.setLayer(9);
+// rect.installButton(drag);
+// const huantu = new CustomButton({
+//   child: new TextBox("换图", {
+//     fontSize: screenUtil1.setSp(26),
+//   }),
+// });
+// huantu.setSenseRadius(screenUtil1.setSp(36));
+// huantu.setId("huantu1");
+// const buttons = [
+//   huantu,
+//   new RotateButton({
+//     alignment: Alignment.topLeft,
+//   }),
+//   new DragButton(),
+//   new MirrorButton({
+//     alignment: Alignment.bottomLeft,
+//   }),
+// ];
+// buttons.forEach((_) => _.setSenseRadius(screenUtil1.setSp(50)));
+// // rect.installMultipleButtons(buttons);
+// // loadToGesti(rect);
 
-const imageBox2 = new ImageBox(
-  new XImage({
-    data: img2,
-    width: img2.width,
-    height: img2.height,
-    url: img2.src,
-    scale: 0.5,
-  })
-);
-imageBox2.installMultipleButtons(buttons);
-imageBox2.setId("image1");
-// loadToGesti(imageBox2);
+// const imageBox2 = new ImageBox(
+//   new XImage({
+//     data: img2,
+//     width: img2.width,
+//     height: img2.height,
+//     url: img2.src,
+//     scale: 0.5,
+//   })
+// );
+// imageBox2.installMultipleButtons(buttons);
+// imageBox2.setId("image1");
+// // loadToGesti(imageBox2);
 
-const polygon = new Polygon({
-  radius: screenUtil1.setSp(750),
-  count: 5,
-  decoration: {
-    backgroundColor: "orange",
-    // gradient: new LineGradientDecoration({
-    //   colors: ["orange", "orange", "yellow"],
-    //   begin: Alignment.topLeft,
-    //   end: Alignment.bottomRight,
-    // }),
-    // backgroundImage:ximage
-  },
-});
-const label: TextBox = new TextBox("你好", {
-  color: "red",
-  fontSize: screenUtil1.setSp(26),
-});
-const customButton = new CustomButton({
-  child: label,
-  onClick: () => {
-    const duobianx: Polygon = controller.getViewObjectByIdSync("duobianx");
-    duobianx.setDecoration({
-      backgroundColor: ["red", "orange", "skyblue", "#ffffff"][
-        ~~(Math.random() * 3)
-      ],
-    });
-    duobianx.setCount(Math.floor(Math.random() * (10 - 3 + 1)) + 3);
-  },
-  alignment: Alignment.topRight,
-});
-customButton.setId("huanbian");
-label.installButton(new DragButton());
-polygon.setId("duobianx");
-polygon.installMultipleButtons(
-  [
-    new HorizonButton(),
-    new VerticalButton(),
-    new VerticalButton(),
-    new HorizonButton(),
-    new DragButton(),
-    customButton,
-    new SizeButton(),
-    new MirrorButton({
-      alignment: Alignment.bottomLeft,
-    }),
-  ].map((_) => {
-    _.setSenseRadius(screenUtil1.setSp(50));
-    return _;
-  })
-);
-//loadToGesti(polygon);
-polygon.toCenter();
+// const polygon = new Polygon({
+//   radius: screenUtil1.setSp(750),
+//   count: 5,
+//   decoration: {
+//     backgroundColor: "orange",
+//     // gradient: new LineGradientDecoration({
+//     //   colors: ["orange", "orange", "yellow"],
+//     //   begin: Alignment.topLeft,
+//     //   end: Alignment.bottomRight,
+//     // }),
+//     // backgroundImage:ximage
+//   },
+// });
+// const label: TextBox = new TextBox("你好", {
+//   color: "red",
+//   fontSize: screenUtil1.setSp(26),
+// });
+// const customButton = new CustomButton({
+//   child: label,
+//   onClick: () => {
+//     const duobianx: Polygon = controller.getViewObjectByIdSync("duobianx");
+//     duobianx.setDecoration({
+//       backgroundColor: ["red", "orange", "skyblue", "#ffffff"][
+//         ~~(Math.random() * 3)
+//       ],
+//     });
+//     duobianx.setCount(Math.floor(Math.random() * (10 - 3 + 1)) + 3);
+//   },
+//   alignment: Alignment.topRight,
+// });
+// customButton.setId("huanbian");
+// label.installButton(new DragButton());
+// polygon.setId("duobianx");
+// polygon.installMultipleButtons(
+//   [
+//     new HorizonButton(),
+//     new VerticalButton(),
+//     new VerticalButton(),
+//     new HorizonButton(),
+//     new DragButton(),
+//     customButton,
+//     new SizeButton(),
+//     new MirrorButton({
+//       alignment: Alignment.bottomLeft,
+//     }),
+//   ].map((_) => {
+//     _.setSenseRadius(screenUtil1.setSp(50));
+//     return _;
+//   })
+// );
+// //loadToGesti(polygon);
+// polygon.toCenter();
 
-// loadToGesti(aa);
-const canvas2: HTMLCanvasElement = document.querySelector("#canvas2");
-const canvas3: HTMLCanvasElement = document.querySelector("#canvas3");
-const g3 = canvas3.getContext("2d", {
-  willReadFrequently: true,
-});
+// // loadToGesti(aa);
+// const canvas2: HTMLCanvasElement = document.querySelector("#canvas2");
+// const canvas3: HTMLCanvasElement = document.querySelector("#canvas3");
+// const g3 = canvas3.getContext("2d", {
+//   willReadFrequently: true,
+// });
 
-const g2 = canvas2.getContext("2d", {
-  willReadFrequently: true,
-});
+// const g2 = canvas2.getContext("2d", {
+//   willReadFrequently: true,
+// });
 
-canvas2.width = 200 * dev;
-canvas2.height = 200 * dev;
-canvas2.style.width = 200 + "px";
-canvas2.style.height = 200 + "px";
-canvas3.width = 1;
-canvas3.height = 1;
-const gesti2 = createGesti();
-const gesti3 = createGesti();
-const controller2 = gesti2.initialization({
-  renderContext: g2,
-  rect: {
-    x: 0,
-    y: canvas.height,
-    canvasWidth: canvas2.width,
-    canvasHeight: canvas2.height,
-  },
-});
-console.log(controller2);
+// canvas2.width = 200 * dev;
+// canvas2.height = 200 * dev;
+// canvas2.style.width = 200 + "px";
+// canvas2.style.height = 200 + "px";
+// canvas3.width = 1;
+// canvas3.height = 1;
+// const gesti2 = createGesti();
+// const gesti3 = createGesti();
+// const controller2 = gesti2.initialization({
+//   renderContext: g2,
+//   rect: {
+//     x: 0,
+//     y: canvas.height,
+//     canvasWidth: canvas2.width,
+//     canvasHeight: canvas2.height,
+//   },
+// });
+// console.log(controller2);
 
-controller2.generateScreenUtils({
-  devicePixelRatio: dev,
-  designWidth: 750,
-  designHeight: 750,
-});
-// gesti2.debug=true
-gesti3.initialization({
-  renderContext: g3,
-  rect: {
-    x: canvas3.getBoundingClientRect().left,
-    y: canvas3.getBoundingClientRect().top,
-    canvasWidth: canvas3.width * dev,
-    canvasHeight: canvas3.height * dev,
-  },
-});
+// controller2.generateScreenUtils({
+//   devicePixelRatio: dev,
+//   designWidth: 750,
+//   designHeight: 750,
+// });
+// // gesti2.debug=true
+// gesti3.initialization({
+//   renderContext: g3,
+//   rect: {
+//     x: canvas3.getBoundingClientRect().left,
+//     y: canvas3.getBoundingClientRect().top,
+//     canvasWidth: canvas3.width * dev,
+//     canvasHeight: canvas3.height * dev,
+//   },
+// });
 
-// const offScreenBuilder =
-// Plugins.getPluginByKey<OffScreenCanvasBuilder>("offScreenBuilder");
-// const offScreenCanvas = offScreenBuilder.buildOffScreenCanvas(1000, 1000);
-// const offPainter = offScreenBuilder.buildOffScreenContext(offScreenCanvas);
-// controller2.cancelEvent();
-document.getElementById("import").addEventListener("click", () => {
-  console.log("导入");
-  gesti2.controller.cleanAll();
-  gesti3.controller.cleanAll();
+// // const offScreenBuilder =
+// // Plugins.getPluginByKey<OffScreenCanvasBuilder>("offScreenBuilder");
+// // const offScreenCanvas = offScreenBuilder.buildOffScreenCanvas(1000, 1000);
+// // const offPainter = offScreenBuilder.buildOffScreenContext(offScreenCanvas);
+// // controller2.cancelEvent();
+// document.getElementById("import").addEventListener("click", () => {
+//   console.log("导入");
+//   gesti2.controller.cleanAll();
+//   gesti3.controller.cleanAll();
 
-  const a = window.localStorage.getItem("aa");
-  importAll(
-    a,
-    async (arr) => {
-      arr.forEach((_) => {
-        const huanbianButton = _.getButtonByIdSync<CustomButton>("huanbian");
-        if (huanbianButton) {
-          huanbianButton.onClick = () => {
-            alert("哈哈哈");
-          };
-        }
-      });
-      return Promise.resolve(arr);
-    },
-    gesti2
-  ).then((e) => {
-    console.log(gesti2.controller.getScreenUtil());
-    console.log("导入成功");
-  });
-  // importAll(a, null, gesti3).then((e) => {
-  //   console.log("导入成功");
-  // });
-});
+//   const a = window.localStorage.getItem("aa");
+//   importAll(
+//     a,
+//     async (arr) => {
+//       arr.forEach((_) => {
+//         const huanbianButton = _.getButtonByIdSync<CustomButton>("huanbian");
+//         if (huanbianButton) {
+//           huanbianButton.onClick = () => {
+//             alert("哈哈哈");
+//           };
+//         }
+//       });
+//       return Promise.resolve(arr);
+//     },
+//     gesti2
+//   ).then((e) => {
+//     console.log(gesti2.controller.getScreenUtil());
+//     console.log("导入成功");
+//   });
+//   // importAll(a, null, gesti3).then((e) => {
+//   //   console.log("导入成功");
+//   // });
+// });
 
-document.getElementById("export").addEventListener("click", () => {
-  console.log("导出");
-  controller.cancelAll();
-  exportAll(gesti).then((json) => {
-    console.log(json);
-    window.localStorage.setItem("aa", json);
-    console.log("导出成功");
-    controller2.importAll(json).then((e) => {
-      console.log("导入成功");
-    });
-  });
-});
+// document.getElementById("export").addEventListener("click", () => {
+//   console.log("导出");
+//   controller.cancelAll();
+//   exportAll(gesti).then((json) => {
+//     console.log(json);
+//     window.localStorage.setItem("aa", json);
+//     console.log("导出成功");
+//     controller2.importAll(json).then((e) => {
+//       console.log("导入成功");
+//     });
+//   });
+// });
 
-document.getElementById("input").addEventListener("input", (e: any) => {
-  textBox2.setText(e.target?.value);
-  console.log(e.target?.value);
-});
-controller.render();
+// document.getElementById("input").addEventListener("input", (e: any) => {
+//   textBox2.setText(e.target?.value);
+//   console.log(e.target?.value);
+// });
+// controller.render();
 
 async function main() {
-  const text = new TextBox(`你好`, {
-    fontSize: screenUtil1.setSp(300),
-    stroke: true,
-    fill: true,
-    weight: "bold",
-    strokeColor: "white",
-    strokeLineWidth: screenUtil1.setSp(20),
-    fillGradient: {
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: ["orange", "red"],
-    },
-    shadowBlur: 2,
-    shadowColor: "#000",
-    shadowOffsetX: 2,
-    shadowOffsetY: 2,
-    fillShadow: true,
-    strokeShadow: true,
-  });
-  text.installButton(new DragButton());
-  // controller.load(text);
-  controller.center(text);
-
   const clipWidth = 450,
     clipHeight = 420,
     clipX = 175,
@@ -480,15 +457,10 @@ async function main() {
       backgroundImage: roundedXImage,
     },
   }); //new ImageBox(roundedXImage);
-  const scale = screenUtil1.fullWidth / fixedImg.width;
-  const rectClip = new RectClipMask({
-    width: clipWidth * scale,
-    height: clipHeight * scale,
+  rr.setScaleConstraints({
+    min:.5,max:2,
   });
-  rectClip.setPosition(
-    clipX * scale + rectClip.width * 0.5,
-    clipY * scale + rectClip.height * 0.5
-  );
+  const scale = screenUtil1.fullWidth / fixedImg.width;
   rr.installMultipleButtons([
     new DragButton({
       angleDisabled: true,
@@ -558,11 +530,6 @@ async function main() {
   controller.center(rr);
   //屏蔽双指
   controller.cancelGesture();
-  controller.updateText(text.value, {
-    color: "red",
-  });
-
-  console.log("拿到矩形", controller.getCanvasSize());
   // setInterval(()=>{
   //   rr.replaceXImage(Math.random()>.5?ximage:roundedXImage);
   // },1000)
@@ -580,7 +547,7 @@ async function loadImg(src): Promise<HTMLImageElement> {
   await waitingLoadImg(bg);
   return Promise.resolve(bg);
 }
-for (let index = 0; index < 1; index++) {
+for (let index = 0; index < 10; index++) {
   main();
 }
 if (controller.initialized) {

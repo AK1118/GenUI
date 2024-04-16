@@ -4,6 +4,9 @@ import Vector from "../../core/lib/vector";
 class Drag {
   private rect: Rect = null;
   private offset: Vector;
+  get busy():boolean{
+    return this.rect!==null;
+  }
   public catchViewObject(rect: Rect, position: Vector | any): void {
     this.rect = rect;
     this.offset

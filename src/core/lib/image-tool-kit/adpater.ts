@@ -57,9 +57,9 @@ abstract class ImageToolkitAdapterController
     layer: number,
     view?: ViewObject<DecorationBase<BoxDecorationOption>>
   ): void {
-    let _view = view || this.selectedViewObject;
+    let _view = view || this.focusedViewObject;
     _view.setLayer(layer);
-    this.tool.arrangeLayer(this.ViewObjectList, _view, LayerOperationType.none);
+    this.tool.arrangeLayer(this.layers, _view, LayerOperationType.none);
     this.render();
   }
 
@@ -80,14 +80,14 @@ abstract class ImageToolkitAdapterController
     }
   }
   forceRender(): void {
-    this.ViewObjectList.forEach((_) => _.forceUpdate());
-    this.tool.arrangeLayer(this.ViewObjectList, null, LayerOperationType.none);
+    this.layers.forEach((_) => _.forceUpdate());
+    this.tool.arrangeLayer(this.layers, null, LayerOperationType.none);
   }
   cancelGesture(): void {
     this.gesture.disable();
   }
   getViewObjectByIdSync<T extends ViewObject>(id: string): T {
-    const arr = this.ViewObjectList;
+    const arr = this.layers;
     const obj: T | null = arr.find((item) => item.id === id) as T;
     return obj;
   }
@@ -105,27 +105,27 @@ abstract class ImageToolkitAdapterController
     return this.screenUtils;
   }
   remove(view?: ViewObject): boolean {
-    const _view = view || this.selectedViewObject;
+    const _view = view || this.focusedViewObject;
     if (!_view) return false;
-    this.setViewObjectList(
-      this.ViewObjectList.filter((_) => _.key != _view.key)
+    this.setlayers(
+      this.layers.filter((_) => _.key != _view.key)
     );
     this.callHook("onRemove", null);
     this.render();
     return true;
   }
   getAllViewObjectSync(): ViewObject[] {
-    return this.ViewObjectList;
+    return this.layers;
   }
   getAllViewObject(): Promise<ViewObject[]> {
-    return Promise.resolve(this.ViewObjectList);
+    return Promise.resolve(this.layers);
   }
   mount(view: ViewObject): void {
     this.load(view);
   }
   unMount(view: ViewObject): void {
     const result: boolean = this.deleteViewObject(
-      view || this.selectedViewObject
+      view || this.focusedViewObject
     );
     if (result) this.render();
   }
@@ -133,10 +133,10 @@ abstract class ImageToolkitAdapterController
   private deleteViewObject(view: ViewObject): boolean {
     if (!view) return false;
     const key: string | number = view.key;
-    const newList: Array<ViewObject> = this.ViewObjectList.filter(
+    const newList: Array<ViewObject> = this.layers.filter(
       (_) => _.key !== key
     );
-    this.setViewObjectList(newList);
+    this.setlayers(newList);
     return false;
   }
 
@@ -145,14 +145,14 @@ abstract class ImageToolkitAdapterController
   }
   //隐藏某个对象
   close(view?: ViewObject): void {
-    if (!view) this.selectedViewObject?.hide?.();
+    if (!view) this.focusedViewObject?.hide?.();
     view?.hide?.();
     this.render();
   }
   //镜像某个对象
   mirror(view?: ViewObject): boolean {
     if (!view) {
-      const isMirror: boolean = this.selectedViewObject?.mirror?.();
+      const isMirror: boolean = this.focusedViewObject?.mirror?.();
       this.render();
       this.callHook("onMirror", isMirror);
       return isMirror;
@@ -171,7 +171,7 @@ abstract class ImageToolkitAdapterController
     throw new Error("Method not implemented.");
   }
   getViewObjectById<T extends ViewObject>(id: string): Promise<T> {
-    const arr = this.ViewObjectList;
+    const arr = this.layers;
     const obj: T | null = arr.find((item) => item.id === id) as T;
     return Promise.resolve<T>(obj);
   }
@@ -182,7 +182,7 @@ abstract class ImageToolkitAdapterController
     if (view) {
       view.setPosition(x, y);
     }
-    this.selectedViewObject?.setPosition(x, y);
+    this.focusedViewObject?.setPosition(x, y);
     this.render();
   }
   /**
@@ -191,7 +191,7 @@ abstract class ImageToolkitAdapterController
    */
   cleanAll(): Promise<void> {
     return new Promise((r, v) => {
-      this.cleanViewObjectList();
+      this.cleanlayers();
       this.render();
       r();
     });
@@ -215,14 +215,14 @@ abstract class ImageToolkitAdapterController
   protected addViewObject(
     obj: ViewObject<DecorationBase<BoxDecorationOption>>
   ): void {
-    this.ViewObjectList.push(obj);
+    this.layers.push(obj);
     obj.initialization(this);
     super.addViewObject(obj);
   }
   select(select: ViewObject): Promise<void> {
     if (select && select.onSelected) {
       select.onSelected();
-      this.selectedViewObject = select;
+      this.focusedViewObject = select;
       this.callHook("onSelect", select);
       this.render();
       return Promise.resolve();
@@ -230,14 +230,14 @@ abstract class ImageToolkitAdapterController
     return Promise.resolve();
   }
   get currentViewObject(): ViewObject {
-    return this.selectedViewObject;
+    return this.focusedViewObject;
   }
   async rotate(
     angle: number,
     existing?: boolean,
     view?: ViewObject
   ): Promise<void> {
-    let obj = view || this.selectedViewObject;
+    let obj = view || this.focusedViewObject;
     if (!obj) return Promise.resolve(null);
     let _angle = existing ? angle + obj.rect.getAngle : angle;
     obj.rect.setAngle(_angle);
@@ -249,36 +249,36 @@ abstract class ImageToolkitAdapterController
       viewObject.position.y -= 1;
       return viewObject.position.y;
     }
-    if (!this.selectedViewObject) return null;
-    this.selectedViewObject.position.y -= 1;
-    return this.selectedViewObject.position.y;
+    if (!this.focusedViewObject) return null;
+    this.focusedViewObject.position.y -= 1;
+    return this.focusedViewObject.position.y;
   }
   downward(viewObject?: ViewObject): number {
     if (viewObject) {
       viewObject.position.y += 1;
       return viewObject.position.y;
     }
-    if (!this.selectedViewObject) return null;
-    this.selectedViewObject.position.y += 1;
-    return this.selectedViewObject.position.y;
+    if (!this.focusedViewObject) return null;
+    this.focusedViewObject.position.y += 1;
+    return this.focusedViewObject.position.y;
   }
   leftward(viewObject?: ViewObject): number {
     if (viewObject) {
       viewObject.position.x -= 1;
       return viewObject.position.x;
     }
-    if (!this.selectedViewObject) return null;
-    this.selectedViewObject.position.x -= 1;
-    return this.selectedViewObject.position.x;
+    if (!this.focusedViewObject) return null;
+    this.focusedViewObject.position.x -= 1;
+    return this.focusedViewObject.position.x;
   }
   rightward(viewObject?: ViewObject): number {
     if (viewObject) {
       viewObject.position.x += 1;
       return viewObject.position.x;
     }
-    if (!this.selectedViewObject) return null;
-    this.selectedViewObject.position.x += 1;
-    return this.selectedViewObject.position.x;
+    if (!this.focusedViewObject) return null;
+    this.focusedViewObject.position.x += 1;
+    return this.focusedViewObject.position.x;
   }
   /**
    * @description 导入json解析成对象  H5
@@ -364,7 +364,7 @@ abstract class ImageToolkitAdapterController
     return new Promise(async (r, j) => {
       try {
         const viewObjectList: Array<ViewObjectExportEntity> = [];
-        for await (const item of this.ViewObjectList) {
+        for await (const item of this.layers) {
           if (item.disabled) continue;
           const exportEntity = await item.export();
           viewObjectList.push(exportEntity);
@@ -383,11 +383,11 @@ abstract class ImageToolkitAdapterController
     });
   }
   updateText(text: string, options?: TextOptions): void {
-    //const isTextBox = classTypeIs(this.selectedViewObject, TextBox);
+    //const isTextBox = classTypeIs(this.focusedViewObject, TextBox);
     const isTextBox: boolean =
-      this.selectedViewObject?.family === ViewObjectFamily.text;
+      this.focusedViewObject?.family === ViewObjectFamily.text;
     if (isTextBox) {
-      const view: TextBox = this.selectedViewObject as TextBox;
+      const view: TextBox = this.focusedViewObject as TextBox;
       view.setTextStyle(options ?? {});
       view.setText(text);
       this.render();
@@ -396,41 +396,41 @@ abstract class ImageToolkitAdapterController
   }
   center(view?: ViewObject, axis?: CenterAxis): void {
     if (view) view.center(this.canvasRect.size, axis);
-    else this.selectedViewObject?.center(this.canvasRect.size, axis);
+    else this.focusedViewObject?.center(this.canvasRect.size, axis);
     this.render();
   }
   cancel(view?: ViewObject): void {
     super.blurViewObject(view);
   }
   cancelAll(): void {
-    this.ViewObjectList.forEach((item: ViewObject) =>
+    this.layers.forEach((item: ViewObject) =>
       this.handleCancelView(item)
     );
     this.render();
   }
   layerLower(view?: ViewObject): void {
-    let _view = view || this.selectedViewObject;
+    let _view = view || this.focusedViewObject;
     this.tool.arrangeLayer(
-      this.ViewObjectList,
+      this.layers,
       _view,
       LayerOperationType.lower
     );
     this.render();
   }
   layerRise(view?: ViewObject): void {
-    let _view = view || this.selectedViewObject;
-    this.tool.arrangeLayer(this.ViewObjectList, _view, LayerOperationType.rise);
+    let _view = view || this.focusedViewObject;
+    this.tool.arrangeLayer(this.layers, _view, LayerOperationType.rise);
     this.render();
   }
   layerTop(view?: ViewObject): void {
-    let _view = view || this.selectedViewObject;
-    this.tool.arrangeLayer(this.ViewObjectList, _view, LayerOperationType.top);
+    let _view = view || this.focusedViewObject;
+    this.tool.arrangeLayer(this.layers, _view, LayerOperationType.top);
     this.render();
   }
   layerBottom(view?: ViewObject): void {
-    let _view = view || this.selectedViewObject;
+    let _view = view || this.focusedViewObject;
     this.tool.arrangeLayer(
-      this.ViewObjectList,
+      this.layers,
       _view,
       LayerOperationType.bottom
     );
@@ -438,19 +438,19 @@ abstract class ImageToolkitAdapterController
   }
   unLock(view?: ViewObject): void {
     if (view) view?.unLock();
-    else this.selectedViewObject?.unLock();
+    else this.focusedViewObject?.unLock();
   }
   lock(view?: ViewObject): void {
     if (view) view?.lock();
-    else this.selectedViewObject?.lock();
+    else this.focusedViewObject?.lock();
   }
   async fallback() {
     // const node: RecordNode = await this.recorder.fallback();
-    // this.tool.fallbackViewObject(this.ViewObjectList, node, this);
+    // this.tool.fallbackViewObject(this.layers, node, this);
   }
   async cancelFallback() {
     // const node: RecordNode = await this.recorder.cancelFallback();
-    // this.tool.fallbackViewObject(this.ViewObjectList, node, this);
+    // this.tool.fallbackViewObject(this.layers, node, this);
   }
 
   //无须实现
@@ -517,8 +517,8 @@ abstract class ImageToolkitAdapterController
     textBox.center(this.canvasRect.size);
     this.addViewObject(textBox);
     //测试
-    // this.selectedViewObject=textBox;
-    // this.selectedViewObject.onSelected()
+    // this.focusedViewObject=textBox;
+    // this.focusedViewObject.onSelected()
     setTimeout(() => {
       this.render();
     }, 100);
