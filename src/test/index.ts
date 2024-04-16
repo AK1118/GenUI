@@ -468,11 +468,11 @@ async function main() {
       icon: new DefaultIcon(),
     }),
     new EventButton({
-      // child: new TextBox("hello", {
-      //   fontSize: screenUtil1.setSp(13),
-      // }),
+      child: new TextBox("close", {
+        fontSize: screenUtil1.setSp(13),
+      }),
       onClick: () => {
-        console.log("hello");
+        console.log("close");
       },
       alignment: Alignment.topRight,
       icon: new CloseIcon(),
@@ -548,7 +548,7 @@ async function loadImg(src): Promise<HTMLImageElement> {
   return Promise.resolve(bg);
 }
 for (let index = 0; index < 10; index++) {
-  main();
+  // main();
 }
 if (controller.initialized) {
   controller.cancelEvent();
@@ -562,3 +562,8 @@ if (controller.initialized) {
     controller.up(e);
   });
 }
+
+
+const template='{"entities":[{"type":"image","base":{"buttons":[{"id":"","type":"DragButton","alignment":{"x":1,"y":1},"radius":12,"backgroundColor":"rgba(255,255,255,.8)","iconColor":"#c1c1c1","displayBackground":true,"icon":{"fixedSize":40,"computedData":[[[1.5,1.5],[5.7,1.5],[1.5,5.7]],[[10.5,10.5],[6.3,10.5],[10.5,6.3]],[[6.3,1.5],[10.5,1.5],[10.5,5.7]],[[1.5,6.3],[1.5,10.5],[5.7,10.5]]],"size":12,"center":{"x":20,"y":20},"color":"#a4a6a8"}},{"id":"","type":"MirrorButton","alignment":{"x":-1,"y":1},"radius":12,"backgroundColor":"rgba(255,255,255,.8)","iconColor":"#c1c1c1","displayBackground":true,"icon":{"fixedSize":40,"computedData":[[[3,3],[0,6],[3,9]],[[3,3],[0,6],[3,9]],[[9,3],[12,6],[9,9]],[[5.1,1.5],[6.8999999999999995,1.5],[6.8999999999999995,10.5],[5.1,10.5]]],"size":12,"center":{"x":20,"y":20},"color":"#a4a6a8","finalData":[[[10,10],[0,20],[10,30]],[[10,10],[0,20],[10,30]],[[30,10],[40,20],[30,30]],[[17,5],[23,5],[23,35],[17,35]]]}},{"id":"","type":"CloseButton","alignment":{"x":1,"y":-1},"radius":12,"backgroundColor":"rgba(255,255,255,.8)","iconColor":"#c1c1c1","displayBackground":true,"icon":{"fixedSize":40,"computedData":[[[1.5,1.5],[10.5,10.5]],[[10.5,1.5],[1.5,10.5]]],"size":12,"center":{"x":20,"y":20},"color":"#a4a6a8"}},{"id":"","type":"RotateButton","alignment":{"x":-1,"y":-1},"radius":12,"backgroundColor":"rgba(255,255,255,.8)","iconColor":"#c1c1c1","displayBackground":true,"icon":{"fixedSize":40,"computedData":[],"size":12,"center":{"x":20,"y":20},"color":"#a4a6a8"}}],"rect":{"x":150,"y":150,"width":300,"height":300,"angle":0},"relativeRect":{"x":150,"y":150,"width":300,"height":300,"angle":0},"fixedSize":{"width":300,"height":300},"sizeScale":{"scaleWidth":1,"scaleHeight":1},"mirror":false,"locked":false,"id":"imageBox","layer":-1,"isBackground":false,"opacity":1,"platform":"Browser","decoration":{"type":"box"}},"fixedHeight":164,"fixedWidth":164,"url":"https://images.unsplash.com/photo-1518756131217-31eb79b20e8f?w=164&h=164&fit=crop&auto=format"},{"type":"text","text":"Spring","option":{"fontSize":52,"color":"green","spacing":1,"lineHeight":1.5,"weight":"bold","fontStyle":"normal","maxWidth":300,"shadowColor":"#999999","shadowBlur":4,"shadowOffsetX":0,"shadowOffsetY":1.2000000000000002,"stroke":false,"strokeColor":"black","fill":true,"fillShadow":true,"fillGradient":{"begin":{"x":-1,"y":-1},"end":{"x":1,"y":1},"colors":["#dff976","green"],"type":"lineGradient"}},"base":{"buttons":[],"rect":{"x":150,"y":150,"width":188,"height":78,"angle":0},"relativeRect":{"x":0,"y":0,"width":0,"height":0,"angle":0},"fixedSize":{"width":188.787109375,"height":78},"sizeScale":{"scaleWidth":1,"scaleHeight":1},"mirror":false,"locked":false,"layer":0,"isBackground":false,"opacity":1,"platform":"Browser","decoration":{"borderRadius":10,"backgroundColor":"#ffffff","gradient":{"begin":{"x":-1,"y":-1},"end":{"x":1,"y":1},"colors":["#ffffff","#bbe663"],"type":"lineGradient"},"type":"box"}}}],"info":{"platform":"Browser","screen":{"scaleHeight":0.4,"scaleText":0.4,"scaleWidth":0.4,"canvasWidth":300,"canvasHeight":300,"designHeight":750,"designWidth":750,"devicePixelRatio":1}}}';
+
+controller.importAll(template)

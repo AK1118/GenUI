@@ -30,6 +30,7 @@ const iconMap = {
 export const IconFormat = (name: IconNames, args: any) => {
   const IconConstruct = iconMap[name];
   console.log("获取", name);
+  if(!IconConstruct)return;
   return new IconConstruct(args);
 };
 export type ButtonOption = {
@@ -209,7 +210,7 @@ export abstract class BaseButton
     if (icon instanceof IconBase) {
       this.icon = icon;
     } else {
-      this.icon = IconFormat(icon.name, icon);
+      this.icon = IconFormat(icon.name, icon)??this.icon;
     }
 
     //icon的大小等于半径

@@ -13,10 +13,10 @@ import { DefaultIcon } from "@/composite/icons";
 import SizeButton, { ARButtonOption } from "./sizeButton";
 import { ARButton } from "@/index";
 
-type Location = "left" | "right";
+type HorizonAlignmentType = "left" | "right";
 
 export interface HorizonButtonOption extends ARButtonOption {
-  location?: Location;
+  location?: HorizonAlignmentType;
 }
 
 class HorizonButton extends SizeButton {

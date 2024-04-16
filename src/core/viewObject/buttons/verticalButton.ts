@@ -8,8 +8,10 @@ import { DefaultIcon } from "@/composite/icons";
 import { ButtonOption } from "@/core/abstract/baseButton";
 import Alignment from "@/core/lib/painting/alignment";
 
+type VerticalAlignmentType="top" | "bottom"
+
 export interface VerticalButtonOption extends ARButtonOption {
-  location?: "top" | "bottom";
+  location?: VerticalAlignmentType;
 }
 
 class VerticalButton extends SizeButton {
