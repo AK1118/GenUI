@@ -3,6 +3,7 @@ import Rect from "../lib/rect";
 import ImageBox from "../viewObject/image";
 import TextBox from "../viewObject/text/text";
 import WriteViewObj from "../viewObject/write";
+import * as Icons from "@/composite/icons"
 import Button, { BaseButton } from "../abstract/baseButton";
 import Group from "../viewObject/group";
 import * as Buttons from "@/composite/buttons";
@@ -32,9 +33,8 @@ import {
   PolygonDecorationOption,
 } from "Graphics";
 // import Circle from "../viewObject/graphics/circle";
-import ImageToolkit from "../lib/image-toolkit";
+import ImageToolkit from "../lib/image-tool-kit/image-toolkit";
 import ScreenUtils from "@/utils/screenUtils/ScreenUtils";
-import { ImageChunk } from "Gesti";
 import BoxDecoration from "../lib/rendering/decorations/box-decoration";
 import DecorationBase from "./decoration-base";
 import Polygon from "../viewObject/graphics/polygon";
@@ -42,6 +42,10 @@ import PolygonDecoration from "../lib/rendering/decorations/polygon-decoration";
 import RectCrop from "../viewObject/crop/rect-crop";
 import RectClipMask from "../viewObject/mask/rect-clip-mask";
 import LineGradientDecoration from "../lib/graphics/gradients/lineGradientDecoration";
+import EventButton, {
+  EventButtonOption,
+} from "../viewObject/buttons/eventButton";
+import { IconNames } from "@/types/gesti";
 
 type ViewObjectHandler<T> = (entity: ViewObjectImportEntity) => T;
 
@@ -64,7 +68,8 @@ abstract class DeserializerBase {
     LockButton: Buttons.LockButton,
     SizeButton: Buttons.SizeButton,
     VerticalButton: Buttons.VerticalButton,
-    CustomButton: Buttons.CustomButton,
+    EventButton: Buttons.EventButton,
+    CustomButton: Buttons.EventButton,
   };
 
   //entity转换为对应实体ViewObject对象映射器
@@ -192,7 +197,9 @@ abstract class DeserializerBase {
       height: this.adaptScreenSizeHeight(size.height),
     };
   }
-  public async getObjectByJson(importEntity: ViewObjectImportEntity) {
+  public async getObjectByJson<T extends ViewObject>(
+    importEntity: ViewObjectImportEntity
+  ): Promise<T> {
     const base: ViewObjectImportBaseInfo = importEntity.base;
     const rect: Rect = Rect.format(base.rect);
     const relativeRect: Rect = Rect.format(base.relativeRect);
@@ -221,10 +228,10 @@ abstract class DeserializerBase {
     //设置2D矢量数据
     this.setVectorData(view, base);
     //设置盒子装饰器
-    
+
     view.setDecorationEntity(await this.formatBoxDecoration(base?.decoration));
     this.installButton(view, buttons);
-    return view;
+    return view as T;
   }
   private setVectorData(view: ViewObject, base): void {
     //屏幕适配包括   宽高 坐标
@@ -250,7 +257,7 @@ abstract class DeserializerBase {
           decorationOption.borderRadius as number
         );
       }
-     
+
       return await decoration.format(decorationOption);
     } else if (_decoration.type === "polygon") {
       let d: PolygonDecorationOption = _decoration;
@@ -264,6 +271,7 @@ abstract class DeserializerBase {
       throw Error("Invalid decoration");
     }
   }
+
   //安装按钮
   private async installButton(viewObject: ViewObject, buttons: ExportButton[]) {
     buttons.forEach(async (item: ExportButton) => {
@@ -276,12 +284,15 @@ abstract class DeserializerBase {
           this.buttonMap[item.type]
         );
 
-      let button: BaseButton = new buttonConstructor();
-      if (buttonName === "CustomButton") {
-        const child: ViewObject = await this.getObjectByJson(item.option.child);
-        button = new Buttons.CustomButton({
-          child,
-        });
+      let button: BaseButton = new buttonConstructor(item as any);
+      if (buttonName === "EventButton") {
+        let child;
+        if (item.option?.child) {
+          child = await this.getObjectByJson<EventButtonOption["child"]>(
+            item.option.child
+          );
+        }
+        button = new EventButton(item as any);
       }
 
       button.setSenseRadius(this.adaptScreenFontSize(item.radius));
@@ -289,8 +300,8 @@ abstract class DeserializerBase {
       button.setIconColor(item.iconColor);
       button.setId(item.id);
       viewObject.installButton(button);
-      const location: { x: number; y: number } = item.alignment as any;
-      button.setLocation(Alignment.format(location.x, location.y));
+      const alignment: { x: number; y: number } = item.alignment as any;
+      button.setLocation(Alignment.format(alignment.x, alignment.y));
     });
   }
 }

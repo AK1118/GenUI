@@ -1,6 +1,8 @@
 import IconBase from "@/core/lib/icon";
+import { IconNames } from "@/types/gesti";
 
 class MirrorIcon extends IconBase {
+  name: IconNames="mirrorIcon";
   private finalData: number[][][];
   get data(): number[][][] {
     if (!this.finalData) {

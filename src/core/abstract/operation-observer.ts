@@ -1,6 +1,7 @@
 import RenderObject from "../interfaces/render-object";
 import { Debounce, Throttle } from "../../utils/utils";
 import RenderBox from "../lib/rendering/renderbox";
+import { SimpleGestiEventObject } from "@/utils/event/event-manager";
 
 //操作监听类型
 /**
@@ -45,7 +46,7 @@ class Observer {
   }
 }
 
-abstract class OperationObserver {
+abstract class OperationObserver extends SimpleGestiEventObject{
   abstract renderBox:RenderBox;
   onHide(): void {}
   private observeRenderBox: RenderBox;

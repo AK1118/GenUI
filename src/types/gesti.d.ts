@@ -1,12 +1,11 @@
+import { BaseButton, Button } from "./button";
 import GestiController from "./controller";
 import {
   BoxDecorationOption,
   GenerateGraphicsOption,
   GeneratePolygonOption,
   GenerateRectAngleOption,
-  LineGradientDecoration,
   LineGradientDecorationOption,
-  PolygonDecorationOption,
 } from "./graphics";
 import {
   ExportXImage,
@@ -19,6 +18,18 @@ export declare interface SelectedBorderStyle {
   lineWidth?: number;
   padding?: number;
 }
+declare type IconNames =
+  | "closeIcon"
+  | "defaultIcon"
+  | "deleteIcon"
+  | "dragIcon"
+  | "imageIcon"
+  | "lockIcon"
+  | "mirrorIcon"
+  | "rotateIcon"
+  | "scaleIcon"
+  | "unlockIcon";
+
 interface Shadow {
   shadowColor?: string;
   shadowBlur?: number;
@@ -191,10 +202,7 @@ declare class Size {
   };
 }
 
-type ButtonOption = {
-  alignment?: Alignment;
-  icon?: Icon;
-};
+
 
 declare class Painter {}
 
@@ -593,20 +601,39 @@ export abstract class ViewObject {
    * - 颜色，dash,padding，lineWidth
    */
   public setSelectedBorder(option: SelectedBorderStyle): void;
-  //使用缓存
+  /**
+   * 使用缓存
+   */
   public useCache(): void;
-  //不使用缓存
+  /**
+   * 不使用缓存
+   */
   public unUseCache(): void;
-  //使固定，不能被手指拖拽操作等
+  /**
+   * 使固定，不能被手指拖拽操作等
+   */
   public makeFixed(): void;
-  //解除固定
+  /**
+   * 解除固定
+   */
   public makeUnfixed(): void;
-  //禁用旋转
+  /**
+   * 禁用旋转
+   */
   public disableRotate(): void;
-  //启动旋转
+  /**
+   * 启动旋转
+   */
   public enableRotate(): void;
-  //是否旋转
+  /**
+   * 是否可被旋转
+   */
   get angleDisabled(): boolean;
+  /**
+   * 约束缩放倍数
+   * @param constraints
+   */
+  setScaleConstraints(constraints: ValueConstraints<number>): void;
 }
 
 export class XImage {
@@ -815,64 +842,7 @@ type GestiControllerListenerTypes =
   | "onUpdateText"
   | "onRemove";
 
-declare abstract class BaseButton {
-  constructor(option?: ButtonOption);
-}
 
-declare abstract class Button extends BaseButton {
-  get btnLocation(): Alignment;
-  public setLocation(location: Alignment): void;
-  public setBackgroundColor(color: string): void;
-  public hideBackground(): void;
-  public setIconColor(color: string): void;
-  public setSenseRadius(senseRadius: number): void;
-  public setId(id: string): void;
-  get id(): string;
-}
-
-export class CloseButton extends Button {}
-export class DragButton extends Button {
-  constructor(options?: {
-    angleDisabled?: boolean;
-    buttonOption?: ButtonOption;
-  });
-}
-export class MirrorButton extends Button {}
-export class LockButton extends Button {}
-export class RotateButton extends Button {}
-/**
- * ### 创建一个自定义按钮对象
- * - 按钮可以自定义child和点击事件，但是点击事件不能被导出
- */
-export class CustomButton extends Button {
-  constructor(option: {
-    child: ViewObject;
-    onClick?: VoidFunction;
-    option?: ButtonOption;
-  });
-}
-export class SizeButton extends Button {
-  constructor(alignment: Alignment, option?: ButtonOption);
-}
-/**
- * 创建一个自定义事件按钮
- */
-export class EventButton extends CustomButton {}
-/**
- * 创建一个等比例缩放按钮
- */
-export class ARButton extends SizeButton {}
-export class UnLockButton extends Button {
-  constructor(option?: ButtonOption);
-}
-type VerticalAlignmentType = "top" | "bottom";
-export class VerticalButton extends Button {
-  constructor(location?: VerticalAlignmentType, option?: ButtonOption);
-}
-type HorizonAlignmentType = "left" | "right";
-export class HorizonButton extends Button {
-  constructor(location?: HorizonAlignmentType, option?: ButtonOption);
-}
 
 declare abstract class GraphicsBase<
   T extends GenerateGraphicsOption

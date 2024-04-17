@@ -6,19 +6,29 @@ import Rect from "../../lib/rect";
 import Vector from "../../lib/vector";
 import Widgets from "../../../static/widgets";
 import ViewObject from "../../abstract/view-object";
-import GestiConfig from "../../../config/gestiConfig";
+
 import DragButton from "./dragbutton";
 import { Icon } from "@/core/lib/icon";
 import { DefaultIcon } from "@/composite/icons";
-import SizeButton from "./sizeButton";
+import SizeButton, { ARButtonOption } from "./sizeButton";
+import { ARButton } from "@/index";
+
+type HorizonAlignmentType = "left" | "right";
+
+export interface HorizonButtonOption extends ARButtonOption {
+  location?: HorizonAlignmentType;
+}
 
 class HorizonButton extends SizeButton {
   readonly name: ButtonNames = "HorizonButton";
   protected icon: Icon = new DefaultIcon();
-  constructor(location?: "left" | "right", option?: ButtonOption) {
+  constructor(option?: HorizonButtonOption) {
+    const { location } = option ?? {};
     const _location =
       location === "right" ? Alignment.centerRight : Alignment.centerLeft;
-    super(_location || Alignment.centerRight, option);
+    super(Object.assign(option??{},{
+      alignment:_location
+    }));
   }
   public onUpWithInner(): void {
     this.computeSelfLocation();

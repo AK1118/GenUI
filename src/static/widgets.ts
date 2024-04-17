@@ -1,4 +1,3 @@
-import GestiConfig from "../config/gestiConfig";
 import Painter from "../core/lib/painter";
 
 /*使用Canvas渲染一些小部件*/
@@ -16,8 +15,8 @@ class Widgets {
         } = offset;
         // 填充三角形
         paint.beginPath();
-        paint.strokeStyle = GestiConfig.theme.buttonIconColor;
-        paint.fillStyle = GestiConfig.theme.buttonIconColor;
+        paint.strokeStyle = "black";
+        paint.fillStyle = "black";
         paint.moveTo(25 * scale + offsetX, 25 * scale + offsetY);
         paint.lineTo(105 * scale + offsetX, 25 * scale + offsetY);
         paint.lineTo(25 * scale + offsetX, 105 * scale + offsetY);
@@ -42,14 +41,14 @@ class Widgets {
         } = offset;
         // 填充三角形
         paint.beginPath();
-        paint.fillStyle = GestiConfig.theme.buttonIconColor;
-        paint.strokeStyle = GestiConfig.theme.buttonIconColor;
+        paint.fillStyle = "black";
+        paint.strokeStyle = "black";
         paint.arc(offsetX,offsetY,4,0,Math.PI*.6);
         paint.stroke();
         paint.closePath();
         paint.beginPath();
-        paint.fillStyle = GestiConfig.theme.buttonIconColor;
-        paint.strokeStyle = GestiConfig.theme.buttonIconColor;
+        paint.fillStyle = "black";
+        paint.strokeStyle = "black";
         paint.arc(offsetX,offsetY,4,Math.PI,Math.PI*1.6);
         paint.stroke();
         paint.closePath();
@@ -70,8 +69,8 @@ class Widgets {
         } = offset;
         const width:number=30,height:number=30;
         paint.beginPath();
-        paint.fillStyle = GestiConfig.theme.buttonIconColor;
-        paint.strokeStyle = GestiConfig.theme.buttonIconColor;
+        paint.fillStyle = "black";
+        paint.strokeStyle = "black";
         paint.moveTo(10 * scale + offsetX, 5 * scale + offsetY);
         paint.lineTo(0 * scale + offsetX, 15 * scale + offsetY);
         paint.lineTo(10 * scale + offsetX, 25 * scale + offsetY);
@@ -103,7 +102,7 @@ class Widgets {
         } = offset;
 
         paint.beginPath();
-        paint.strokeStyle = GestiConfig.theme.buttonIconColor;
+        paint.strokeStyle = "black";
         paint.lineWidth = 1;
         paint.moveTo(0 * scale + offsetX, 0 * scale + offsetY);
         paint.lineTo(10 * scale + offsetX, 10 * scale + offsetY);
@@ -127,7 +126,7 @@ class Widgets {
         } = offset;
 
         paint.beginPath();
-        paint.strokeStyle = GestiConfig.theme.buttonIconColor;
+        paint.strokeStyle = "black";
         paint.lineWidth = 1;
         paint.arc(5 + offsetX, offsetY + 3, 3, Math.PI, 0);
         paint.strokeRect(offsetX, offsetY + 4, 10, 6);
@@ -149,7 +148,7 @@ class Widgets {
             offsetY
         } = offset;
         paint.beginPath();
-        paint.strokeStyle = GestiConfig.theme.buttonIconColor;
+        paint.strokeStyle = "black";
         paint.lineWidth = 1;
         paint.arc(5 + offsetX, offsetY + 2, 3, Math.PI, 0);
         paint.strokeRect(offsetX, offsetY + 6, 10, 6);
@@ -169,7 +168,7 @@ class Widgets {
             offsetY:y
         } = offset;
         paint.beginPath();
-        paint.fillStyle=GestiConfig.theme.buttonIconColor;
+        paint.fillStyle="black";
         // paint.fillRect(x-5,y-5,10,10);
         paint.arc(x,y,5,0,Math.PI*2);
         paint.fill();

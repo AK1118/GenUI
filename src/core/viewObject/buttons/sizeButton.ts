@@ -13,16 +13,20 @@ import { DefaultIcon } from "@/composite/icons";
 import Alignment from "@/core/lib/painting/alignment";
 import { ButtonOption } from "@/core/abstract/baseButton";
 
+export interface ARButtonOption extends ButtonOption {
+  alignment:Alignment,
+}
+
 class SizeButton extends DragButton {
   readonly name: ButtonNames = "SizeButton";
   protected buttonAlignment: Alignment = Alignment.bottomRight;
   protected icon: Icon = new DefaultIcon();
-  constructor(location?: Alignment, option?: ButtonOption) {
+  constructor(option?: ARButtonOption) {
     super({
       angleDisabled: true,
-      buttonOption: option,
+      ...option,
     });
-    this.buttonAlignment = location||Alignment.center;
+    this.buttonAlignment = option?.alignment ?? Alignment.center;
     //this.beforeMounted(location);
   }
   /**

@@ -1,9 +1,12 @@
+import { IconNames } from "@/types/gesti";
 import Painter from "./painter";
 import Vector from "./vector";
+
 
 type IconDataType = number[][][];
 
 export interface Icon {
+  name:IconNames;
   color: string;
   size: number;
   //静态
@@ -12,20 +15,21 @@ export interface Icon {
   computedData: IconDataType;
   render(paint: Painter, location: Vector);
   setSize(value: number): void;
-  setColor(color:string):void;
+  setColor(color: string): void;
 }
 interface IconOption {
   color?: string;
   size?: number;
 }
 abstract class IconBase implements Icon {
+  abstract readonly name: IconNames;
   constructor(option?: IconOption) {
     this.color = option?.color ?? "#a4a6a8";
     this.size = option?.size ?? this.fixedSize;
     this.update();
   }
   setColor(color: string): void {
-    this.color=color;
+    this.color = color;
   }
   protected readonly fixedSize: number = 40;
   computedData: IconDataType = [];
@@ -81,17 +85,20 @@ abstract class IconBase implements Icon {
   //   console.log("变化后",this.computedData)
   //   return this;
   // }
-  private readonly center:Vector=new Vector(20,20);
-  private rotatePoint(point:Array<number>, angle: number): [x:number,y:number] {
-  const [px,py]=point;
-    const center=this.center;
-      const cos = Math.cos(angle);
-      const sin = Math.sin(angle);
-  
-      const x = (px - center.x) * cos - (py - center.y) * sin + center.x;
-      const y = (px - center.x) * sin + (py - center.y) * cos + center.y;
-  
-      return [x, y];
+  private readonly center: Vector = new Vector(20, 20);
+  private rotatePoint(
+    point: Array<number>,
+    angle: number
+  ): [x: number, y: number] {
+    const [px, py] = point;
+    const center = this.center;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+
+    const x = (px - center.x) * cos - (py - center.y) * sin + center.x;
+    const y = (px - center.x) * sin + (py - center.y) * cos + center.y;
+
+    return [x, y];
   }
 }
 

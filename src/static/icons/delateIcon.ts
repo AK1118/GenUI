@@ -1,6 +1,8 @@
 import IconBase from "@/core/lib/icon";
+import { IconNames } from "@/types/gesti";
 
-class DelateIcon extends IconBase{
+class DeleteIcon extends IconBase{
+    name: IconNames="deleteIcon";
     get data(): number[][][] {
         
         return [
@@ -30,4 +32,4 @@ class DelateIcon extends IconBase{
     
 }
 
-export default DelateIcon;
+export default DeleteIcon;

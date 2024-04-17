@@ -3,6 +3,7 @@ import {
   Gesti,
   GraffitiCloser,
   ImportAllInterceptor,
+  Painter,
   ScreenUtilOption,
   ScreenUtils,
   TextOptions,
@@ -299,6 +300,15 @@ interface ImageToolKitController {
    * 获取该控制器的屏幕适配器
    */
   getScreenUtil(): ScreenUtils;
+
+  /**
+   * 获取Gesti内画笔
+   */
+  getPainter(): Painter;
+  /**
+   * 获取Gesti可视区域画布大小
+   */
+  getCanvasSize(): Size;
 }
 /**
  * 控制器类，提供接口供给用户使用
@@ -366,6 +376,8 @@ declare interface GestiControllerInterface
 }
 
 declare class GestiController implements GestiControllerInterface {
+  getPainter(): Painter;
+  getCanvasSize(): Size;
   setLayer(layer: number, view?: ViewObject): void;
   hide(view?: ViewObject): void;
   show(view?: ViewObject): void;

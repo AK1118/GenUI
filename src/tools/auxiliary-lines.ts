@@ -1,4 +1,3 @@
-import GestiConfig from "../config/gestiConfig";
 import Painter from "../core/lib/painter";
 import Rect from "../core/lib/rect";
 import Vector from "../core/lib/vector";
@@ -22,7 +21,6 @@ class AuxiliaryLine {
   private readonly d: number = 3;
   //虚线
   private readonly dash=[3,3];
-  private readonly color=GestiConfig.theme.dashedLineColor
   private readonly canvasRect:Rect;
   private readonly views:Array<ViewObject>;
   //参考点
@@ -119,7 +117,7 @@ class AuxiliaryLine {
       paint.lineTo(p2.x, p2.y);
     });
     paint.setLineDash(this.dash)
-    paint.strokeStyle = this.color;
+    paint.strokeStyle = "black";
     paint.lineWidth = 1;
     paint.stroke();
     paint.closePath();

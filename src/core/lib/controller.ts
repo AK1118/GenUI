@@ -1,6 +1,6 @@
 import ViewObject from "../abstract/view-object";
 import { ViewObjectFamily } from "../enums";
-import ImageToolkit from "./image-toolkit";
+import ImageToolkit from "./image-tool-kit/image-toolkit";
 import GestiControllerInterface, {
   BindControllerInterface,
 } from "../interfaces/gesticontroller";
@@ -11,6 +11,7 @@ import {
   GraffitiCloser,
   ImportAllInterceptor,
   ScreenUtilOption,
+  Size,
   TextOptions,
   XImageOption,
 } from "@/types/gesti";
@@ -19,18 +20,27 @@ import Gesti from "./gesti";
 import { GestiControllerListenerTypes } from "@/types/controller";
 import { BoxDecorationOption } from "@/types/graphics";
 import DecorationBase from "../bases/decoration-base";
+import ImageToolkitAdapterController from "./image-tool-kit/adpater";
+import Painter from "./painter";
 
 declare type CenterAxis = "vertical" | "horizon";
 
 abstract class GesteControllerImpl implements GestiControllerInterface {
+  readonly key: string = Math.random().toString(16).substring(2);
   /**
    * @ImageToolkit
    * @private
    */
-  protected kit: ImageToolkit;
-  constructor(kit?: ImageToolkit) {
+  protected kit: ImageToolkitAdapterController;
+  constructor(kit?: ImageToolkitAdapterController) {
     //使用控制器时，取消原有控制
     this.kit = kit;
+  }
+  getCanvasSize(): Size {
+    return this.kit.getCanvasSize();
+  }
+  getPainter(): Painter {
+    return this.kit.getPainter();
   }
   setLayer(
     layer: number,
@@ -389,14 +399,14 @@ class GestiController
   implements BindControllerInterface
 {
   constructor(gesti?: Gesti) {
-    super(gesti?.kit);
+    super(gesti?.simpleAdapter);
   }
   initialized: boolean = false;
   bindController(controller: GestiControllerInterface): void {
     throw new Error("Method not implemented.");
   }
   bindGesti(gesti: Gesti): void {
-    this.kit = gesti.kit;
+    this.kit = gesti.simpleAdapter;
     this.initialized = gesti.initialized;
   }
   destroyGesti(): void {

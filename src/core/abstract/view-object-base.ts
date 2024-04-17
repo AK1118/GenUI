@@ -6,7 +6,7 @@ import { Point } from "../lib/vertex";
 import Button, { BaseButton } from "./baseButton";
 import OperationObserver from "./operation-observer";
 import { ViewObjectFamily } from "../enums";
-import ImageToolkit from "../lib/image-toolkit";
+import ImageToolkit from "../lib/image-tool-kit/image-toolkit";
 import { Delta } from "../../utils/event/event";
 import { ViewObjectExportEntity } from "@/types/serialization";
 import {
@@ -23,6 +23,10 @@ import {
 } from "Graphics";
 import DecorationBase from "../bases/decoration-base";
 import PolygonDecoration from "../lib/rendering/decorations/polygon-decoration";
+import Constraints from "../lib/rendering/constraints";
+import ImageToolkitAdapterController from "../lib/image-tool-kit/adpater";
+import CatchPointUtil from "@/utils/event/catchPointUtil";
+import Drag from "@/utils/event/drag";
 
 class ViewObjectRenderBox extends RenderBox {}
 
@@ -32,6 +36,7 @@ class ViewObjectRenderBox extends RenderBox {}
 abstract class BaseViewObject<
   D extends DecorationBase
 > extends OperationObserver {
+  protected readonly drag = new Drag();
   //被移除禁用
   public _disabledRemove: boolean = false;
   protected decoration: D;
@@ -41,6 +46,10 @@ abstract class BaseViewObject<
   protected offScreenPainter: Painter;
   private _isCache: boolean = false;
   private _didChanged: boolean = false;
+  private _scaleConstraints: ValueConstraints<number> = {
+    min: 0.1,
+    max: Infinity,
+  };
   protected get canRenderCache(): boolean {
     return this._isCache && this.offScreenCreated;
   }
@@ -52,6 +61,13 @@ abstract class BaseViewObject<
   }
   protected get didChanged(): boolean {
     return this._didChanged;
+  }
+  //约束倍数变换大小
+  public setScaleConstraints(constraints: ValueConstraints<number>): void {
+    this._scaleConstraints = constraints;
+  }
+  protected getScaleConstraints(): ValueConstraints<number> {
+    return this._scaleConstraints;
   }
   public disableRemove(): void {
     this._disabledRemove = true;
@@ -136,7 +152,7 @@ abstract class BaseViewObject<
   //是否被选中
   public selected: boolean = false;
   //图层唯一身份码
-  public readonly key: string | number = +new Date();
+  // public readonly key: string | number = +new Date();
   //是否处于镜像
   protected isMirror: boolean = false;
   //是否隐藏
@@ -163,10 +179,10 @@ abstract class BaseViewObject<
   //元素唯一id
   public _id: string;
   //image kit 对象
-  private kit: ImageToolkit;
+  private kit: ImageToolkitAdapterController;
   //对象层级 => 对象在数组中的位置
   private layer: number = null;
-  protected setKit(kit: ImageToolkit) {
+  protected setKit(kit: ImageToolkitAdapterController) {
     this.kit = kit;
   }
   //初始化时的尺寸，用于计算scaleWidth,和scaleHeight
@@ -282,16 +298,13 @@ abstract class BaseViewObject<
     );
   }
 
-  public getKit(): ImageToolkit {
-    return this.kit;
-  }
   public get absoluteScale(): number {
     return this.renderBox.absoluteScale;
   }
   /**
    * 被加入gesti内时调用
    */
-  protected ready(kit: ImageToolkit): void {}
+  protected ready(kit: ImageToolkitAdapterController): void {}
 
   /**
    * 重置按钮
@@ -403,6 +416,10 @@ abstract class BaseViewObject<
   ): Promise<ButtonType | undefined> {
     return Promise.resolve(this.getButtonByIdSync(id));
   }
+  public getKit(): ImageToolkitAdapterController {
+    return this.kit;
+  }
+  
 }
 
 export default BaseViewObject;

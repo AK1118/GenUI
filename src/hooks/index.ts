@@ -1,4 +1,3 @@
-import { GestiConfigOption } from "../config/gestiConfig";
 import Gesti from "../core/lib/gesti";
 import GestiReader from "../core/bases/deserializer-base";
 import TextBox from "../core/viewObject/text/text";
@@ -20,6 +19,7 @@ import HorizonButton from "../core/viewObject/buttons/horizonButton";
 import LockButton from "../core/viewObject/buttons/lockbutton";
 import VerticalButton from "../core/viewObject/buttons/verticalButton";
 import {
+  GestiConfigOption,
   GraffitiCloser,
   ImportAllInterceptor,
   TextOptions,

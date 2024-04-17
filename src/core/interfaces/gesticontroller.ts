@@ -3,6 +3,7 @@ import {
   GraffitiCloser,
   ImportAllInterceptor,
   ScreenUtilOption,
+  Size,
   TextOptions,
   XImageOption,
 } from "@/types/gesti";
@@ -16,6 +17,7 @@ import {
   GestiControllerListenerTypes,
   GraffitiType,
 } from "@/types/controller";
+import Painter from "../lib/painter";
 
 export interface BindControllerInterface {
   initialized: boolean;
@@ -284,6 +286,10 @@ interface ImageToolKitController {
    * 获取该控制器的屏幕适配器
    */
   getScreenUtil(): ScreenUtils;
+
+  getPainter(): Painter;
+
+  getCanvasSize(): Size;
 }
 /**
  * 控制器类，提供接口供给用户使用

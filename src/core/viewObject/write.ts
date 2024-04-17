@@ -1,8 +1,7 @@
 import OperationObserver from "../abstract/operation-observer";
 import ViewObject from "../abstract/view-object";
 import Painter from "../lib/painter";
-import { ViewObjectFamily } from "../enums";
-import GestiConfig from "../../config/gestiConfig";
+import { ViewObjectFamily } from "../enums"
 import {
   FetchXImageForImportCallback,
   ViewObjectExportEntity,
@@ -128,7 +127,7 @@ class WriteViewObj extends ViewObject {
     paint.beginPath();
     const width = this.rect.size.width,
       height = this.rect.size.height;
-    paint.fillStyle = GestiConfig.theme.textSelectedMaskBgColor;
+    paint.fillStyle ="black";
     paint.fillRect(-width >> 1, -height >> 1, width, height);
     paint.closePath();
     paint.fill();

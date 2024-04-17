@@ -166,6 +166,10 @@ class Rect extends ObserverObj {
     this._position.add(delta);
     this.report(delta, "addPosition");
   }
+  //设置绝对大小，不依赖于瞬时scale
+  public setAbsoluteScale(scale:number):void{
+    this._absoluteScale=scale;
+  }
   public setDeltaScale(deltaScale: number, change?: boolean): void {
     this._absoluteScale *= deltaScale;
     if (deltaScale === this.deltaScale) return;

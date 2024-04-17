@@ -212,4 +212,5 @@ declare type ButtonNames =
   | "RotateButton"
   | "SizeButton"
   | "VerticalButton"
-  | "CustomButton";
+  | "CustomButton"
+  | "EventButton";

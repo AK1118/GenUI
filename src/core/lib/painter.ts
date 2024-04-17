@@ -129,6 +129,7 @@ class Painter implements Painter {
     if (fillRule) {
       this.paint?.clip(fillRule);
     } else {
+      //部分平台没有该参数处理逻辑
       this.paint?.clip();
     }
   }
