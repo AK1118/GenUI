@@ -107,9 +107,7 @@ abstract class ImageToolkitAdapterController
   remove(view?: ViewObject): boolean {
     const _view = view || this.focusedViewObject;
     if (!_view) return false;
-    this.setlayers(
-      this.layers.filter((_) => _.key != _view.key)
-    );
+    this.setlayers(this.layers.filter((_) => _.key != _view.key));
     this.callHook("onRemove", null);
     this.render();
     return true;
@@ -133,9 +131,7 @@ abstract class ImageToolkitAdapterController
   private deleteViewObject(view: ViewObject): boolean {
     if (!view) return false;
     const key: string | number = view.key;
-    const newList: Array<ViewObject> = this.layers.filter(
-      (_) => _.key !== key
-    );
+    const newList: Array<ViewObject> = this.layers.filter((_) => _.key !== key);
     this.setlayers(newList);
     return false;
   }
@@ -306,16 +302,25 @@ abstract class ImageToolkitAdapterController
            * - dpr双方必须一致   收方dpr等于送方dpr
            *
            */
-          this.screenUtils = this.generateScreenUtils({
-            ...info.screen,
-            devicePixelRatio:
-              this.screenUtils.devicePixelRatio ??
-              info.screen?.devicePixelRatio ??
-              1,
-            deviceCanvasRatio: this.screenUtils.deviceCanvasRatio,
-            canvasWidth: this.canvasRect.size.width,
-            canvasHeight: this.canvasRect.size.height,
-          });
+
+          if (this.screenUtils) {
+            this.screenUtils = this.generateScreenUtils({
+              ...info.screen,
+              devicePixelRatio:
+                this.screenUtils?.devicePixelRatio ??
+                info.screen?.devicePixelRatio ??
+                1,
+              deviceCanvasRatio: this.screenUtils?.deviceCanvasRatio,
+              canvasWidth: this.canvasRect.size.width,
+              canvasHeight: this.canvasRect.size.height,
+            });
+          } else {
+            this.screenUtils = this.generateScreenUtils({
+              ...info.screen,
+              canvasWidth: this.canvasRect.size.width,
+              canvasHeight: this.canvasRect.size.height,
+            });
+          }
         }
         //还原另一端的屏幕适配器
         const otherScreenUtils = ScreenUtils.format(info.screen);
@@ -403,18 +408,12 @@ abstract class ImageToolkitAdapterController
     super.blurViewObject(view);
   }
   cancelAll(): void {
-    this.layers.forEach((item: ViewObject) =>
-      this.handleCancelView(item)
-    );
+    this.layers.forEach((item: ViewObject) => this.handleCancelView(item));
     this.render();
   }
   layerLower(view?: ViewObject): void {
     let _view = view || this.focusedViewObject;
-    this.tool.arrangeLayer(
-      this.layers,
-      _view,
-      LayerOperationType.lower
-    );
+    this.tool.arrangeLayer(this.layers, _view, LayerOperationType.lower);
     this.render();
   }
   layerRise(view?: ViewObject): void {
@@ -429,11 +428,7 @@ abstract class ImageToolkitAdapterController
   }
   layerBottom(view?: ViewObject): void {
     let _view = view || this.focusedViewObject;
-    this.tool.arrangeLayer(
-      this.layers,
-      _view,
-      LayerOperationType.bottom
-    );
+    this.tool.arrangeLayer(this.layers, _view, LayerOperationType.bottom);
     this.render();
   }
   unLock(view?: ViewObject): void {

@@ -1,3 +1,3 @@
-import Gesti from "./dist/index.esm";
+import Gesti from "./dist/index.esm.js";
 export default Gesti;
-export * from "./dist/index.esm";
+export * from "./dist/index.esm.js";
