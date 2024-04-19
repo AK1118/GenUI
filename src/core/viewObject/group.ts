@@ -77,7 +77,7 @@ abstract class GroupBase extends ViewObject {
   public didChangeAngle(angle: number): void {
     this.updateChildrenAngle();
   }
-  protected didChangeScaleHeight(): void {
+   didChangeScaleHeight(): void {
     this.views.forEach((_) => {
       _.setFixedSize(
         new Size(
@@ -90,7 +90,7 @@ abstract class GroupBase extends ViewObject {
       _.addPosition(this.delta.deltaX * -1, this.delta.deltaY * -1);
     });
   }
-  protected didChangeScaleWidth(): void {
+   didChangeScaleWidth(): void {
     this.views.forEach((_) => {
       _.setFixedSize(
         new Size(
@@ -108,7 +108,7 @@ abstract class GroupBase extends ViewObject {
     });
   }
 
-  protected didChangeSize(size: Size): void {
+   didChangeSize(size: Size): void {
     this.views.forEach((_) => {
       _.addPosition(this.delta.deltaX, this.delta.deltaY);
     });
@@ -161,14 +161,14 @@ abstract class GroupBase extends ViewObject {
       _.addPosition(deltaX, deltaY);
     });
   }
-  protected didChangePosition(position: Vector): void {
+   didChangePosition(position: Vector): void {
     this.updateChildrenLocation();
   }
   /**
    * @description 位置通过加法被改变
    * @param delta
    */
-  protected didAddPosition(delta: Vector): void {
+   didAddPosition(delta: Vector): void {
     this.views.forEach((_) => {
       _.addPosition(delta.x, delta.y);
     });

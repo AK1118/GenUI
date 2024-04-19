@@ -1,46 +1,15 @@
 import Button, { BaseButton } from "../../abstract/baseButton";
 import ViewObject from "../../abstract/view-object";
 import CatchPointUtil from "../../../utils/event/catchPointUtil";
-import Drag from "../../../utils/event/drag";
-import { FuncButtonTrigger, ViewObjectFamily } from "../../enums";
-import GestiEventManager, { GestiEvent } from "../../../utils/event/event";
-import Gesture from "../../../utils/event/gesture";
-import GestiController from "../../interfaces/gesticontroller";
+import { FuncButtonTrigger } from "../../enums";
+import GestiEventManager from "../../../utils/event/event";
 import Painter from "../painter";
 import Rect from "../rect";
 import Vector from "../vector";
-import ImageBox from "../../viewObject/image";
-import TextBox from "../../viewObject/text/text";
 import WriteFactory from "../../viewObject/write/write-factory";
-import { ViewObject as ViewObjectD, XImageOption } from "@/types/gesti";
-import XImage from "../ximage";
-import {
-  ViewObjectExportEntity,
-  ViewObjectExportWrapper,
-  ViewObjectImportEntity,
-} from "@/types/serialization";
-import {
-  ExportAllInterceptor,
-  GraffitiCloser,
-  ImportAllInterceptor,
-  InitializationOption,
-  TextOptions,
-} from "@/types/gesti";
+import { InitializationOption } from "@/types/gesti";
 import WriteViewObj from "../../viewObject/write";
-import ScreenUtils from "@/utils/screenUtils/ScreenUtils";
-import { ScreenUtilOption } from "Gesti";
-import Platform from "../../viewObject/tools/platform";
-import Deserializer from "@/utils/deserializer/Deserializer";
-import {
-  CenterAxis,
-  GestiControllerListenerTypes,
-  GraffitiType,
-} from "@/types/controller";
-import { BoxDecorationOption } from "@/types/graphics";
-import DecorationBase from "../../bases/decoration-base";
 import ImageToolkitBase, { EventHandlerState } from "./image-toolkit-base";
-import { LayerOperationType } from "./utils";
-import { ListenerHook } from "../listener";
 import gestiEventManager from "@/utils/event/event-manager";
 
 class ImageToolkit extends ImageToolkitBase {
@@ -66,32 +35,32 @@ class ImageToolkit extends ImageToolkitBase {
   private bindEvent(): void {
     this.eventHandler = new GestiEventManager().getEvent(this);
     if (this.eventHandler == null) return;
-    // this.eventHandler
-    //   .down((v) => {
-    //     const event: Vector | Vector[] = this.correctEventPosition(v);
-    //     gestiEventManager.down(this.key, event);
-    //     this.render();
-    //   })
-    //   .move((v) => {
-    //     const event: Vector | Vector[] = this.correctEventPosition(v);
-    //     gestiEventManager.move(this.key, event);
-    //     this.render();
-    //   })
-    //   .up((v) => {
-    //     const event: Vector | Vector[] = this.correctEventPosition(v);
-    //     gestiEventManager.up(this.key, event);
-    //     this.render();
-    //   })
-    //   .wheel((e) => {
-    //     // const { deltaY } = e;
-    //     gestiEventManager.wheel(this.key, e);
-    //     this.render();
-    //   });
     this.eventHandler
-      .down(this.onDown)
-      .move(this.onMove)
-      .up(this.onUp)
-      .wheel(this.onWheel);
+      .down((v) => {
+        const event: Vector | Vector[] = this.correctEventPosition(v);
+        if (!Array.isArray(event)) gestiEventManager.down(event);
+        this.render();
+      })
+      .move((v) => {
+        const event: Vector | Vector[] = this.correctEventPosition(v);
+        if (!Array.isArray(event)) gestiEventManager.move(event);
+        this.render();
+      })
+      .up((v) => {
+        const event: Vector | Vector[] = this.correctEventPosition(v);
+        if (!Array.isArray(event)) gestiEventManager.up(event);
+        this.render();
+      })
+      .wheel((e) => {
+        // const { deltaY } = e;
+        gestiEventManager.wheel(e);
+        this.render();
+      });
+    // this.eventHandler
+    //   .down(this.onDown)
+    //   .move(this.onMove)
+    //   .up(this.onUp)
+    //   .wheel(this.onWheel);
     this.debug(["Event Bind,", this.eventHandler]);
   }
   public onDown(v: GestiEventParams): void {
@@ -276,24 +245,24 @@ class ImageToolkit extends ImageToolkitBase {
   }
 
   private checkFuncButton(eventPosition: Vector): boolean {
-    const _button: BaseButton | boolean =
-      this.focusedViewObject.checkFuncButton(eventPosition);
-    const result: any = _button;
-    //确保是按钮 且 对象以及被选中
-    if (result instanceof Button && this.focusedViewObject.selected) {
-      this._inObjectArea = true;
-      const button: BaseButton = result;
-      if (button.trigger == FuncButtonTrigger.drag) {
-        button.onSelected();
-        this.drag.catchViewObject(button.rect, eventPosition);
-      } else if (button.trigger == FuncButtonTrigger.click) {
-        button.effect();
-      }
-      return true;
-    } else {
-      this.drag.cancel();
-      this.gesture.cancel();
-    }
+    // const _button: BaseButton | boolean =
+    //   this.focusedViewObject.checkFuncButton(eventPosition);
+    // const result: any = _button;
+    // //确保是按钮 且 对象以及被选中
+    // if (result instanceof Button && this.focusedViewObject.selected) {
+    //   this._inObjectArea = true;
+    //   const button: BaseButton = result;
+    //   if (button.trigger == FuncButtonTrigger.drag) {
+    //     button.onSelected();
+    //     this.drag.catchViewObject(button.rect, eventPosition);
+    //   } else if (button.trigger == FuncButtonTrigger.click) {
+    //     button.effect();
+    //   }
+    //   return true;
+    // } else {
+    //   this.drag.cancel();
+    //   this.gesture.cancel();
+    // }
     return false;
   }
   /**

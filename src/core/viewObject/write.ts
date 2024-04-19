@@ -1,7 +1,7 @@
 import OperationObserver from "../abstract/operation-observer";
 import ViewObject from "../abstract/view-object";
 import Painter from "../lib/painter";
-import { ViewObjectFamily } from "../enums"
+import { ViewObjectFamily } from "../enums";
 import {
   FetchXImageForImportCallback,
   ViewObjectExportEntity,
@@ -127,7 +127,7 @@ class WriteViewObj extends ViewObject {
     paint.beginPath();
     const width = this.rect.size.width,
       height = this.rect.size.height;
-    paint.fillStyle ="black";
+    paint.fillStyle = "black";
     paint.fillRect(-width >> 1, -height >> 1, width, height);
     paint.closePath();
     paint.fill();
@@ -210,10 +210,10 @@ class WriteViewObj extends ViewObject {
     this._scalex = this.size.width / this.fixedSize.width;
     this._scaley = this.size.height / this.fixedSize.height;
   }
-  protected didChangeScaleWidth(): void {
+  didChangeScaleWidth(): void {
     this._scalex = this.size.width / this.fixedSize.width;
   }
-  protected didChangeScaleHeight(): void {
+  didChangeScaleHeight(): void {
     this._scaley = this.size.height / this.fixedSize.height;
   }
   get value(): any {

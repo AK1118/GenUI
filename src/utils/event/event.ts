@@ -11,17 +11,18 @@ class Delta implements Delta {
     this._deltaX = deltaX;
     this._deltaY = deltaY;
   }
-  static get zero():Delta{
-    return new Delta(0,0);
+  static get zero(): Delta {
+    return new Delta(0, 0);
   }
   update(vector: Vector) {
-    if(vector.x===this.beforeVector.x&&vector.y===this.beforeVector.y)return;
+    if (vector.x === this.beforeVector.x && vector.y === this.beforeVector.y)
+      return;
     //初始化时before 和 vector 坐标相等
-    if(this.beforeVector.x===0&&this.beforeVector.y===0){
+    if (this.beforeVector.x === 0 && this.beforeVector.y === 0) {
       this.beforeVector = vector;
     }
     //两个相同不更新
-    
+
     [this._deltaX, this._deltaY] = Vector.sub(
       vector,
       this.beforeVector
@@ -34,21 +35,21 @@ class Delta implements Delta {
   get deltaY(): number {
     return this._deltaY;
   }
-  get delta():[deltaX:number,deltaY:number]{
-    return [this._deltaX,this._deltaY];
+  get delta(): [deltaX: number, deltaY: number] {
+    return [this._deltaX, this._deltaY];
   }
-  get deltaVector():Vector{
-    return new Vector(this._deltaX,this._deltaY);
+  get deltaVector(): Vector {
+    return new Vector(this._deltaX, this._deltaY);
   }
-  public clean(){
-    this._deltaX=this._deltaY=0;
+  public clean() {
+    this._deltaX = this._deltaY = 0;
   }
-  public cleanCurrentAndBefore(){
+  public cleanCurrentAndBefore() {
     this.clean();
     this.beforeVector.toZero();
   }
-  get isZero():boolean{
-    return this._deltaX===0&&this._deltaY===0;
+  get isZero(): boolean {
+    return this._deltaX === 0 && this._deltaY === 0;
   }
 }
 
@@ -97,7 +98,7 @@ class GestiTouchEvent implements GestiEvent {
   down(down: GestiEventFunction): GestiEvent {
     window.addEventListener("touchstart", (_e: TouchEvent) => {
       if (this.disabled) return;
-      const touches: TouchList = _e.targetTouches??_e.touches;
+      const touches: TouchList = _e.targetTouches ?? _e.touches;
       if (touches?.length >= 2) {
         down.bind(this.kit)(this.twoFingers(touches));
       } else {
@@ -120,7 +121,7 @@ class GestiTouchEvent implements GestiEvent {
   move(move: GestiEventFunction): GestiEvent {
     window.addEventListener("touchmove", (_e: TouchEvent) => {
       if (this.disabled) return;
-      const touches: TouchList = _e.targetTouches??_e.touches;
+      const touches: TouchList = _e.targetTouches ?? _e.touches;
       if (touches?.length >= 2) {
         move.bind(this.kit)(this.twoFingers(touches));
       } else {
@@ -135,10 +136,12 @@ class GestiTouchEvent implements GestiEvent {
     //手机端不用适配
   }
 }
+
 /**
  * 电脑端
  */
 class GestiMouseEvent implements GestiEvent {
+  kit: ImageToolkit;
   constructor(kit: ImageToolkit) {
     this.kit = kit;
   }
@@ -178,7 +181,6 @@ class GestiMouseEvent implements GestiEvent {
       wheel.bind(this.kit)(e);
     });
   }
-  kit: ImageToolkit;
 }
 
 export { GestiEvent, Delta };

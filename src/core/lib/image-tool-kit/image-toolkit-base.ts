@@ -55,7 +55,7 @@ abstract class ImageToolkitBase {
   //绘制对象工厂  //绘制对象，比如签字、矩形、圆形等
   protected writeFactory: WriteFactory;
   protected hoverViewObject: ViewObject = null;
-  protected setlayers(viewObjectArray: Array<ViewObject>) {
+  protected setLayers(viewObjectArray: Array<ViewObject>) {
     this._viewObjectList = viewObjectArray;
   }
   protected cleanlayers(): void {

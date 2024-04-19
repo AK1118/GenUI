@@ -1,4 +1,8 @@
-import RenderObject from "../interfaces/render-object";
+import RenderObject, {
+  EventRenderObjectWithOperationObserve,
+  RenderObjectWithEvent,
+  SimpleRenderObject,
+} from "../interfaces/render-object";
 import Painter from "../lib/painter";
 import Rect, { Size } from "../lib/rect";
 import Vector from "../lib/vector";
@@ -27,6 +31,7 @@ import Constraints from "../lib/rendering/constraints";
 import ImageToolkitAdapterController from "../lib/image-tool-kit/adpater";
 import CatchPointUtil from "@/utils/event/catchPointUtil";
 import Drag from "@/utils/event/drag";
+import { SimpleGestiEventObject } from "@/utils/event/event-object";
 
 class ViewObjectRenderBox extends RenderBox {}
 
@@ -35,7 +40,7 @@ class ViewObjectRenderBox extends RenderBox {}
  */
 abstract class BaseViewObject<
   D extends DecorationBase
-> extends OperationObserver {
+> extends EventRenderObjectWithOperationObserve {
   protected readonly drag = new Drag();
   //被移除禁用
   public _disabledRemove: boolean = false;
@@ -84,7 +89,7 @@ abstract class BaseViewObject<
   get angleDisabled(): boolean {
     return this._angleDisabled;
   }
-  protected _didChangedAll(): void {
+  _didChangedAll(): void {
     this._didChanged = true;
   }
   protected reBuild(): void {
@@ -419,7 +424,6 @@ abstract class BaseViewObject<
   public getKit(): ImageToolkitAdapterController {
     return this.kit;
   }
-  
 }
 
 export default BaseViewObject;

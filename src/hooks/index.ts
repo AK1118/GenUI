@@ -19,6 +19,7 @@ import HorizonButton from "../core/viewObject/buttons/horizonButton";
 import LockButton from "../core/viewObject/buttons/lockbutton";
 import VerticalButton from "../core/viewObject/buttons/verticalButton";
 import {
+  EventHandle,
   GestiConfigOption,
   GraffitiCloser,
   ImportAllInterceptor,

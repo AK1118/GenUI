@@ -7,6 +7,7 @@ import GestiControllerInterface, {
 import Vector from "./vector";
 import XImage from "./ximage";
 import {
+  EventHandle,
   ExportAllInterceptor,
   GraffitiCloser,
   ImportAllInterceptor,

@@ -1,5 +1,9 @@
 import { FuncButtonTrigger } from "@/core/enums";
-import RenderObject from "../interfaces/render-object";
+import RenderObject, {
+  RenderObjectWithEvent,
+  RenderObjectWithEventPriority,
+  SimpleRenderObject,
+} from "../interfaces/render-object";
 import Painter from "@/core/lib/painter";
 import CatchPointUtil from "../../utils/event/catchPointUtil";
 import ViewObject from "./view-object";
@@ -11,8 +15,8 @@ import Alignment from "../lib/painting/alignment";
 import { ExportButton } from "Serialization";
 import { IconNames } from "@/types/gesti";
 import * as Icons from "@/composite/icons";
-import { SimpleGestiEventObject } from "@/utils/event/event-manager";
 import Drag from "@/utils/event/drag";
+import RenderBox from "../lib/rendering/renderbox";
 
 const iconMap = {
   defaultIcon: Icons.DefaultIcon,
@@ -30,18 +34,18 @@ const iconMap = {
 export const IconFormat = (name: IconNames, args: any) => {
   const IconConstruct = iconMap[name];
   console.log("获取", name);
-  if(!IconConstruct)return;
+  if (!IconConstruct) return;
   return new IconConstruct(args);
 };
 export type ButtonOption = {
   alignment?: Alignment;
   icon?: Icon;
 };
+
+class ButtonRenderBox extends RenderBox {}
+
 //按钮抽象类
-export abstract class BaseButton
-  extends SimpleGestiEventObject
-  implements RenderObject
-{
+export abstract class BaseButton extends RenderObjectWithEventPriority {
   protected icon: Icon = new DefaultIcon({
     color: "#c1c1c1",
     size: 10,
@@ -70,11 +74,14 @@ export abstract class BaseButton
     this.customIcon = option?.icon;
     this.option = option ?? {};
   }
+  onWheel(e: WheelEvent): void {
+    throw new Error("Method not implemented.");
+  }
   protected abstract buttonAlignment: Alignment;
   abstract readonly name: ButtonNames;
   //隐藏
   disabled: boolean = false;
-  rect: Rect = new Rect();
+  renderBox: RenderBox = new ButtonRenderBox();
   relativeRect: Rect = new Rect();
   master: ViewObject;
   //渲染UI按钮半径
@@ -95,27 +102,27 @@ export abstract class BaseButton
     return this._id;
   }
   private drag: Drag = new Drag();
-  onDown(e: Vector | Vector[]): void {
-    if (!Array.isArray(e)) {
-      const selected = CatchPointUtil.checkInsideArc(
-        this.position,
-        e,
-        this.radius
-      );
-      console.log(selected);
-
-      if (selected) {
-        this.drag.catchViewObject(this.rect, e);
-        this.master.cancelDrag();
-        this.master.onSelected();
-      }
+  onDown(e: Vector): boolean {
+    const selected = CatchPointUtil.checkInsideArc(
+      this.position,
+      e,
+      this.radius
+    );
+    if (selected) {
+      this.drag.catchViewObject(this.rect, e);
+      this.master.cancelDrag();
+      this.master.onSelected();
+      return false;
     }
+    return true;
   }
-  onMove(e: Vector | Vector[]): void {
+  onMove(e: Vector): boolean {
     this.drag.update(e);
+    return true;
   }
-  onUp(e: Vector | Vector[]): void {
+  onUp(e): boolean {
     this.drag.cancel();
+    return true;
   }
   get mounted(): boolean {
     return this._mounted;
@@ -210,7 +217,7 @@ export abstract class BaseButton
     if (icon instanceof IconBase) {
       this.icon = icon;
     } else {
-      this.icon = IconFormat(icon.name, icon)??this.icon;
+      this.icon = IconFormat(icon.name, icon) ?? this.icon;
     }
 
     //icon的大小等于半径

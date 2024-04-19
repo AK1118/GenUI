@@ -26,6 +26,7 @@ import DecorationBase from "../bases/decoration-base";
 import { SelectedBorderStyle } from "@/types/gesti";
 import ImageToolkitAdapterController from "../lib/image-tool-kit/adpater";
 import CatchPointUtil from "@/utils/event/catchPointUtil";
+
 /**
  *
  * 缓存要做到 数据层缓存，渲染层缓存
@@ -36,17 +37,12 @@ import CatchPointUtil from "@/utils/event/catchPointUtil";
  *
  *
  */
-abstract class ViewObject<D extends DecorationBase = DecorationBase>
-  extends BaseViewObject<D>
-  implements RenderObject
-{
+abstract class ViewObject<
+  D extends DecorationBase = DecorationBase
+> extends BaseViewObject<D> {
   //辅助线
   private auxiliary: AuxiliaryLine;
   public originFamily: ViewObjectFamily;
-
-  constructor() {
-    super();
-  }
 
   //获取对象值
   abstract get value(): any;
@@ -56,7 +52,7 @@ abstract class ViewObject<D extends DecorationBase = DecorationBase>
     //初始化一些数据，准备挂载
     this.ready(kit);
     //添加监听
-    this.addObserver(this.renderBox);
+    this.observeStart();
     //初始化矩阵点
     this.rect.updateVertex();
     //挂载
@@ -159,7 +155,7 @@ abstract class ViewObject<D extends DecorationBase = DecorationBase>
       paint.save();
       if (this.isMirror) paint.scale(-1, 1);
       //按钮
-      this.updateFuncButton(paint);
+      this.updateButtons(paint);
       paint.restore();
     }
   }
@@ -224,7 +220,7 @@ abstract class ViewObject<D extends DecorationBase = DecorationBase>
    * @description 刷新按钮
    * @param paint
    */
-  private updateFuncButton(paint: Painter): void {
+  private updateButtons(paint: Painter): void {
     const rect: Rect = this.rect;
     const x: number = rect.position.x,
       y: number = rect.position.y;
@@ -237,33 +233,12 @@ abstract class ViewObject<D extends DecorationBase = DecorationBase>
       const vector = new Vector(~~newx, ~~newy);
       button.updatePosition(vector);
       //运动时不显示按钮
-      if (this.delta.isZero) button.render(paint);
+      // if (this.delta.isZero)
+      button.render(paint);
     });
-  }
-  /**
-   * @description 按钮是否被点击
-   * @param eventPosition
-   * @returns
-   */
-  public checkFuncButton(eventPosition: Vector): Button | boolean {
-    /**
-     * 遍历功能键
-     * 传入的时global位置，转换为相对位置判断是否点击到按钮
-     */
-    const event: Vector = Vector.sub(eventPosition, this.rect.position);
-    const button: Button = this.funcButton.find((button: Button) => {
-      if (button.disabled) return false;
-      const angle = button.oldAngle + this.rect.getAngle;
-      const x = Math.cos(angle) * button.originDistance;
-      const y = Math.sin(angle) * button.originDistance;
-      const buttonPosi: Vector = new Vector(x, y);
-      return button.isInArea(event, buttonPosi);
-    });
-    return button;
   }
   public hide() {
     this.disabled = true;
-    this.onHide();
     this.cancel();
   }
   public show() {
@@ -361,11 +336,11 @@ abstract class ViewObject<D extends DecorationBase = DecorationBase>
     this.getKit().center(this, axis);
   }
 
-  protected _didChangeSize(size: Size): void {
+  _didChangeSize(size: Size): void {
     this.computedRespectRatio();
   }
 
-  protected _didChangeDeltaScale(scale: number): void {
+  _didChangeDeltaScale(scale: number): void {
     this.computedRespectRatio();
   }
 
@@ -379,11 +354,11 @@ abstract class ViewObject<D extends DecorationBase = DecorationBase>
     this.renderBox.setScaleWidth(deltaWidth / this.fixedSize.width);
     this.setScaleHeight(deltaHeight / this.fixedSize.height);
   }
-  protected _didChangePosition(position: Vector): void {
+  _didChangePosition(position: Vector): void {
     if (!this.delta) this.delta = new Delta(position.x, position.y);
     this.delta.update(position.copy());
   }
-  protected _didChangeScaleWidth(): void {
+  _didChangeScaleWidth(): void {
     if (!this.sizeDelta)
       this.sizeDelta = new Delta(this.size.width, this.size.height);
     this.sizeDelta.update(this.size.toVector());
@@ -451,14 +426,25 @@ abstract class ViewObject<D extends DecorationBase = DecorationBase>
   public setOpacity(opacity: number): void {
     this.opacity = opacity;
   }
-  onDown(e: Vector | Vector[]): void {
-   
+  onDown(e: Vector): boolean {
+    const kit = this.getKit();
+    const selected = CatchPointUtil.inArea(this.rect, e);
+    if (selected) {
+      this.drag.catchViewObject(this.rect, e);
+      kit.select(this);
+      return false;
+    } else if (this.selected) {
+      kit.cancel(this);
+    }
+    return super.onDown(e);
   }
-  onMove(e: Vector | Vector[]): void {
-    
+  onMove(e: Vector): boolean {
+    this.drag.update(e);
+    return true;
   }
-  onUp(e: Vector | Vector[]): void {
-    
+  onUp(e: Vector): boolean {
+    this.cancelDrag();
+    return true;
   }
   public cancelDrag() {
     this.drag.cancel();

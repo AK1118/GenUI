@@ -462,7 +462,7 @@ export abstract class TextBoxBase extends ViewObject {
     //拖拽时设置scale 等于设置大小，松开时再设置大小就会判断一样的值
     this.setSize(size);
   }
-  protected didChangeDeltaScale(scale: number): void {
+  didChangeDeltaScale(scale: number): void {
     this.isDirty = true;
     this.extendDidChangeDeltaScale(scale);
     this.updateFontSizeByRectSizeHeight();
@@ -474,8 +474,8 @@ export abstract class TextBoxBase extends ViewObject {
    * 扩展给扩展类类用
    * @param scale
    */
-  protected extendDidChangeDeltaScale(scale: number): void {}
-  protected didChangeSize(size: Size): void {
+  extendDidChangeDeltaScale(scale: number): void {}
+  didChangeSize(size: Size): void {
     this.extendDidChangeSize(size);
   }
   protected extendDidChangeSize(size: Size): void {}

@@ -42,7 +42,7 @@ class Polygon extends GraphicsBase<GeneratePolygonOption, PolygonDecoration> {
     this.decoration.setPoints(points);
     this.forceUpdate();
   }
-  protected didChangeDeltaScale(deltaScale: number): void {
+  didChangeDeltaScale(deltaScale: number): void {
     this.option.radius *= deltaScale;
     this.decoration?.updatePoint(deltaScale);
   }

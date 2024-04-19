@@ -107,7 +107,7 @@ abstract class ImageToolkitAdapterController
   remove(view?: ViewObject): boolean {
     const _view = view || this.focusedViewObject;
     if (!_view) return false;
-    this.setlayers(this.layers.filter((_) => _.key != _view.key));
+    this.setLayers(this.layers.filter((_) => _.key != _view.key));
     this.callHook("onRemove", null);
     this.render();
     return true;
@@ -132,7 +132,7 @@ abstract class ImageToolkitAdapterController
     if (!view) return false;
     const key: string | number = view.key;
     const newList: Array<ViewObject> = this.layers.filter((_) => _.key !== key);
-    this.setlayers(newList);
+    this.setLayers(newList);
     return false;
   }
 
