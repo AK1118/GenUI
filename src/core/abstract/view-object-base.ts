@@ -224,7 +224,7 @@ abstract class BaseViewObject<
   get name(): string {
     return this._name;
   }
-
+  
   public mount(): void {
     this._mounted = true;
     this.onMounted();

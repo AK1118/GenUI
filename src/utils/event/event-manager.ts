@@ -12,11 +12,18 @@ export interface GestiEventNotification {
   move(e: EventParams): void;
 }
 
-interface EventNotifyNode {
+/**
+ * 通知管理者
+ */
+export interface GestiEventManagerNotify {
+  previous: Record<RankType, EventNotifyNode>;
+  setPrevious(tank: RankType, node: EventNotifyNode): void;
+}
+
+export interface EventNotifyNode {
   parentNode: EventNotifyNode;
   previous: EventNotifyNode;
   next: EventNotifyNode;
-  event: GestiEventObject;
   setPrevious(node: EventNotifyNode): void;
   setNext(node: EventNotifyNode): void;
   getParent(): EventNotifyNode;
@@ -24,14 +31,10 @@ interface EventNotifyNode {
   getNext(): EventNotifyNode;
 }
 
-abstract class SingleEventNotifyNode implements EventNotifyNode {
+export abstract class SingleEventNotifyNode implements EventNotifyNode {
   parentNode: EventNotifyNode;
-  previous: EventNotifyNode;
-  event: GestiEventObject;
-  constructor(parentNode: EventNotifyNode, event: GestiEventObject) {
-    this.parentNode = parentNode;
-    this.event = event;
-  }
+  previous: EventNotifyNode = null;
+  next: EventNotifyNode = null;
   setPrevious(node: EventNotifyNode): void {
     this.previous = node;
   }
@@ -41,7 +44,7 @@ abstract class SingleEventNotifyNode implements EventNotifyNode {
   getNext(): EventNotifyNode {
     return this.next;
   }
-  next: EventNotifyNode;
+
   getParent(): EventNotifyNode {
     return this.parentNode;
   }
@@ -63,22 +66,28 @@ abstract class MultipleEventNotifyNode extends SingleEventNotifyNode {
   }
 }
 
-class SimpleSingleEventNotifyNode extends SingleEventNotifyNode {}
-class SimpleMultipleEventNotifyNode extends SingleEventNotifyNode {}
+// export class SimpleSingleEventNotifyNode extends SingleEventNotifyNode {}
+// export class SimpleMultipleEventNotifyNode extends SingleEventNotifyNode {}
 
 /**
  * 管理全局的鼠标事件监听
  */
-abstract class GestiEventManager implements GestiEventNotification {
+abstract class GestiEventManager
+  implements GestiEventNotification, GestiEventManagerNotify
+{
   /**
    * 委托存放全局event对象栈
    */
-  private readonly eventsStacks: Record<
-    RankType,
-    Array<EventNotifyNode>
-  > = {
+  private readonly eventsStacks: Record<RankType, Array<EventNotifyNode>> = {
     priority: [],
     secondary: [],
+  };
+  /**
+   * 上一个事件节点
+   */
+  previous: Record<RankType, EventNotifyNode> = {
+    priority: null,
+    secondary: null,
   };
   /**
    * 将事件注册进委托栈
@@ -87,11 +96,17 @@ abstract class GestiEventManager implements GestiEventNotification {
    */
   public register(
     rank: RankType,
-    object: GestiEventObject,
+    node: EventNotifyNode,
     parentNode?: EventNotifyNode
   ): void {
-    const node = new SimpleSingleEventNotifyNode(parentNode, object);
+    console.log(node);
+    if (this.previous[rank]) {
+      node.setPrevious(this.previous[rank]);
+      this.previous[rank].setNext(node);
+    }
+    //[new,o,o,o,...]
     this.eventsStacks[rank].unshift(node);
+    this.setPrevious(rank, node);
   }
 
   private performNotify(
@@ -107,7 +122,7 @@ abstract class GestiEventManager implements GestiEventNotification {
     let isContinue = true;
     for (let index = 0; index < len; index++) {
       const node = arr[index];
-      const _: GestiEventObject = node.event;
+      const _: GestiEventObject = node as GestiEventObject;
       if (type === "onDown") {
         isContinue = _.onDown(event);
       }
@@ -144,6 +159,10 @@ abstract class GestiEventManager implements GestiEventNotification {
   }
   move(e: EventParams): void {
     this.notify("onMove", e);
+  }
+
+  setPrevious(rank: RankType, node: EventNotifyNode): void {
+    this.previous[rank] = node;
   }
 }
 

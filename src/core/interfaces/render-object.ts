@@ -3,6 +3,7 @@ import {
   PriorityGestiEventObject,
   SimpleGestiEventObject,
   SimplePriorityGestiEventObject,
+  WatcherHandle,
 } from "@/utils/event/event-object";
 import Painter from "../lib/painter";
 import Rect from "../lib/rect";
@@ -12,21 +13,39 @@ import SimpleOperationObserver, {
   OperationHandle,
   SimpleOperationHandle,
 } from "../abstract/operation-observer";
+import CatchPointUtil from "@/utils/event/catchPointUtil";
+
+/**
+ * 
+ * 
+ * 
+ * build 只执行一次，用于传输上下文数据例如 主题，父数据等
+ * render 渲染数据
+ * 
+ * 
+ */
 
 /**
  * 在页面上渲染的对象
  */
 export interface RenderObject {
+  parent: RenderObject;
   key: string;
-  /**
-   * 世界坐标，相对于画布的坐标
-   */
-  rect: Rect;
-  render(paint: Painter): void;
   renderBox: RenderBox;
+  focused: boolean;
+  render(paint: Painter): void;
+  get mounted(): boolean;
 }
 
 export abstract class SimpleRenderObject implements RenderObject {
+  parent: RenderObject;
+  get mounted(): boolean {
+    return this.renderBox != null;
+  }
+  protected performMount(parent?: RenderObject): void {
+    this.parent = parent;
+  }
+  focused: boolean = false;
   abstract renderBox: RenderBox;
   key: string = Math.random().toString(16).substring(2);
   get rect(): Rect {
@@ -36,7 +55,7 @@ export abstract class SimpleRenderObject implements RenderObject {
     this.renderBox.rect = rect;
   }
   render(paint: Painter): void {
-    throw new Error("Method not implemented.");
+    
   }
 }
 
@@ -45,14 +64,35 @@ export abstract class SimpleRenderObject implements RenderObject {
  */
 export abstract class RenderObjectWithEvent
   extends SimpleRenderObject
-  implements EventHandle
+  implements EventHandle, WatcherHandle
 {
   protected event = new SimpleGestiEventObject();
   constructor() {
     super();
+  }
+  performMount(parent?: RenderObject): void {
+    super.performMount(parent);
     this.event.bindHandleProxy(this);
   }
+  blur(e: Vector): void {
+    this.focused = false;
+    this.onBlur(e);
+  }
+  focus(e: Vector): void {
+    this.focused = true;
+    this.event.focus(e);
+    this.onFocus(e);
+  }
+  onFocus(e: Vector): void {}
+  onBlur(e: Vector): void {}
   onDown(e: Vector): boolean {
+    const selected = CatchPointUtil.inArea(this.rect, e);
+    if (selected) {
+      this.focus(e);
+      return false;
+    } else if (this.focused) {
+      this.blur(e);
+    }
     return true;
   }
   onUp(e: Vector): boolean {
@@ -68,7 +108,6 @@ export abstract class RenderObjectWithEventPriority extends RenderObjectWithEven
   protected event = new SimplePriorityGestiEventObject();
   constructor() {
     super();
-    this.event.bindHandleProxy(this);
   }
 }
 

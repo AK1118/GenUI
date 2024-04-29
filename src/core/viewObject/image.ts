@@ -122,4 +122,5 @@ class ImageBox extends ViewObject {
     return new ImageBox(ximage);
   }
 }
+
 export default ImageBox;

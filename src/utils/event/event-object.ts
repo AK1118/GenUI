@@ -1,19 +1,24 @@
 import Vector from "@/core/lib/vector";
-import gestiEventManager from "./event-manager";
+import gestiEventManager, {
+  EventNotifyNode,
+  SingleEventNotifyNode,
+} from "./event-manager";
 type EventParams = Vector;
 
 export type RankType = "priority" | "secondary";
 /**
  * 聚焦失焦
  */
-export interface Watcher {
-  onFocus(): void;
-  onBlur(): void;
-  blur(): void;
-  focus(): void;
+export interface WatcherHandle {
+  onFocus(e: EventParams): void;
+  onBlur(e: EventParams): void;
+  blur(e: EventParams): void;
+  focus(e: EventParams): void;
 }
+
 type EventCallbackFunction = (e: EventParams) => boolean;
-export interface EventHandle {
+
+export interface EventHandle extends WatcherHandle {
   onDown(e: EventParams): boolean;
   onUp(e: EventParams): boolean;
   onMove(e: EventParams): boolean;
@@ -32,28 +37,58 @@ export interface GestiEvent extends EventHandle {
 /**
  * 事件可通知对象
  */
-export abstract class GestiEventObject implements GestiEvent, Watcher {
-  readonly key: string = Math.random().toString(16).substring(2);
+export abstract class GestiEventObject
+  extends SingleEventNotifyNode
+  implements GestiEvent
+{
+  readonly key: string = new Date().toUTCString(); //Math.random().toString(16).substring(2);
   handleProxy: EventHandle;
-  constructor(autoRegistration: boolean = true) {
-    if (autoRegistration) {
-      this.registration("priority", this);
-    }
+  handleWatcher: WatcherHandle;
+  onFocus(e: Vector): void {
+    this.handleProxy.onFocus.bind(this.handleProxy)(e);
+  }
+  onBlur(e: Vector): void {
+    this.handleProxy.onBlur.bind(this.handleProxy)(e);
   }
   bindHandleProxy(obj: EventHandle) {
     this.handleProxy = obj;
   }
-  onFocus(): void {
-    throw new Error("Method not implemented.");
+  blur(e: EventParams): void {
+    this.onBlur(e);
   }
-  onBlur(): void {
-    throw new Error("Method not implemented.");
+  private handleBlurOtherNode(
+    e: EventParams,
+    _node: EventNotifyNode,
+    direction: "up" | "down"
+  ) {
+    if (!_node) return;
+    let otherNode;
+    if (direction === "up") {
+      otherNode = _node.previous;
+      console.log("pre", otherNode);
+    } else if (direction === "down") {
+      otherNode = _node.next;
+      console.log("down", otherNode);
+    }
+
+    if (otherNode) {
+      const node = otherNode as GestiEventObject;
+      if (node.key === this.key) return;
+      node.blur(e);
+      // 递归调用，根据方向继续向上或向下遍历节点
+      this.handleBlurOtherNode(e, otherNode, direction);
+    }
   }
-  blur(): void {
-    throw new Error("Method not implemented.");
-  }
-  focus(): void {
-    throw new Error("Method not implemented.");
+  /**
+   * 聚焦时取消其他聚焦
+   * @param e
+   */
+  focus(e: EventParams): void {
+    //[o,o,blur<<-current,o,...]
+    //current 是当前节点，需要向上blur兄弟事件，下游兄弟事件会根据事件流往下执行并判断
+    this.handleBlurOtherNode(e, this, "up");
+    this.handleBlurOtherNode(e, this, "down");
+    this.onFocus(e);
   }
   registration<T extends GestiEventObject>(rank: RankType, obj: T): void {
     gestiEventManager.register(rank, obj);
@@ -80,14 +115,20 @@ export abstract class GestiEventObject implements GestiEvent, Watcher {
  */
 export abstract class PriorityGestiEventObject extends GestiEventObject {
   constructor() {
-    super(false);
+    super();
+  }
+  bindHandleProxy(obj: EventHandle): void {
+    super.bindHandleProxy(obj);
     this.registration("priority", this);
   }
 }
 
 export abstract class SecondaryGestiEventObject extends GestiEventObject {
   constructor() {
-    super(false);
+    super();
+  }
+  bindHandleProxy(obj: EventHandle): void {
+    super.bindHandleProxy(obj);
     this.registration("secondary", this);
   }
 }

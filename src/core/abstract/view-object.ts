@@ -426,17 +426,15 @@ abstract class ViewObject<
   public setOpacity(opacity: number): void {
     this.opacity = opacity;
   }
-  onDown(e: Vector): boolean {
+  onFocus(e:Vector): void {
     const kit = this.getKit();
-    const selected = CatchPointUtil.inArea(this.rect, e);
-    if (selected) {
-      this.drag.catchViewObject(this.rect, e);
-      kit.select(this);
-      return false;
-    } else if (this.selected) {
-      kit.cancel(this);
-    }
-    return super.onDown(e);
+    this.drag.catchViewObject(this.rect, e);
+    kit.select(this);
+  }
+  onBlur(e: Vector): void {
+    const kit = this.getKit();
+    kit.cancel(this);
+    this.cancelDrag();
   }
   onMove(e: Vector): boolean {
     this.drag.update(e);
