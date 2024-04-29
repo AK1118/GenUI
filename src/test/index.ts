@@ -139,24 +139,29 @@ Gesti.installPlugin(
 class View {
   private renderer: RenderView;
   build(): RenderView {
-    return new RenderView(
-      new RenderView(
-        new SizeRender(
-          0,
-          0,
+    return new SizeRender(
+      canvas.width,
+      canvas.height,
+      new EdgeInsetsRender(
+        0,
+        new ColoredRender(
+          "#cccccc",
           new EdgeInsetsRender(
             10,
             new ColoredRender(
-              "red",
+              "orange",
               new EdgeInsetsRender(
                 10,
                 new ColoredRender(
-                  "orange",
+                  "#cccccc",
                   new EdgeInsetsRender(
                     10,
                     new ColoredRender(
-                      "orangered",
-                      new EdgeInsetsRender(10, new ColoredRender("orange"))
+                      "orange",
+                      new EdgeInsetsRender(
+                        10,
+                        new ColoredRender("#cccccc", new EdgeInsetsRender(10))
+                      )
                     )
                   )
                 )
@@ -172,7 +177,6 @@ class View {
   }
   layout() {
     this.renderer.layout(BoxConstraints.zero);
-    //this.renderer.applyConstraints(BoxConstraints.zero, true);
     console.log(this.renderer);
   }
   render(paint: Painter) {
@@ -193,15 +197,8 @@ class RenderView {
   constructor(child?: RenderView) {
     this.child = child;
   }
-  render(paint: Painter, size?: Size, offset?: Vector) {
-    this.renderChild(paint, size, offset);
-  }
-  //布局约束
-  applyConstraints(
-    constrain: BoxConstraints,
-    parentSize?: boolean
-  ): BoxConstraints {
-    return this.child?.applyConstraints(constrain, parentSize);
+  render(paint: Painter, offset?: Vector) {
+    this.renderChild(paint, offset);
   }
   //默认大小等于子大小，被子撑开
   layout(constraints: BoxConstraints): void {
@@ -213,8 +210,8 @@ class RenderView {
     }
   }
 
-  private renderChild(paint: Painter, size?: Size, offset?: Vector) {
-    this.child?.render(paint, size, offset);
+  private renderChild(paint: Painter, offset?: Vector) {
+    this.child?.render(paint, offset);
   }
 }
 
@@ -224,11 +221,15 @@ class ColoredRender extends RenderView {
     super(child);
     this.color = color;
   }
-  render(paint: Painter, size?: Size, offset?: Vector): void {
-    if (!size) return;
+  render(paint: Painter, offset?: Vector): void {
     paint.fillStyle = this.color;
-    paint.fillRect(offset?.x ?? 0, offset?.y ?? 0, size.width, size.height);
-    super.render(paint, size, offset);
+    paint.fillRect(
+      offset?.x ?? 0,
+      offset?.y ?? 0,
+      this.size.width,
+      this.size.height
+    );
+    super.render(paint, offset);
   }
 }
 
@@ -245,10 +246,11 @@ class SizeRender extends RenderView {
     });
   }
   layout(constraints: BoxConstraints): void {
-    super.layout(this.additionalConstraints.enforce(constraints));
+    super.layout(this.additionalConstraints);
+    this.size = this.additionalConstraints.constrain(Size.zero);
   }
-  render(paint: Painter, size?: Size, offset?: Vector): void {
-    super.render(paint, this.size, offset);
+  render(paint: Painter, offset?: Vector): void {
+    super.render(paint, offset);
   }
 }
 
@@ -258,41 +260,26 @@ class EdgeInsetsRender extends RenderView {
     super(child);
     this.padding = padding;
   }
-  applyConstraints(
-    constrain: BoxConstraints,
-    parentSize?: boolean
-  ): BoxConstraints {
-    //大小等于子+padding
-    const childConstrain = super.applyConstraints(constrain, true);
-    let newConstrain: BoxConstraints;
-    if (!childConstrain) {
-      newConstrain = new BoxConstraints({
-        minWidth: this.padding * 2,
-        minHeight: this.padding * 2,
-      });
-    } else if (parentSize) {
-      newConstrain = new BoxConstraints({
-        minWidth: this.padding * 2 + childConstrain.minWidth,
-        minHeight: this.padding * 2 + childConstrain.minHeight,
-      });
-    }
-    this.constrain = newConstrain ?? this.constrain;
-    this.size = this.constrain.constrain(this.size);
-    return this.constrain;
-  }
   layout(constraints: BoxConstraints): void {
-    super.layout(constraints);
+    const additionalConstraints = new BoxConstraints({
+      minWidth: constraints.minWidth + this.padding * -2,
+      minHeight: constraints.minHeight + this.padding * -2,
+    });
+
+    super.layout(additionalConstraints);
     this.size = new Size(
-      this.size.width + this.padding * 2,
+      Math.max(
+        constraints.constrainWidth(this.size.width),
+        this.padding * 2
+      ),
       this.size.height + this.padding * 2
     );
   }
-  render(paint: Painter, size?: Size, offset?: Vector): void {
-    if (!size) return;
+  render(paint: Painter, offset?: Vector): void {
     // 计算新的偏移量
     const paddedOffsetX = offset ? offset?.x + this.padding : 0;
     const paddedOffsetY = offset ? offset?.y + this.padding : 0;
-    super.render(paint, this.size, new Vector(paddedOffsetX, paddedOffsetY));
+    super.render(paint, new Vector(paddedOffsetX, paddedOffsetY));
   }
 }
 
