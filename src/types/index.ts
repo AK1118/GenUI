@@ -160,13 +160,7 @@ class View {
                       "orange",
                       new EdgeInsetsRender(
                         10,
-                        new ColoredRender(
-                          "#cccccc",
-                          new EdgeInsetsRender(
-                            10,
-                            new ColoredRender("red", new SizeRender(30, 30))
-                          )
-                        )
+                        new ColoredRender("#cccccc", new EdgeInsetsRender(10))
                       )
                     )
                   )
@@ -273,11 +267,14 @@ class EdgeInsetsRender extends RenderView {
      */
     const additionalConstraints = new BoxConstraints({
       minWidth: constraints.minWidth + this.padding * -2,
-      minHeight: this.padding * -2, //高度不需要约束，如果加上 约束盒子高度会默认为父约束盒高度
+      minHeight: this.padding * -2,//高度不需要约束，如果加上 约束盒子高度会默认为父约束盒高度
     });
     super.layout(additionalConstraints);
     this.size = new Size(
-      Math.max(constraints.constrainWidth(this.size.width), this.padding * 2),
+      Math.max(
+        constraints.constrainWidth(this.size.width),
+        this.padding * 2
+      ),
       this.size.height + this.padding * 2
     );
   }
