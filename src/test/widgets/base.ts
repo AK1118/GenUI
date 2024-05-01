@@ -1,17 +1,14 @@
 import Painter from "@/core/lib/painter";
+import Alignment from "@/core/lib/painting/alignment";
 import { Size } from "@/core/lib/rect";
 import { BoxConstraints } from "@/core/lib/rendering/constraints";
 import Vector from "@/core/lib/vector";
 
 //原子渲染对象，可以有层级渲染，没有renderbox，依赖于context传输的大小来渲染
 export abstract class RenderView {
-  render(context: PaintingContext, offset?: Vector) {
-    this.renderChild(context, offset);
-  }
+  abstract render(context: PaintingContext, offset?: Vector): void;
   //默认大小等于子大小，被子撑开
   abstract layout(constraints: BoxConstraints): void;
-
-  abstract renderChild(context: PaintingContext, offset?: Vector);
 }
 
 export class SingleChildRenderView extends RenderView {
@@ -23,10 +20,7 @@ export class SingleChildRenderView extends RenderView {
     this.child = child;
   }
   render(context: PaintingContext, offset?: Vector) {
-    this.renderChild(context, offset);
-  }
-  renderChild(context: PaintingContext, offset?: Vector) {
-    this.child?.render(context, offset);
+    context.paintChild(this.child!, offset);
   }
   //默认大小等于子大小，被子撑开
   layout(constraints: BoxConstraints): void {
@@ -108,6 +102,46 @@ export class Padding extends SingleChildRenderView {
   }
 }
 
+export class Align extends SingleChildRenderView {
+  private alignment: Alignment;
+  private offset: Vector = Vector.zero;
+  constructor(alignment: Alignment, child?: RenderView) {
+    super(child);
+    this.alignment = alignment;
+  }
+  layout(constraints: BoxConstraints): void {
+    super.layout(constraints);
+    const parentSize = constraints.constrain(Size.zero);
+    this.offset = this.alignment.inscribe(this.size, parentSize);
+  }
+  render(context: PaintingContext, offset?: Vector): void {
+    super.render(
+      context,
+      offset ? Vector.add(offset, this.offset) : this.offset
+    );
+  }
+}
+
+export class BorderRadius extends SingleChildRenderView {
+  private borderRadius: number | Iterable<number>;
+  constructor(borderRadius: number | Iterable<number>, child?: RenderView) {
+    super(child);
+    this.borderRadius = borderRadius;
+  }
+  render(context: PaintingContext, offset?: Vector): void {
+    const paint = context.paint;
+    paint.roundRect(
+      offset?.x ?? 0,
+      offset?.y ?? 0,
+      this.size.width,
+      this.size.height,
+      this.borderRadius
+    );
+    paint.clip();
+    super.render(context, offset);
+  }
+}
+
 export class PaintingContext {
   private _paint: Painter;
   constructor(paint: Painter) {
@@ -117,6 +151,6 @@ export class PaintingContext {
     return this._paint;
   }
   paintChild(child: RenderView, offset?: Vector): void {
-    child.render(this, offset);
+    child?.render(this, offset);
   }
 }

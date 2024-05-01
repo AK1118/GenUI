@@ -54,6 +54,7 @@ import ScreenUtils from "@/utils/screenUtils/ScreenUtils";
 import { RenderObject } from "@/core/interfaces/render-object";
 import { BoxConstraints } from "@/core/lib/rendering/constraints";
 import {
+  Align,
   ColoredRender,
   Padding,
   PaintingContext,
@@ -150,12 +151,12 @@ class View {
 
   build(): RenderView {
     return new SizeRender(
-      200,
-      200,
-      new ColoredRender(
-        "#ccc",
-        new Padding(
-          10,
+      canvas.width,
+      canvas.height,
+      new Align(
+        Alignment.center,
+        new BorderRadius(
+          [0, 20, 0, 20],
           new ColoredRender(
             "orange",
             new SizeRender(
@@ -163,7 +164,7 @@ class View {
               100,
               new Align(
                 Alignment.center,
-                new ColoredRender("#ccc", new SizeRender(10, 10))
+                new ColoredRender("red", new SizeRender(10, 10))
               )
             )
           )
@@ -183,23 +184,23 @@ class View {
   }
 }
 
-class Align extends SingleChildRenderView {
-  private alignment: Alignment;
-  private offset: Vector = Vector.zero;
-  constructor(alignment: Alignment, child?: RenderView) {
+class BorderRadius extends SingleChildRenderView {
+  private borderRadius: number | Iterable<number>;
+  constructor(borderRadius: number | Iterable<number>, child?: RenderView) {
     super(child);
-    this.alignment = alignment;
-  }
-  layout(constraints: BoxConstraints): void {
-    super.layout(constraints);
-    const parentSize = constraints.constrain(Size.zero);
-    this.offset = this.alignment.inscribe(this.size, parentSize);
+    this.borderRadius = borderRadius;
   }
   render(context: PaintingContext, offset?: Vector): void {
-    super.renderChild(
-      context,
-      offset ? Vector.add(offset, this.offset) : this.offset
+    const paint = context.paint;
+    paint.roundRect(
+      offset?.x ?? 0,
+      offset?.y ?? 0,
+      this.size.width,
+      this.size.height,
+      this.borderRadius
     );
+    paint.clip();
+    super.render(context, offset);
   }
 }
 
