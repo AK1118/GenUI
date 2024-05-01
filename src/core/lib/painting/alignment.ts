@@ -1,5 +1,6 @@
 import Serializable from "@/core/interfaces/Serialization";
 import Vector from "../vector";
+import Rect, { Size } from "../rect";
 class Alignment implements Serializable<{ x: number; y: number }> {
   private x: number;
   private y: number;
@@ -45,6 +46,15 @@ class Alignment implements Serializable<{ x: number; y: number }> {
       offsetX: halfWidthDelta * this.x + this.offset.offsetX,
       offsetY: halfHeighDelta * this.y + this.offset.offsetY,
     };
+  }
+  public inscribe(size: Size, parentSize: Size): Vector {
+    const halfWidthDelta: number = (parentSize.width - size.width) * 0.5;
+    const halfHeighDelta: number = (parentSize.height - size.height) * 0.5;
+
+    return new Vector(
+      halfWidthDelta + halfWidthDelta * this.x,
+      halfHeighDelta + halfHeighDelta * this.y
+    );
   }
 
   public computeWithVector(v: Vector): Vector {

@@ -53,6 +53,14 @@ import { waitingLoadImg } from "@/utils/canvas";
 import ScreenUtils from "@/utils/screenUtils/ScreenUtils";
 import { RenderObject } from "@/core/interfaces/render-object";
 import { BoxConstraints } from "@/core/lib/rendering/constraints";
+import {
+  ColoredRender,
+  Padding,
+  PaintingContext,
+  RenderView,
+  SingleChildRenderView,
+  SizeRender,
+} from "./widgets/base";
 
 /**
  * 假如全屏 360，    分成750份
@@ -136,41 +144,26 @@ Gesti.installPlugin(
 // });
 
 //具有renderbox的对象，用来作为装载RenderObject的容器
+
 class View {
   private renderer: RenderView;
+
   build(): RenderView {
     return new SizeRender(
-      canvas.width,
-      0,
-      new EdgeInsetsRender(
-        10,
-        new ColoredRender(
-          "#cccccc",
-          new EdgeInsetsRender(
-            10,
-            new ColoredRender(
-              "orange",
-              new EdgeInsetsRender(
-                10,
-                new ColoredRender(
-                  "#cccccc",
-                  new EdgeInsetsRender(
-                    10,
-                    new ColoredRender(
-                      "orange",
-                      new EdgeInsetsRender(
-                        10,
-                        new ColoredRender(
-                          "#cccccc",
-                          new EdgeInsetsRender(
-                            10,
-                            new ColoredRender("red", new SizeRender(30, 30))
-                          )
-                        )
-                      )
-                    )
-                  )
-                )
+      200,
+      200,
+      new ColoredRender(
+        "#ccc",
+        new Padding(
+          10,
+          new ColoredRender(
+            "orange",
+            new SizeRender(
+              100,
+              100,
+              new Align(
+                Alignment.center,
+                new ColoredRender("#ccc", new SizeRender(10, 10))
               )
             )
           )
@@ -185,107 +178,28 @@ class View {
     this.renderer.layout(BoxConstraints.zero);
     console.log(this.renderer);
   }
-  render(paint: Painter) {
-    this.renderer.render(paint);
+  render(context: PaintingContext) {
+    this.renderer.render(context);
   }
 }
 
-//原子渲染对象，可以有层级渲染，没有renderbox，依赖于context传输的大小来渲染
-class RenderView {
-  protected child: RenderView;
-  protected size: Size = Size.zero;
-  protected constrain: BoxConstraints = new BoxConstraints({
-    minWidth: canvas.width,
-    maxHeight: canvas.height,
-    minHeight: canvas.height,
-    maxWidth: canvas.width,
-  });
-  constructor(child?: RenderView) {
-    this.child = child;
-  }
-  render(paint: Painter, offset?: Vector) {
-    this.renderChild(paint, offset);
-  }
-  //默认大小等于子大小，被子撑开
-  layout(constraints: BoxConstraints): void {
-    if (this.child) {
-      this.child.layout(constraints);
-      this.size = this.child.size;
-    } else {
-      this.size = constraints.constrain(Size.zero);
-    }
-  }
-
-  private renderChild(paint: Painter, offset?: Vector) {
-    this.child?.render(paint, offset);
-  }
-}
-
-class ColoredRender extends RenderView {
-  private color: string;
-  constructor(color?: string, child?: RenderView) {
+class Align extends SingleChildRenderView {
+  private alignment: Alignment;
+  private offset: Vector = Vector.zero;
+  constructor(alignment: Alignment, child?: RenderView) {
     super(child);
-    this.color = color;
+    this.alignment = alignment;
   }
-  render(paint: Painter, offset?: Vector): void {
-    paint.fillStyle = this.color;
-    paint.fillRect(
-      offset?.x ?? 0,
-      offset?.y ?? 0,
-      this.size.width,
-      this.size.height
+  layout(constraints: BoxConstraints): void {
+    super.layout(constraints);
+    const parentSize = constraints.constrain(Size.zero);
+    this.offset = this.alignment.inscribe(this.size, parentSize);
+  }
+  render(context: PaintingContext, offset?: Vector): void {
+    super.renderChild(
+      context,
+      offset ? Vector.add(offset, this.offset) : this.offset
     );
-    super.render(paint, offset);
-  }
-}
-
-//尺寸约束 不负责渲染
-class SizeRender extends RenderView {
-  private additionalConstraints: BoxConstraints;
-  constructor(width: number, height: number, child?: RenderView) {
-    super(child);
-    this.additionalConstraints = new BoxConstraints({
-      maxWidth: width,
-      maxHeight: height,
-      minWidth: width,
-      minHeight: height,
-    });
-  }
-  layout(constraints: BoxConstraints): void {
-    super.layout(this.additionalConstraints);
-    this.size = this.additionalConstraints.constrain(Size.zero);
-  }
-  render(paint: Painter, offset?: Vector): void {
-    super.render(paint, offset);
-  }
-}
-
-class EdgeInsetsRender extends RenderView {
-  private padding: number = 0;
-  constructor(padding: number, child?: RenderView) {
-    super(child);
-    this.padding = padding;
-  }
-  layout(constraints: BoxConstraints): void {
-    /**
-     * 增量约束
-     * padding box最大约束
-     */
-    const additionalConstraints = new BoxConstraints({
-      minWidth: constraints.minWidth + this.padding * -2,
-      minHeight: this.padding * -2, //高度不需要约束，如果加上 约束盒子高度会默认为父约束盒高度
-    });
-    super.layout(additionalConstraints);
-    this.size = new Size(
-      Math.max(constraints.constrainWidth(this.size.width), this.padding * 2),
-      this.size.height + this.padding * 2
-    );
-  }
-  render(paint: Painter, offset?: Vector): void {
-    // 计算新的偏移量
-    const paddedOffsetX = offset ? offset?.x + this.padding : this.padding;
-    const paddedOffsetY = offset ? offset?.y + this.padding : this.padding;
-    super.render(paint, new Vector(paddedOffsetX, paddedOffsetY));
   }
 }
 
@@ -293,6 +207,6 @@ const view = new View();
 console.log(view);
 view.mount();
 view.layout();
-view.render(new Painter(g));
+view.render(new PaintingContext(new Painter(g)));
 
 //父默认宽高为子
