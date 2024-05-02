@@ -55,13 +55,17 @@ import { RenderObject } from "@/core/interfaces/render-object";
 import { BoxConstraints } from "@/core/lib/rendering/constraints";
 import {
   Align,
+  ClipRRect,
   ColoredRender,
   Padding,
   PaintingContext,
+  Positioned,
   RenderView,
   SingleChildRenderView,
   SizeRender,
-} from "./widgets/base";
+  Stack,
+} from "./widgets/basic";
+import RenderBox from "@/core/lib/rendering/renderbox";
 
 /**
  * 假如全屏 360，    分成750份
@@ -153,20 +157,53 @@ class View {
     return new SizeRender(
       canvas.width,
       canvas.height,
-      new Align(
-        Alignment.center,
-        new BorderRadius(
-          [0, 20, 0, 20],
-          new ColoredRender(
-            "orange",
-            new SizeRender(
-              100,
-              100,
-              new Align(
-                Alignment.center,
-                new ColoredRender("red", new SizeRender(10, 10))
-              )
-            )
+      new Padding(
+        30,
+        new ColoredRender(
+          "white",
+          new SizeRender(
+            200,
+            200,
+            new Stack([
+              new Positioned({
+                top: 0,
+                right: 0,
+                child: new ClipRRect({
+                  borderRadius: 20,
+                  child: new ColoredRender("#ccc", new SizeRender(150, 150)),
+                }),
+              }),
+              new Positioned({
+                left: 0,
+                bottom: 0,
+                child: new ClipRRect({
+                  borderRadius: 20,
+                  child: new ColoredRender("yellow", new SizeRender(100, 100)),
+                }),
+              }),
+              new Positioned({
+                bottom: 0,
+                left: 0,
+                child: new ClipRRect({
+                  borderRadius: 20,
+                  child: new ColoredRender("orange", new SizeRender(50, 50)),
+                }),
+              }),
+              // new Align(
+              //   Alignment.center,
+              //   new BorderRadius(
+              //     20,
+              //     new ColoredRender("red", new SizeRender(100, 100))
+              //   )
+              // ),
+              // new Align(
+              //   Alignment.center,
+              //   new BorderRadius(
+              //     20,
+              //     new ColoredRender("orange", new SizeRender(100, 100))
+              //   )
+              // ),
+            ])
           )
         )
       )
@@ -184,25 +221,7 @@ class View {
   }
 }
 
-class BorderRadius extends SingleChildRenderView {
-  private borderRadius: number | Iterable<number>;
-  constructor(borderRadius: number | Iterable<number>, child?: RenderView) {
-    super(child);
-    this.borderRadius = borderRadius;
-  }
-  render(context: PaintingContext, offset?: Vector): void {
-    const paint = context.paint;
-    paint.roundRect(
-      offset?.x ?? 0,
-      offset?.y ?? 0,
-      this.size.width,
-      this.size.height,
-      this.borderRadius
-    );
-    paint.clip();
-    super.render(context, offset);
-  }
-}
+
 
 const view = new View();
 console.log(view);

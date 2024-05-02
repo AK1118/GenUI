@@ -3,9 +3,17 @@ import Alignment from "@/core/lib/painting/alignment";
 import { Size } from "@/core/lib/rect";
 import { BoxConstraints } from "@/core/lib/rendering/constraints";
 import Vector from "@/core/lib/vector";
+import { BoundsRRect, BoundsRect, ClipRRectOption, PositionedOption, Radius, SingleChildRenderViewOption } from "@/types/widget";
+
+enum Clip {
+  none,
+  hardEdge,
+  antiAlias,
+}
 
 //原子渲染对象，可以有层级渲染，没有renderbox，依赖于context传输的大小来渲染
 export abstract class RenderView {
+  protected size: Size = Size.zero;
   abstract render(context: PaintingContext, offset?: Vector): void;
   //默认大小等于子大小，被子撑开
   abstract layout(constraints: BoxConstraints): void;
@@ -13,7 +21,6 @@ export abstract class RenderView {
 
 export class SingleChildRenderView extends RenderView {
   protected child: RenderView;
-  protected size: Size = Size.zero;
   protected constrain: BoxConstraints = BoxConstraints.zero;
   constructor(child?: RenderView) {
     super();
@@ -41,6 +48,7 @@ export class ColoredRender extends SingleChildRenderView {
   }
   render(context: PaintingContext, offset?: Vector): void {
     const paint = context.paint;
+    paint.beginPath();
     paint.fillStyle = this.color;
     paint.fillRect(
       offset?.x ?? 0,
@@ -48,6 +56,7 @@ export class ColoredRender extends SingleChildRenderView {
       this.size.width,
       this.size.height
     );
+    paint.closePath();
     super.render(context, offset);
   }
 }
@@ -122,27 +131,51 @@ export class Align extends SingleChildRenderView {
   }
 }
 
-export class BorderRadius extends SingleChildRenderView {
-  private borderRadius: number | Iterable<number>;
-  constructor(borderRadius: number | Iterable<number>, child?: RenderView) {
+export class ClipRRect extends SingleChildRenderView {
+  private borderRadius: Radius;
+  constructor(option:Partial<ClipRRectOption>) {
+    const {child,borderRadius}=option;
     super(child);
     this.borderRadius = borderRadius;
   }
   render(context: PaintingContext, offset?: Vector): void {
-    const paint = context.paint;
-    paint.roundRect(
-      offset?.x ?? 0,
-      offset?.y ?? 0,
-      this.size.width,
-      this.size.height,
-      this.borderRadius
+    context.clipRRectAndPaint(
+      Clip.hardEdge,
+      {
+        x: offset?.x ?? 0,
+        y: offset?.y ?? 0,
+        width: this.size.width,
+        height: this.size.height,
+        radii: this.borderRadius,
+      },
+      () => {
+        super.render(context, offset);
+      }
     );
-    paint.clip();
-    super.render(context, offset);
   }
 }
 
-export class PaintingContext {
+export class ClipRect extends SingleChildRenderView {
+  render(context: PaintingContext, offset?: Vector): void {
+    context.clipRectAndPaint(
+      Clip.hardEdge,
+      {
+        x: offset?.x ?? 0,
+        y: offset?.y ?? 0,
+        width: this.size.width,
+        height: this.size.height,
+      },
+      () => {
+        super.render(context, offset);
+      }
+    );
+  }
+}
+
+
+
+
+abstract class ClipContext {
   private _paint: Painter;
   constructor(paint: Painter) {
     this._paint = paint;
@@ -150,7 +183,134 @@ export class PaintingContext {
   get paint(): Painter {
     return this._paint;
   }
+  private clipAndPaint(
+    clipCall: VoidFunction,
+    clipBehavior: Clip,
+    paintClipPath: VoidFunction,
+    painter: VoidFunction
+  ) {
+    this.paint.save();
+    if (clipBehavior != Clip.none) {
+      paintClipPath();
+      clipCall();
+    }
+    painter();
+    this.paint.restore();
+  }
+
+  public clipRRectAndPaint(
+    clipBehavior: Clip,
+    bounds: BoundsRRect,
+    painter: VoidFunction
+  ) {
+    this.clipAndPaint(
+      () => this.paint.clip(),
+      clipBehavior,
+      () => {
+        const { x, y, width, height, radii } = bounds;
+        this.paint.roundRect(x, y, width, height, radii);
+      },
+      painter
+    );
+  }
+
+  public clipRectAndPaint(
+    clipBehavior: Clip,
+    bounds: BoundsRect,
+    painter: VoidFunction
+  ) {
+    this.clipAndPaint(
+      () => this.paint.clip(),
+      clipBehavior,
+      () => {
+        const { x, y, width, height } = bounds;
+        this.paint.rect(x, y, width, height);
+      },
+      painter
+    );
+  }
+}
+
+export class PaintingContext extends ClipContext {
   paintChild(child: RenderView, offset?: Vector): void {
     child?.render(this, offset);
+  }
+}
+
+
+export class Positioned extends SingleChildRenderView {
+  private position: Vector = Vector.zero;
+  private isBottom: boolean;
+  private isRight: boolean;
+  constructor(option: Partial<PositionedOption & SingleChildRenderViewOption>) {
+    const { child } = option;
+    super(child);
+    this.updatePosition(option);
+  }
+  private updatePosition(positionValues: Partial<PositionedOption>) {
+    let { top, bottom, left, right } = positionValues;
+    let x = top,
+      y = left;
+    if (top == null && bottom != null) {
+      y = bottom;
+      this.isBottom = true;
+    }
+    if (left == null && right != null) {
+      x = right;
+      this.isRight = true;
+    }
+    this.position.setXY(x || 0, y || 0);
+  }
+  layout(constraints: BoxConstraints): void {
+    super.layout(constraints);
+    const parentSize = constraints.constrain(Size.zero);
+    this.isBottom &&
+      this.position.setXY(
+        this.position.x,
+        parentSize.height - (this.position.y + this.size.height)
+      );
+    this.isRight &&
+      this.position.setXY(
+        parentSize.width - (this.position.x + this.size.width),
+        this.position.y
+      );
+  }
+  render(context: PaintingContext, offset?: Vector): void {
+    context.paintChild(
+      this.child,
+      offset ? Vector.add(this.position, offset) : offset
+    );
+  }
+}
+
+export abstract class MultiChildRenderView extends RenderView {
+  protected children: RenderView[];
+  constructor(children?: RenderView[]) {
+    super();
+    this.children = children;
+  }
+  render(context: PaintingContext, offset?: Vector): void {}
+  layout(constraints: BoxConstraints): void {
+    this.size = constraints.constrain(Size.zero);
+    this.children?.forEach((child, index) => {
+      this.performLayoutChild(child, constraints);
+    });
+  }
+  performLayoutChild(child: RenderView, constraints: BoxConstraints): void {
+    child.layout(constraints);
+  }
+}
+
+
+
+export class Stack extends MultiChildRenderView {
+  constructor(children: RenderView[]) {
+    super(children);
+  }
+  render(context: PaintingContext, offset?: Vector): void {
+    this.children?.forEach((child) => {
+      context.paintChild(child, offset);
+    });
+    super.render(context, offset);
   }
 }

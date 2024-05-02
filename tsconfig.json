@@ -8,6 +8,7 @@
     "strict": false,
     "outDir": "./dist",
     "declarationMap": false,
+    "declaration": false,// 不需要自动生成声明文件，自动生成的文件太过冗余
     "baseUrl": "src/",
     "paths": {
       "@/core/*": ["core/*"],
