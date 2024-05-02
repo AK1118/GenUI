@@ -8,15 +8,19 @@ declare namespace Widget {
     paintChild(child: RenderView, offset?: Vector): void;
   }
   type RenderView = any;
-
+  type RenderBox = any;
   interface RenderViewOption {
-    child: RenderView;
+    child: RenderBox;
   }
 
   interface SingleChildRenderViewOption {
-    child: RenderView;
+    child: RenderBox;
   }
-  
+
+  interface MultiChildRenderViewOption {
+    children: RenderBox[];
+  }
+
   interface PositionedOption {
     top: number;
     left: number;
@@ -40,5 +44,4 @@ declare namespace Widget {
   interface ClipRRectOption extends ClipRectOption {
     borderRadius: Radius;
   }
-
 }

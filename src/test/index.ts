@@ -55,8 +55,14 @@ import { RenderObject } from "@/core/interfaces/render-object";
 import { BoxConstraints } from "@/core/lib/rendering/constraints";
 import {
   Align,
+  Axis,
   ClipRRect,
   ColoredRender,
+  ContainerRenderViewParentData,
+  CrossAxisAlignment,
+  FlexParentData,
+  MainAxisAlignment,
+  MultiChildRenderView,
   Padding,
   PaintingContext,
   Positioned,
@@ -66,6 +72,7 @@ import {
   Stack,
 } from "./widgets/basic";
 import RenderBox from "@/core/lib/rendering/renderbox";
+import { MultiChildRenderViewOption } from "@/types/widget";
 
 /**
  * 假如全屏 360，    分成750份
@@ -158,54 +165,15 @@ class View {
       canvas.width,
       canvas.height,
       new Padding(
-        30,
-        new ColoredRender(
-          "white",
-          new SizeRender(
-            200,
-            200,
-            new Stack([
-              new Positioned({
-                top: 0,
-                right: 0,
-                child: new ClipRRect({
-                  borderRadius: 20,
-                  child: new ColoredRender("#ccc", new SizeRender(150, 150)),
-                }),
-              }),
-              new Positioned({
-                left: 0,
-                bottom: 0,
-                child: new ClipRRect({
-                  borderRadius: 20,
-                  child: new ColoredRender("yellow", new SizeRender(100, 100)),
-                }),
-              }),
-              new Positioned({
-                bottom: 0,
-                left: 0,
-                child: new ClipRRect({
-                  borderRadius: 20,
-                  child: new ColoredRender("orange", new SizeRender(50, 50)),
-                }),
-              }),
-              // new Align(
-              //   Alignment.center,
-              //   new BorderRadius(
-              //     20,
-              //     new ColoredRender("red", new SizeRender(100, 100))
-              //   )
-              // ),
-              // new Align(
-              //   Alignment.center,
-              //   new BorderRadius(
-              //     20,
-              //     new ColoredRender("orange", new SizeRender(100, 100))
-              //   )
-              // ),
-            ])
-          )
-        )
+        10,
+        new Flex({
+          direction: Axis.horizontal,
+          children: [
+            new ColoredRender("orange", new SizeRender(20, 20)),
+            new ColoredRender("white", new SizeRender(20, 20)),
+            new ColoredRender("red", new SizeRender(10, 10)),
+          ],
+        })
       )
     );
   }
@@ -221,7 +189,158 @@ class View {
   }
 }
 
+interface FlexOption {
+  direction: Axis;
+}
 
+interface LayoutSizes {
+  mainSize: number;
+  crossSize: number;
+  allocatedSize: number;
+}
+class Flex extends MultiChildRenderView {
+  private direction: Axis = Axis.horizontal;
+  private mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.start;
+  private crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.start;
+  constructor(option: Partial<FlexOption & MultiChildRenderViewOption>) {
+    const { direction, children } = option;
+    super(children);
+    this.direction = direction;
+  }
+
+  layout(constraints: BoxConstraints): void {
+    super.layout(constraints);
+  }
+
+  performLayout(constraints: BoxConstraints): void {
+    super.performLayout(constraints);
+    this.computeSize(constraints);
+
+    // const actualSizeDelta=
+    // let leadingSpace:number=0;
+    // let betweenSpace:number=0;
+    // switch(this.mainAxisAlignment){
+    //   case MainAxisAlignment.start:break;
+    //   case MainAxisAlignment.end:
+    //   case MainAxisAlignment.center:
+    //   case MainAxisAlignment.spaceBetween:
+    //   case MainAxisAlignment.spaceAround:
+    //   case MainAxisAlignment.spaceEvenly:
+    // }
+
+    // child = this.firstChild;
+    // while (child != null) {
+    //   const parentData =
+    //     child.parentData as ContainerRenderViewParentData<RenderView>;
+    //   const preChild = parentData.previousSibling as RenderView;
+    //   if (preChild) {
+    //     const preParentData =
+    //       preChild?.parentData as ContainerRenderViewParentData<RenderView>;
+    //     if (this.direction === Axis.horizontal) {
+    //       parentData.offset = new Vector(
+    //         parentData.offset.x + preChild.size.width + preParentData.offset.x,
+    //         parentData.offset.y
+    //       );
+    //     } else if (this.direction === Axis.vertical) {
+    //       parentData.offset = new Vector(
+    //         parentData.offset.x,
+    //         parentData.offset.y + preChild.size.height + preParentData.offset.y
+    //       );
+    //     }
+    //     console.log("偏移子", preChild, preParentData);
+    //   }
+    //   child = parentData?.nextSibling;
+    // }
+    //根据布局主轴方向设置盒子大小
+    // if (this.direction == Axis.horizontal) {
+    //   this.size = constraints.constrain(
+    //     new Size(this.allocatedSize, this.crossSize)
+    //   );
+    //   this.allocatedSize = this.size.width;
+    //   this.crossSize = this.size.height;
+    // } else if (this.direction === Axis.vertical) {
+    //   this.size = constraints.constrain(
+    //     new Size(this.crossSize, this.allocatedSize)
+    //   );
+    //   this.allocatedSize = this.size.height;
+    //   this.crossSize = this.size.width;
+    // }
+  }
+
+  private computeSize(constraints: BoxConstraints): LayoutSizes {
+    let totalFlex: number = 0,
+      maxMainSize: number = 0,
+      canFlex: boolean,
+      child = this.firstChild,
+      childCount: number = 0,
+      crossSize: number = 0,
+      allocatedSize: number = 0;
+
+    maxMainSize=(this.direction===Axis.horizontal)?constraints.minWidth:constraints.minWidth;
+
+    console.log("最大宽度",maxMainSize)
+
+    while (child != null) {
+      const parentData =
+        child.parentData as ContainerRenderViewParentData<RenderView>;
+      const childSize = child?.size || Size.zero;
+      allocatedSize += this.getMainSize(childSize);
+      crossSize = Math.max(crossSize, this.getCrossSize(childSize));
+      child = parentData?.nextSibling;
+      childCount += 1;
+    }
+
+    return {
+      mainSize: 0,
+      crossSize: crossSize,
+      allocatedSize: allocatedSize,
+    };
+  }
+
+  protected setupParentData(child: RenderView): void {
+    child.parentData = new FlexParentData();
+  }
+
+  private getCrossSize(size: Size) {
+    switch (this.direction) {
+      case Axis.horizontal:
+        return size.height;
+      case Axis.vertical:
+        return size.width;
+    }
+  }
+
+  private getMainSize(size: Size) {
+    switch (this.direction) {
+      case Axis.horizontal:
+        return size.width;
+      case Axis.vertical:
+        return size.height;
+    }
+  }
+  render(context: PaintingContext, offset?: Vector): void {
+    console.log(this.size);
+    context.paint.fillRect(
+      offset.x,
+      offset.y,
+      this.size.width,
+      this.size.height
+    );
+    this.defaultRenderChild(context, offset);
+  }
+  private defaultRenderChild(context: PaintingContext, offset?: Vector) {
+    let child = this.firstChild;
+    while (child != null) {
+      const parentData =
+        child.parentData as ContainerRenderViewParentData<RenderView>;
+      context.paintChild(
+        child,
+        Vector.add(parentData.offset ?? Vector.zero, offset ?? Vector.zero)
+      );
+      child = parentData?.nextSibling;
+    }
+  }
+}
 
 const view = new View();
 console.log(view);

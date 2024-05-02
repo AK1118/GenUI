@@ -3,26 +3,194 @@ import Alignment from "@/core/lib/painting/alignment";
 import { Size } from "@/core/lib/rect";
 import { BoxConstraints } from "@/core/lib/rendering/constraints";
 import Vector from "@/core/lib/vector";
-import { BoundsRRect, BoundsRect, ClipRRectOption, PositionedOption, Radius, SingleChildRenderViewOption } from "@/types/widget";
+import {
+  BoundsRRect,
+  BoundsRect,
+  ClipRRectOption,
+  PositionedOption,
+  Radius,
+  SingleChildRenderViewOption,
+} from "@/types/widget";
 
-enum Clip {
+export enum Clip {
   none,
   hardEdge,
   antiAlias,
 }
+export enum Axis {
+  /// Left and right.
+  horizontal,
+  /// Up and down.
+  vertical,
+}
+export enum MainAxisAlignment {
+  /// Place the children as close to the start of the main axis as possible.
+  ///
+  /// If this value is used in a horizontal direction, a [TextDirection] must be
+  /// available to determine if the start is the left or the right.
+  ///
+  /// If this value is used in a vertical direction, a [VerticalDirection] must be
+  /// available to determine if the start is the top or the bottom.
+  start,
+
+  /// Place the children as close to the end of the main axis as possible.
+  ///
+  /// If this value is used in a horizontal direction, a [TextDirection] must be
+  /// available to determine if the end is the left or the right.
+  ///
+  /// If this value is used in a vertical direction, a [VerticalDirection] must be
+  /// available to determine if the end is the top or the bottom.
+  end,
+
+  /// Place the children as close to the middle of the main axis as possible.
+  center,
+
+  /// Place the free space evenly between the children.
+  spaceBetween,
+
+  /// Place the free space evenly between the children as well as half of that
+  /// space before and after the first and last child.
+  spaceAround,
+
+  /// Place the free space evenly between the children as well as before and
+  /// after the first and last child.
+  spaceEvenly,
+}
+
+export enum CrossAxisAlignment {
+  /// Place the children with their start edge aligned with the start side of
+  /// the cross axis.
+  ///
+  /// For example, in a column (a flex with a vertical axis) whose
+  /// [TextDirection] is [TextDirection.ltr], this aligns the left edge of the
+  /// children along the left edge of the column.
+  ///
+  /// If this value is used in a horizontal direction, a [TextDirection] must be
+  /// available to determine if the start is the left or the right.
+  ///
+  /// If this value is used in a vertical direction, a [VerticalDirection] must be
+  /// available to determine if the start is the top or the bottom.
+  start,
+
+  /// Place the children as close to the end of the cross axis as possible.
+  ///
+  /// For example, in a column (a flex with a vertical axis) whose
+  /// [TextDirection] is [TextDirection.ltr], this aligns the right edge of the
+  /// children along the right edge of the column.
+  ///
+  /// If this value is used in a horizontal direction, a [TextDirection] must be
+  /// available to determine if the end is the left or the right.
+  ///
+  /// If this value is used in a vertical direction, a [VerticalDirection] must be
+  /// available to determine if the end is the top or the bottom.
+  end,
+
+  /// Place the children so that their centers align with the middle of the
+  /// cross axis.
+  ///
+  /// This is the default cross-axis alignment.
+  center,
+
+  /// Require the children to fill the cross axis.
+  ///
+  /// This causes the constraints passed to the children to be tight in the
+  /// cross axis.
+  stretch,
+
+  /// Place the children along the cross axis such that their baselines match.
+  ///
+  /// Because baselines are always horizontal, this alignment is intended for
+  /// horizontal main axes. If the main axis is vertical, then this value is
+  /// treated like [start].
+  ///
+  /// For horizontal main axes, if the minimum height constraint passed to the
+  /// flex layout exceeds the intrinsic height of the cross axis, children will
+  /// be aligned as close to the top as they can be while honoring the baseline
+  /// alignment. In other words, the extra space will be below all the children.
+  ///
+  /// Children who report no baseline will be top-aligned.
+  baseline,
+}
+
+// 存储父节点的某些数据
+class ParentData {}
+
+export class BoxParentData extends ParentData {
+  offset: Vector = Vector.zero;
+}
+
+export class ContainerRenderViewParentData<
+  ChildType extends RenderView
+> extends BoxParentData {
+  previousSibling?: ChildType;
+  nextSibling?: ChildType;
+}
+
+export class FlexParentData extends ContainerRenderViewParentData<RenderView> {
+  constructor() {
+    super();
+  }
+  flex: number;
+}
+
+abstract class AbstractNode {
+  private _parent: AbstractNode;
+  get parent() {
+    return this._parent;
+  }
+  set parent(value: AbstractNode) {
+    this._parent = value;
+  }
+  protected dropChild(child: AbstractNode) {
+    if (!child) return;
+    child!.parent = null;
+  }
+  protected adoptChild(child: AbstractNode) {
+    if (!child) return;
+    child!.parent = this;
+  }
+}
 
 //原子渲染对象，可以有层级渲染，没有renderbox，依赖于context传输的大小来渲染
-export abstract class RenderView {
-  protected size: Size = Size.zero;
+export abstract class RenderView extends AbstractNode {
+  private _child?: RenderView;
+  public parentData: ParentData = null;
+  public size: Size = Size.zero;
   abstract render(context: PaintingContext, offset?: Vector): void;
   //默认大小等于子大小，被子撑开
   abstract layout(constraints: BoxConstraints): void;
+  protected dropChild(child: AbstractNode): void {
+    super.dropChild(child);
+  }
+  protected adoptChild(child: AbstractNode): void {
+    if (!child) return;
+    this.setupParentData(child as RenderView);
+    super.adoptChild(child);
+  }
+  get child(): RenderView {
+    return this._child;
+  }
+  set child(value: RenderView) {
+    this.dropChild(value);
+    this._child = value;
+    this.adoptChild(value);
+  }
+  protected setupParentData(child: RenderView) {
+    if (child.parentData instanceof ParentData) {
+      child.parentData = new ParentData();
+    }
+  }
 }
 
-export class SingleChildRenderView extends RenderView {
-  protected child: RenderView;
+abstract class RenderBox extends RenderView {
+  protected setupParentData(child: RenderView): void {
+    child.parentData = new BoxParentData();
+  }
+}
+
+export class SingleChildRenderView extends RenderBox {
   protected constrain: BoxConstraints = BoxConstraints.zero;
-  constructor(child?: RenderView) {
+  constructor(child?: RenderBox) {
     super();
     this.child = child;
   }
@@ -42,7 +210,7 @@ export class SingleChildRenderView extends RenderView {
 
 export class ColoredRender extends SingleChildRenderView {
   private color: string;
-  constructor(color?: string, child?: RenderView) {
+  constructor(color?: string, child?: RenderBox) {
     super(child);
     this.color = color;
   }
@@ -64,7 +232,7 @@ export class ColoredRender extends SingleChildRenderView {
 //尺寸约束 不负责渲染
 export class SizeRender extends SingleChildRenderView {
   private additionalConstraints: BoxConstraints;
-  constructor(width: number, height: number, child?: RenderView) {
+  constructor(width: number, height: number, child?: RenderBox) {
     super(child);
     this.additionalConstraints = new BoxConstraints({
       maxWidth: width,
@@ -84,7 +252,7 @@ export class SizeRender extends SingleChildRenderView {
 
 export class Padding extends SingleChildRenderView {
   private padding: number = 0;
-  constructor(padding: number, child?: RenderView) {
+  constructor(padding: number, child?: RenderBox) {
     super(child);
     this.padding = padding;
   }
@@ -114,7 +282,7 @@ export class Padding extends SingleChildRenderView {
 export class Align extends SingleChildRenderView {
   private alignment: Alignment;
   private offset: Vector = Vector.zero;
-  constructor(alignment: Alignment, child?: RenderView) {
+  constructor(alignment: Alignment, child?: RenderBox) {
     super(child);
     this.alignment = alignment;
   }
@@ -133,8 +301,8 @@ export class Align extends SingleChildRenderView {
 
 export class ClipRRect extends SingleChildRenderView {
   private borderRadius: Radius;
-  constructor(option:Partial<ClipRRectOption>) {
-    const {child,borderRadius}=option;
+  constructor(option: Partial<ClipRRectOption>) {
+    const { child, borderRadius } = option;
     super(child);
     this.borderRadius = borderRadius;
   }
@@ -171,9 +339,6 @@ export class ClipRect extends SingleChildRenderView {
     );
   }
 }
-
-
-
 
 abstract class ClipContext {
   private _paint: Painter;
@@ -237,7 +402,6 @@ export class PaintingContext extends ClipContext {
   }
 }
 
-
 export class Positioned extends SingleChildRenderView {
   private position: Vector = Vector.zero;
   private isBottom: boolean;
@@ -283,34 +447,87 @@ export class Positioned extends SingleChildRenderView {
   }
 }
 
-export abstract class MultiChildRenderView extends RenderView {
-  protected children: RenderView[];
+export abstract class MultiChildRenderView extends RenderBox {
+  protected lastChild: RenderView;
+  protected firstChild: RenderView;
   constructor(children?: RenderView[]) {
     super();
-    this.children = children;
+    this.addAll(children);
+  }
+  public addAll(value: RenderView[]) {
+    value.forEach((_) => this.insert(_, this.lastChild));
+  }
+  private insert(renderView: RenderView, after?: RenderView) {
+    //设置父节点
+    this.adoptChild(renderView);
+    //插入兄弟列表
+    this.insertIntoList(renderView, after);
+  }
+  private insertIntoList(child: RenderView, after?: RenderView) {
+    let currentParentData =
+      child.parentData as ContainerRenderViewParentData<RenderView>;
+    let firstChildParentData = this.firstChild
+      ?.parentData as ContainerRenderViewParentData<RenderView>;
+    let afterParentData =
+      after?.parentData as ContainerRenderViewParentData<RenderView>;
+
+    if (after == null) {
+      this.firstChild = child;
+      this.lastChild = child;
+    } else {
+      if (!firstChildParentData?.nextSibling && this.firstChild) {
+        firstChildParentData.nextSibling = child;
+        this.firstChild.parentData = firstChildParentData!;
+      }
+      afterParentData.nextSibling = child;
+      after.parentData = afterParentData;
+      currentParentData.previousSibling = after;
+      child.parentData = currentParentData;
+      this.lastChild = child;
+    }
   }
   render(context: PaintingContext, offset?: Vector): void {}
   layout(constraints: BoxConstraints): void {
+    this.performLayout(constraints);
+  }
+  performLayout(constraints: BoxConstraints): void {
     this.size = constraints.constrain(Size.zero);
-    this.children?.forEach((child, index) => {
+    let child = this.firstChild;
+    while (child != null) {
+      const parentData =
+        child.parentData as ContainerRenderViewParentData<RenderView>;
       this.performLayoutChild(child, constraints);
-    });
+      child = parentData?.nextSibling;
+    }
   }
   performLayoutChild(child: RenderView, constraints: BoxConstraints): void {
     child.layout(constraints);
   }
+  protected getChildList(): RenderView[] {
+    const children: RenderView[] = [];
+    let child = this.firstChild;
+    while (child != null) {
+      const parentData =
+        child.parentData as ContainerRenderViewParentData<RenderView>;
+      children.push(child);
+      child = parentData?.nextSibling;
+    }
+    return children;
+  }
 }
-
-
 
 export class Stack extends MultiChildRenderView {
   constructor(children: RenderView[]) {
     super(children);
   }
   render(context: PaintingContext, offset?: Vector): void {
-    this.children?.forEach((child) => {
+    let child = this.firstChild;
+    while (child != null) {
+      const parentData =
+        child.parentData as ContainerRenderViewParentData<RenderView>;
       context.paintChild(child, offset);
-    });
+      child = parentData?.nextSibling;
+    }
     super.render(context, offset);
   }
 }
