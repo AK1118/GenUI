@@ -57,6 +57,7 @@ import {
   Align,
   Axis,
   ClipRRect,
+  ClipRect,
   ColoredRender,
   ContainerRenderViewParentData,
   CrossAxisAlignment,
@@ -166,15 +167,35 @@ class View {
       canvas.height,
       new Padding(
         10,
-        new Flex({
-          direction: Axis.horizontal,
-          children: [
-            new ColoredRender("orange", new SizeRender(20, 20)),
-            new ColoredRender("white", new SizeRender(20, 20)),
-            new ColoredRender("red", new SizeRender(10, 10)),
-          ],
-        })
+        new ColoredRender(
+          "orange",
+          new Padding(
+            10,
+            new ColoredRender(
+              "red",
+              new Padding(
+                10,
+                new Align(
+                  Alignment.center,
+                  new ClipRRect({
+                    borderRadius:30,
+                    child: new ColoredRender("#ccc", new SizeRender(100, 100))
+                  })
+                )
+              )
+            )
+          )
+        )
       )
+
+      // new Flex({
+      //     direction: Axis.horizontal,
+      //     children: [
+      //       new ColoredRender("orange", new SizeRender(20, 20)),
+      //       new ColoredRender("white", new SizeRender(20, 20)),
+      //       new ColoredRender("red", new SizeRender(10, 10)),
+      //     ],
+      //   })
     );
   }
   mount() {
@@ -276,9 +297,12 @@ class Flex extends MultiChildRenderView {
       crossSize: number = 0,
       allocatedSize: number = 0;
 
-    maxMainSize=(this.direction===Axis.horizontal)?constraints.minWidth:constraints.minWidth;
+    maxMainSize =
+      this.direction === Axis.horizontal
+        ? constraints.minWidth
+        : constraints.minWidth;
 
-    console.log("最大宽度",maxMainSize)
+    console.log("最大宽度", maxMainSize);
 
     while (child != null) {
       const parentData =

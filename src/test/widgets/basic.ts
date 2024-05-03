@@ -262,8 +262,19 @@ export class Padding extends SingleChildRenderView {
      * padding box最大约束
      */
     const additionalConstraints = new BoxConstraints({
-      minWidth: constraints.minWidth + this.padding * -2,
-      minHeight: this.padding * -2, //高度不需要约束，如果加上 约束盒子高度会默认为父约束盒高度
+      minWidth: Math.max(
+        this.padding * 2,
+        constraints.minWidth + this.padding * -2
+      ),
+      minHeight: this.padding * 2,
+      maxWidth: Math.max(
+        this.padding * 2,
+        constraints.maxWidth + this.padding * -2
+      ),
+      maxHeight: Math.max(
+        this.padding * 2,
+        constraints.maxHeight + this.padding * -2
+      ),
     });
     super.layout(additionalConstraints);
     this.size = new Size(
@@ -290,6 +301,7 @@ export class Align extends SingleChildRenderView {
     super.layout(constraints);
     const parentSize = constraints.constrain(Size.zero);
     this.offset = this.alignment.inscribe(this.size, parentSize);
+    this.offset.clamp([this.offset.x, 0]);
   }
   render(context: PaintingContext, offset?: Vector): void {
     super.render(
