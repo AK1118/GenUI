@@ -462,6 +462,7 @@ export class Positioned extends SingleChildRenderView {
 export abstract class MultiChildRenderView extends RenderBox {
   protected lastChild: RenderView;
   protected firstChild: RenderView;
+  protected childCount:number=0;
   constructor(children?: RenderView[]) {
     super();
     this.addAll(children);
@@ -474,6 +475,7 @@ export abstract class MultiChildRenderView extends RenderBox {
     this.adoptChild(renderView);
     //插入兄弟列表
     this.insertIntoList(renderView, after);
+    this.childCount+=1;
   }
   private insertIntoList(child: RenderView, after?: RenderView) {
     let currentParentData =
