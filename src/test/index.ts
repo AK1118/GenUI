@@ -8,7 +8,6 @@ import BoxFit from "@/core/lib/painting/box-fit";
 import Plugins from "@/core/lib/plugins";
 import OffScreenCanvasGenerator from "@/core/lib/plugins/offScreenCanvasGenerator";
 import { RenderViewElement } from "@/core/lib/rendering/element";
-import { Row } from "@/core/lib/rendering/flex";
 import { RenderViewWidget } from "@/core/lib/rendering/widget";
 import Vector from "@/core/lib/vector";
 import CustomButton from "@/core/viewObject/buttons/eventButton";
@@ -56,6 +55,7 @@ import { BoxConstraints } from "@/core/lib/rendering/constraints";
 import {
   Align,
   Axis,
+  Clip,
   ClipRRect,
   ClipRect,
   ColoredRender,
@@ -66,14 +66,18 @@ import {
   MultiChildRenderView,
   Padding,
   PaintingContext,
+  ParentDataRenderView,
   Positioned,
   RenderView,
   SingleChildRenderView,
   SizeRender,
   Stack,
 } from "./widgets/basic";
-import RenderBox from "@/core/lib/rendering/renderbox";
-import { MultiChildRenderViewOption } from "@/types/widget";
+import {
+  MultiChildRenderViewOption,
+  RenderBox,
+  RenderViewOption,
+} from "@/types/widget";
 
 /**
  * 假如全屏 360，    分成750份
@@ -165,19 +169,17 @@ class View {
     return new SizeRender(
       canvas.width,
       canvas.height,
-      new Padding(
-        0,
-        new Flex({
-          direction: Axis.horizontal,
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            new ColoredRender("orange", new SizeRender(50, 50)),
-            new ColoredRender("white", new SizeRender(20, 20)),
-            new ColoredRender("red", new SizeRender(10, 10)),
-          ],
-        })
-      )
+      new Flex({
+        direction: Axis.horizontal,
+        children: [
+          new Expanded({
+            flex: 1,
+            child: new ColoredRender("orange", new SizeRender(50, 50)),
+          }),
+          new ColoredRender("white", new SizeRender(20, 20)),
+          new ColoredRender("red", new SizeRender(10, 10)),
+        ],
+      })
     );
   }
   mount() {
@@ -203,6 +205,25 @@ interface LayoutSizes {
   crossSize: number;
   allocatedSize: number;
 }
+
+interface ExpandedOption {
+  flex: number;
+}
+
+class Expanded extends ParentDataRenderView {
+  private flex: number;
+  constructor(option?: Partial<ExpandedOption & RenderViewOption>) {
+    const { child, flex } = option ?? {};
+    super(child);
+    this.flex = flex;
+  }
+  applyParentData(renderObject: RenderView): void {
+    if (renderObject.parentData instanceof FlexParentData) {
+      renderObject.parentData.flex = this.flex;
+    }
+  }
+}
+
 class Flex extends MultiChildRenderView {
   private overflow: number = 0;
   private direction: Axis = Axis.horizontal;
@@ -223,7 +244,6 @@ class Flex extends MultiChildRenderView {
 
   performLayout(constraints: BoxConstraints): void {
     const computeSize: LayoutSizes = this.computeSize(constraints);
-
     if (this.direction === Axis.horizontal) {
       this.size = constraints.constrain(
         new Size(computeSize.mainSize, computeSize.crossSize)
@@ -299,7 +319,7 @@ class Flex extends MultiChildRenderView {
       } else if (this.direction === Axis.vertical) {
         parentData.offset = new Vector(childCrossPosition, childMainPosition);
       }
-      childMainPosition += childCrossSize + betweenSpace;
+      childMainPosition += childMainSize + betweenSpace;
       child = parentData?.nextSibling;
     }
   }
@@ -309,7 +329,6 @@ class Flex extends MultiChildRenderView {
       maxMainSize: number = 0,
       canFlex: boolean,
       child = this.firstChild,
-      childCount: number = 0,
       crossSize: number = 0,
       allocatedSize: number = 0;
 
@@ -352,22 +371,19 @@ class Flex extends MultiChildRenderView {
             });
           }
         }
+        child.layout(innerConstraint);
+        const childSize = child?.size || Size.zero;
+        allocatedSize += this.getMainSize(childSize);
+        crossSize = Math.max(crossSize, this.getCrossSize(childSize));
       }
-      child.layout(innerConstraint);
-      const childSize = child?.size || Size.zero;
-      allocatedSize += this.getMainSize(childSize);
-      crossSize = Math.max(crossSize, this.getCrossSize(childSize));
+
       child = parentData?.nextSibling;
-      childCount += 1;
     }
 
     //弹性布局计算
     if (totalFlex > 0) {
       //剩余空间
-      const freeSpace = Math.max(
-        0,
-        (canFlex ? maxMainSize : 0) - allocatedSize
-      );
+      const freeSpace = Math.max(0, canFlex ? maxMainSize : 0) - allocatedSize;
       //弹性盒子平均值
       const freePerSpace: number = freeSpace / totalFlex;
       child = this.firstChild;
@@ -404,17 +420,22 @@ class Flex extends MultiChildRenderView {
                 minWidth: minChildExtend,
                 maxWidth: maxChildExtent,
                 maxHeight: constraints.maxHeight,
+                minHeight: constraints.minHeight,
               });
             } else if (this.direction === Axis.vertical) {
               innerConstraint = new BoxConstraints({
                 minHeight: minChildExtend,
                 maxHeight: maxChildExtent,
                 maxWidth: constraints.maxWidth,
+                minWidth: constraints.minWidth,
               });
             }
           }
           child.layout(innerConstraint);
         }
+        //刷新布局后子盒子大小
+        allocatedSize += this.getMainSize(child.size);
+        crossSize = Math.max(crossSize, this.getCrossSize(child.size));
         const parentData =
           child.parentData as ContainerRenderViewParentData<RenderView>;
         child = parentData.nextSibling;
@@ -430,6 +451,7 @@ class Flex extends MultiChildRenderView {
   }
   private getFlex(child: RenderView): number {
     if (child.parentData instanceof FlexParentData) {
+      console.log("获取FLEX",child,child.parentData,child.parentData.flex)
       return child.parentData.flex ?? 0;
     }
     return 0;
@@ -471,7 +493,6 @@ class Flex extends MultiChildRenderView {
     }
   }
 }
-
 const view = new View();
 console.log(view);
 view.mount();
