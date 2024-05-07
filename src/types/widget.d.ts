@@ -26,6 +26,8 @@ declare namespace Widget {
     left: number;
     bottom: number;
     right: number;
+    width: number;
+    height: number;
   }
 
   interface BoundsRect {
@@ -34,7 +36,11 @@ declare namespace Widget {
     width: number;
     height: number;
   }
-
+  type Axis = any;
+  type MainAxisAlignment = any;
+  type CrossAxisAlignment = any;
+  type StackFit = any;
+  
   interface BoundsRRect extends BoundsRect {
     radii: number | Iterable<number>;
   }
@@ -43,5 +49,21 @@ declare namespace Widget {
 
   interface ClipRRectOption extends ClipRectOption {
     borderRadius: Radius;
+  }
+
+  interface FlexOption {
+    direction: Axis;
+    mainAxisAlignment: MainAxisAlignment;
+    crossAxisAlignment: CrossAxisAlignment;
+  }
+
+  interface LayoutSizes {
+    mainSize: number;
+    crossSize: number;
+    allocatedSize: number;
+  }
+
+  interface ExpandedOption {
+    flex: number;
   }
 }

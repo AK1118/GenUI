@@ -134,6 +134,8 @@ class BoxConstraints extends Constraints {
     return new BoxConstraints();
   }
 
+
+
   static tightFor(width?: number, height?: number): BoxConstraints {
     return new BoxConstraints({
       maxHeight: height ?? Infinity,

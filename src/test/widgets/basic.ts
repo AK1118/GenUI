@@ -7,8 +7,13 @@ import {
   BoundsRRect,
   BoundsRect,
   ClipRRectOption,
+  ExpandedOption,
+  FlexOption,
+  LayoutSizes,
+  MultiChildRenderViewOption,
   PositionedOption,
   Radius,
+  RenderViewOption,
   SingleChildRenderViewOption,
 } from "@/types/widget";
 
@@ -18,98 +23,45 @@ export enum Clip {
   antiAlias,
 }
 export enum Axis {
-  /// Left and right.
   horizontal,
-  /// Up and down.
+
   vertical,
 }
 export enum MainAxisAlignment {
-  /// Place the children as close to the start of the main axis as possible.
-  ///
-  /// If this value is used in a horizontal direction, a [TextDirection] must be
-  /// available to determine if the start is the left or the right.
-  ///
-  /// If this value is used in a vertical direction, a [VerticalDirection] must be
-  /// available to determine if the start is the top or the bottom.
   start,
 
-  /// Place the children as close to the end of the main axis as possible.
-  ///
-  /// If this value is used in a horizontal direction, a [TextDirection] must be
-  /// available to determine if the end is the left or the right.
-  ///
-  /// If this value is used in a vertical direction, a [VerticalDirection] must be
-  /// available to determine if the end is the top or the bottom.
   end,
 
-  /// Place the children as close to the middle of the main axis as possible.
   center,
 
-  /// Place the free space evenly between the children.
   spaceBetween,
 
-  /// Place the free space evenly between the children as well as half of that
-  /// space before and after the first and last child.
   spaceAround,
 
-  /// Place the free space evenly between the children as well as before and
-  /// after the first and last child.
   spaceEvenly,
 }
 
 export enum CrossAxisAlignment {
-  /// Place the children with their start edge aligned with the start side of
-  /// the cross axis.
-  ///
-  /// For example, in a column (a flex with a vertical axis) whose
-  /// [TextDirection] is [TextDirection.ltr], this aligns the left edge of the
-  /// children along the left edge of the column.
-  ///
-  /// If this value is used in a horizontal direction, a [TextDirection] must be
-  /// available to determine if the start is the left or the right.
-  ///
-  /// If this value is used in a vertical direction, a [VerticalDirection] must be
-  /// available to determine if the start is the top or the bottom.
   start,
-
-  /// Place the children as close to the end of the cross axis as possible.
-  ///
-  /// For example, in a column (a flex with a vertical axis) whose
-  /// [TextDirection] is [TextDirection.ltr], this aligns the right edge of the
-  /// children along the right edge of the column.
-  ///
-  /// If this value is used in a horizontal direction, a [TextDirection] must be
-  /// available to determine if the end is the left or the right.
-  ///
-  /// If this value is used in a vertical direction, a [VerticalDirection] must be
-  /// available to determine if the end is the top or the bottom.
   end,
-
-  /// Place the children so that their centers align with the middle of the
-  /// cross axis.
-  ///
-  /// This is the default cross-axis alignment.
   center,
-
-  /// Require the children to fill the cross axis.
-  ///
-  /// This causes the constraints passed to the children to be tight in the
-  /// cross axis.
   stretch,
-
-  /// Place the children along the cross axis such that their baselines match.
-  ///
-  /// Because baselines are always horizontal, this alignment is intended for
-  /// horizontal main axes. If the main axis is vertical, then this value is
-  /// treated like [start].
-  ///
-  /// For horizontal main axes, if the minimum height constraint passed to the
-  /// flex layout exceeds the intrinsic height of the cross axis, children will
-  /// be aligned as close to the top as they can be while honoring the baseline
-  /// alignment. In other words, the extra space will be below all the children.
-  ///
-  /// Children who report no baseline will be top-aligned.
   baseline,
+}
+
+export enum StackFit {
+  /**
+   * 这表示 Stack 组件会放宽传递给它的约束。换句话说，非定位子组件可以根据自己的需要在 Stack 区域内自由调整大小。举个例子，如果 Stack 的约束要求它的大小是 350x600，那么非定位子组件可以在宽度和高度上都在 0 到 350 和 0 到 600 的范围内调整
+   */
+  loose,
+  /**
+   * 这表示 Stack 组件会将传递给它的约束放大到允许的最大尺寸。举个例子，如果 Stack 的约束是宽度在 10 到 100 的范围内，高度在 0 到 600 的范围内，那么非定位子组件都会被调整为 100 像素宽和 600 像素高。
+   */
+  expand,
+  /**
+   * 这表示 Stack 组件会将从父组件传递给它的约束不加修改地传递给非定位子组件。举个例子，如果一个 Stack 作为 Row 的 Expanded 子组件，那么水平约束会是紧密的，而垂直约束会是松散的。
+   */
+  passthrough,
 }
 
 // 存储父节点的某些数据
@@ -198,7 +150,10 @@ abstract class RenderBox extends RenderView {
 }
 
 //parentData设置
-export abstract class ParentDataRenderView extends RenderView {
+export abstract class ParentDataRenderView<
+  P extends ParentData
+> extends RenderView {
+  public parentData: P;
   constructor(child?: RenderBox) {
     super();
     this.child = child;
@@ -442,50 +397,6 @@ export class PaintingContext extends ClipContext {
   }
 }
 
-export class Positioned extends SingleChildRenderView {
-  private position: Vector = Vector.zero;
-  private isBottom: boolean;
-  private isRight: boolean;
-  constructor(option: Partial<PositionedOption & SingleChildRenderViewOption>) {
-    const { child } = option;
-    super(child);
-    this.updatePosition(option);
-  }
-  private updatePosition(positionValues: Partial<PositionedOption>) {
-    let { top, bottom, left, right } = positionValues;
-    let x = top,
-      y = left;
-    if (top == null && bottom != null) {
-      y = bottom;
-      this.isBottom = true;
-    }
-    if (left == null && right != null) {
-      x = right;
-      this.isRight = true;
-    }
-    this.position.setXY(x || 0, y || 0);
-  }
-  performLayout(constraints: BoxConstraints): void {
-    const parentSize = constraints.constrain(Size.zero);
-    this.isBottom &&
-      this.position.setXY(
-        this.position.x,
-        parentSize.height - (this.position.y + this.size.height)
-      );
-    this.isRight &&
-      this.position.setXY(
-        parentSize.width - (this.position.x + this.size.width),
-        this.position.y
-      );
-  }
-  render(context: PaintingContext, offset?: Vector): void {
-    context.paintChild(
-      this.child,
-      offset ? Vector.add(this.position, offset) : offset
-    );
-  }
-}
-
 export abstract class MultiChildRenderView extends RenderBox {
   protected lastChild: RenderView;
   protected firstChild: RenderView;
@@ -530,7 +441,9 @@ export abstract class MultiChildRenderView extends RenderBox {
       this.lastChild = child;
     }
   }
-  render(context: PaintingContext, offset?: Vector): void {}
+  render(context: PaintingContext, offset?: Vector): void {
+    this.defaultRenderChild(context, offset);
+  }
   layout(constraints: BoxConstraints): void {
     this.performLayout(constraints);
   }
@@ -558,20 +471,283 @@ export abstract class MultiChildRenderView extends RenderBox {
     }
     return children;
   }
-}
-
-export class Stack extends MultiChildRenderView {
-  constructor(children: RenderView[]) {
-    super(children);
-  }
-  render(context: PaintingContext, offset?: Vector): void {
+  protected defaultRenderChild(context: PaintingContext, offset?: Vector) {
     let child = this.firstChild;
     while (child != null) {
       const parentData =
         child.parentData as ContainerRenderViewParentData<RenderView>;
-      context.paintChild(child, offset);
+      context.paintChild(
+        child,
+        Vector.add(parentData.offset ?? Vector.zero, offset ?? Vector.zero)
+      );
       child = parentData?.nextSibling;
     }
-    super.render(context, offset);
+  }
+}
+
+export class Expanded extends ParentDataRenderView<FlexParentData> {
+  private flex: number;
+  constructor(option?: Partial<ExpandedOption & RenderViewOption>) {
+    const { child, flex } = option ?? {};
+    super(child);
+    this.flex = flex;
+  }
+  applyParentData(renderObject: RenderView): void {
+    if (renderObject.parentData instanceof FlexParentData) {
+      renderObject.parentData.flex = this.flex;
+    }
+  }
+}
+export class Flex extends MultiChildRenderView {
+  private overflow: number = 0;
+  private direction: Axis = Axis.horizontal;
+  private mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.start;
+  private crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.start;
+  constructor(option: Partial<FlexOption & MultiChildRenderViewOption>) {
+    const { direction, children, mainAxisAlignment, crossAxisAlignment } =
+      option;
+    super(children);
+    this.direction = direction;
+    this.mainAxisAlignment = mainAxisAlignment!;
+    this.crossAxisAlignment = crossAxisAlignment!;
+  }
+
+  layout(constraints: BoxConstraints): void {
+    super.layout(constraints);
+  }
+
+  performLayout(constraints: BoxConstraints): void {
+    const computeSize: LayoutSizes = this.computeSize(constraints);
+    if (this.direction === Axis.horizontal) {
+      this.size = constraints.constrain(
+        new Size(computeSize.mainSize, computeSize.crossSize)
+      );
+    } else if (this.direction === Axis.vertical) {
+      this.size = constraints.constrain(
+        new Size(computeSize.crossSize, computeSize.mainSize)
+      );
+    }
+
+    //实际剩余大小
+    const actualSizeDetail: number =
+      computeSize.mainSize - computeSize.allocatedSize;
+    //当实际剩余大小为负数时判断为溢出
+    this.overflow = Math.max(0, actualSizeDetail * -1);
+    //剩余空间
+    const remainingSpace: number = Math.max(0, actualSizeDetail);
+    let leadingSpace: number = 0;
+    let betweenSpace: number = 0;
+    /**
+     * 根据剩余空间计算leading 和 between
+     * 例如总宽度为 200，元素50有1个，实际剩余等于200-50=150;
+     * 假设为center,算法为  leadingSpace = remainingSpace *.5;也就是 75开始布局
+     */
+    switch (this.mainAxisAlignment) {
+      case MainAxisAlignment.start:
+        break;
+      case MainAxisAlignment.end:
+        leadingSpace = remainingSpace;
+        break;
+      case MainAxisAlignment.center:
+        leadingSpace = remainingSpace * 0.5;
+        break;
+      case MainAxisAlignment.spaceBetween:
+        betweenSpace = remainingSpace / (this.childCount - 1);
+        break;
+      case MainAxisAlignment.spaceAround:
+        betweenSpace = remainingSpace / this.childCount;
+        leadingSpace = betweenSpace * 0.5;
+        break;
+      case MainAxisAlignment.spaceEvenly:
+        betweenSpace = remainingSpace / (this.childCount + 1);
+        leadingSpace = betweenSpace;
+    }
+
+    let child = this.firstChild;
+    let childMainPosition: number = leadingSpace,
+      childCrossPosition: number = 0;
+
+    while (child != null) {
+      const parentData =
+        child.parentData as ContainerRenderViewParentData<RenderView>;
+
+      const childMainSize = this.getMainSize(child.size),
+        childCrossSize = this.getCrossSize(child.size);
+
+      switch (this.crossAxisAlignment) {
+        case CrossAxisAlignment.start:
+        case CrossAxisAlignment.end:
+          childCrossPosition = computeSize.crossSize - childCrossSize;
+          break;
+        case CrossAxisAlignment.center:
+          childCrossPosition =
+            computeSize.crossSize * 0.5 - childCrossSize * 0.5;
+          break;
+        case CrossAxisAlignment.stretch:
+          childCrossPosition = 0;
+          break;
+        case CrossAxisAlignment.baseline:
+      }
+      if (this.direction === Axis.horizontal) {
+        parentData.offset = new Vector(childMainPosition, childCrossPosition);
+      } else if (this.direction === Axis.vertical) {
+        parentData.offset = new Vector(childCrossPosition, childMainPosition);
+      }
+      childMainPosition += childMainSize + betweenSpace;
+      child = parentData?.nextSibling;
+    }
+  }
+
+  private computeSize(constraints: BoxConstraints): LayoutSizes {
+    let totalFlex: number = 0,
+      maxMainSize: number = 0,
+      canFlex: boolean,
+      child = this.firstChild,
+      crossSize: number = 0,
+      allocatedSize: number = 0;
+
+    maxMainSize =
+      this.direction === Axis.horizontal
+        ? constraints.maxWidth
+        : constraints.maxHeight;
+    //盒子主轴值无限时不能被flex布局
+    canFlex = maxMainSize < Infinity;
+
+    while (child != null) {
+      const parentData =
+        child.parentData as ContainerRenderViewParentData<RenderView>;
+      let innerConstraint: BoxConstraints = BoxConstraints.zero;
+      const flex = this.getFlex(child);
+      if (flex > 0) {
+        totalFlex += flex;
+      } else {
+        //当设置了cross方向也需要拉伸时,子盒子约束需要设置为max = min = parent.max
+        if (this.crossAxisAlignment === CrossAxisAlignment.stretch) {
+          this.direction === Axis.horizontal &&
+            (innerConstraint = BoxConstraints.tightFor(
+              0,
+              constraints.maxHeight
+            ));
+          this.direction === Axis.vertical &&
+            (innerConstraint = BoxConstraints.tightFor(
+              constraints.maxWidth,
+              0
+            ));
+        } else {
+          //cross未设置拉伸，仅设置子盒子 max
+          if (this.direction === Axis.horizontal) {
+            innerConstraint = new BoxConstraints({
+              maxHeight: constraints.maxHeight,
+            });
+          } else if (this.direction === Axis.vertical) {
+            innerConstraint = new BoxConstraints({
+              maxWidth: constraints.maxWidth,
+            });
+          }
+        }
+        child.layout(innerConstraint);
+        const childSize = child?.size || Size.zero;
+        allocatedSize += this.getMainSize(childSize);
+        crossSize = Math.max(crossSize, this.getCrossSize(childSize));
+      }
+
+      child = parentData?.nextSibling;
+    }
+
+    //弹性布局计算
+    if (totalFlex > 0) {
+      //剩余空间
+      const freeSpace = Math.max(0, canFlex ? maxMainSize : 0) - allocatedSize;
+      //弹性盒子平均值
+      const freePerSpace: number = freeSpace / totalFlex;
+      child = this.firstChild;
+      while (child != null) {
+        const flex = this.getFlex(child);
+        if (flex > 0) {
+          //子盒子最大约束
+          const maxChildExtent: number = canFlex
+            ? flex * freePerSpace
+            : Infinity;
+          //最小约束
+          const minChildExtend: number = maxChildExtent;
+          let innerConstraint: BoxConstraints = BoxConstraints.zero;
+          //交叉方向填满
+          if (this.crossAxisAlignment === CrossAxisAlignment.stretch) {
+            if (this.direction === Axis.horizontal) {
+              innerConstraint = new BoxConstraints({
+                maxWidth: maxChildExtent,
+                minWidth: minChildExtend,
+                minHeight: constraints.maxHeight,
+                maxHeight: constraints.maxHeight,
+              });
+            } else if (this.direction === Axis.vertical) {
+              innerConstraint = new BoxConstraints({
+                maxWidth: constraints.maxWidth,
+                minWidth: constraints.maxWidth,
+                minHeight: minChildExtend,
+                maxHeight: maxChildExtent,
+              });
+            }
+          } else {
+            if (this.direction === Axis.horizontal) {
+              innerConstraint = new BoxConstraints({
+                minWidth: minChildExtend,
+                maxWidth: maxChildExtent,
+                maxHeight: constraints.maxHeight,
+                minHeight: constraints.minHeight,
+              });
+            } else if (this.direction === Axis.vertical) {
+              innerConstraint = new BoxConstraints({
+                minHeight: minChildExtend,
+                maxHeight: maxChildExtent,
+                maxWidth: constraints.maxWidth,
+                minWidth: constraints.minWidth,
+              });
+            }
+          }
+          child.layout(innerConstraint);
+        }
+        //刷新布局后子盒子大小
+        allocatedSize += this.getMainSize(child.size);
+        crossSize = Math.max(crossSize, this.getCrossSize(child.size));
+        const parentData =
+          child.parentData as ContainerRenderViewParentData<RenderView>;
+        child = parentData.nextSibling;
+      }
+    }
+
+    const idealSize: number = canFlex ? maxMainSize : allocatedSize;
+    return {
+      mainSize: idealSize,
+      crossSize: crossSize,
+      allocatedSize: allocatedSize,
+    };
+  }
+  private getFlex(child: RenderView): number {
+    if (child.parentData instanceof FlexParentData) {
+      return child.parentData.flex ?? 0;
+    }
+    return 0;
+  }
+  protected setupParentData(child: RenderView): void {
+    child.parentData = new FlexParentData();
+  }
+
+  private getCrossSize(size: Size) {
+    switch (this.direction) {
+      case Axis.horizontal:
+        return size.height;
+      case Axis.vertical:
+        return size.width;
+    }
+  }
+
+  private getMainSize(size: Size) {
+    switch (this.direction) {
+      case Axis.horizontal:
+        return size.width;
+      case Axis.vertical:
+        return size.height;
+    }
   }
 }
