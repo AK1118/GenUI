@@ -1,7 +1,13 @@
+
 export = Widget;
 export as namespace Widget;
 
 declare namespace Widget {
+  type Axis = any;
+  type MainAxisAlignment = any;
+  type CrossAxisAlignment = any;
+  type StackFit = any;
+  type Alignment=any;
   type Radius = number | Iterable<number>;
 
   class PaintingContext {
@@ -36,10 +42,6 @@ declare namespace Widget {
     width: number;
     height: number;
   }
-  type Axis = any;
-  type MainAxisAlignment = any;
-  type CrossAxisAlignment = any;
-  type StackFit = any;
   
   interface BoundsRRect extends BoundsRect {
     radii: number | Iterable<number>;
@@ -65,5 +67,9 @@ declare namespace Widget {
 
   interface ExpandedOption {
     flex: number;
+  }
+  interface StackOption {
+    fit: StackFit;
+    alignment: Alignment;
   }
 }
