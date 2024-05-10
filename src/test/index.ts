@@ -211,20 +211,33 @@ class View {
 // view.layout();
 // view.render(new PaintingContext(new Painter(g)));
 
-
-g.font = "bold 15px serif";
-const texts = 'Hello word,this is my first information draw on canvas'//`这是测试文字 测 测 试 n a breakthrough for web designers and developers, a new canvas plugin called "GestiView" has emerged, promising to revolutionize the way interactive content is created and displayed on the web. Developed by a team of forward-thinking engineers at a Silicon Valley startup, GestiView introduces cutting-edge features that streamline the process of designing and implementing canvas-based graphics.`//`hello 欢！迎·来、。到 nuestra comunidad. Добро пожаловать! We are here today to celebrate la beauté de la diversité linguistique. En este texto, мы исследуем l'interconnexion entre différentes langues et cultures. Let's embark on this journey together, shall we?`; //`.,;:?!"\'()（）！【】[]{}-–—/\\|_#*&@~^%$€£¥¢§°±=<>😀`
+const fontSize = 20;
+const paintY = fontSize;
+const paintX = 10;
+g.font = `bold ${fontSize}px serif`;
+const texts =`This is a small text and this is a large text.`// `这是测试文字 测 测 试 n a breakthrough for web designers and developers, a new canvas plugin called "GestiView" has emerged, promising to revolutionize the way interactive content is created and displayed on the web. Developed by a team of forward-thinking engineers at a Silicon Valley startup, GestiView introduces cutting-edge features that streamline the process of designing and implementing canvas-based graphics.`//`hello 欢！迎·来、。到 nuestra comunidad. Добро пожаловать! We are here today to celebrate la beauté de la diversité linguistique. En este texto, мы исследуем l'interconnexion entre différentes langues et cultures. Let's embark on this journey together, shall we?`; //`.,;:?!"\'()（）！【】[]{}-–—/\\|_#*&@~^%$€£¥¢§°±=<>😀`
 const paragraph = new Paragraph();
+const paragraph2 = new Paragraph();
 paragraph.addText(texts);
-paragraph.layout(new ParagraphConstraints(200), new Painter(g));
-const las=paragraph.paint(new Painter(g), new Vector(10, 20));
+paragraph2.addText(texts);
 
 
-// const paragraph2 = new Paragraph();
-// paragraph2.addText(texts);
-// paragraph2.layout(new ParagraphConstraints(200), new Painter(g),las);
-// paragraph2.paint(new Painter(g));
+const { continueOffset,height } = paragraph.layout(
+  new ParagraphConstraints(200),
+  new Painter(g)
+);
+paragraph2.layout(
+  new ParagraphConstraints(200),
+  new Painter(g),
+  new Vector(continueOffset.x, 0)
+);
 
 
+
+
+
+
+paragraph.paint(new Painter(g), new Vector(paintX, paintY));
+paragraph2.paint(new Painter(g), new Vector(paintX, paintY+continueOffset.y));
 
 // g.fillText(texts, 10, 200);

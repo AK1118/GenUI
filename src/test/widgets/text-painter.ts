@@ -37,11 +37,11 @@ class ParagraphStyle {
   fontSize: number = 20;
   height: number = 20;
   letterSpacing: number = 0;
-  wordSpace: number = 10;
-  lineHeight: number = 25;
+  wordSpace: number = 0;
+  lineHeight: number = 40;
   direction: TextDirection;
 }
-class TextStyle extends ParagraphStyle {
+export class TextStyle extends ParagraphStyle {
   color: string = "black";
 }
 
@@ -100,6 +100,10 @@ class TextPoint {
     this.box = box;
   }
 }
+type ParagraphLayouted = {
+  height: number;
+  continueOffset: Vector;
+};
 /**
  * 段落
  */
@@ -109,6 +113,7 @@ export class Paragraph {
   text: string;
   boxes: TextBox[];
   textPoints: TextPoint[] = [];
+  public lastTextPoint: TextPoint;
   public pushStyle(textStyle: TextStyle) {
     this.textStyle = textStyle;
   }
@@ -116,13 +121,27 @@ export class Paragraph {
     this.text = text;
   }
   /**
+   * [startOffset]表示该文本(首个文字)从此开始布局，在[TextSpan]具有children时会按此规律排序
    * 将所有文字逐个分开并通过[getMeasureText]方法获取文字数据，生成[TextBox]列表
    * 1.[performLayoutTextOffset]首次排序使用 [performLayoutRow]将所有文字按ltr方向排序成一条直线并给出每个文字的offset,同时会设置word space
    * 2.[performConstraintsWidth]约束排序，主要做换行等操作,根据文字特性判定换行规则,并返回堆叠高度[maxHeight]
    */
-  layout(constraints: ParagraphConstraints, paint: Painter,startOffset:Vector=Vector.zero) {
-    this.performLayoutTextOffset(paint);
-    const maxHeight = this.performConstraintsWidth(constraints,startOffset);
+  layout(
+    constraints: ParagraphConstraints,
+    paint: Painter,
+    startOffset: Vector = Vector.zero
+  ): Partial<ParagraphLayouted> {
+    this.performLayoutTextOffset(paint, startOffset);
+    const maxHeight = this.performConstraintsWidth(constraints);
+
+    const lastOffset = this.lastTextPoint.offset.copy();
+    const continueOffset = Vector.zero;
+    continueOffset.add(lastOffset);
+    continueOffset.add(new Vector(this.textStyle.fontSize, 0));
+    return {
+      height: maxHeight,
+      continueOffset,
+    };
   }
   /**
    * 约束文字宽度
@@ -130,7 +149,7 @@ export class Paragraph {
    * 超出后由于已经有布局过，需要将新的一行x设置为0,就必须让x加上反向增量达到0,反向增量为x的倒数
    * 文本是否为单词判断逻辑为next不为null与next的code码小于256与next不为空格即判定为一个单词
    */
-  private performConstraintsWidth(constraints: ParagraphConstraints,startOffset:Vector): number {
+  private performConstraintsWidth(constraints: ParagraphConstraints): number {
     let maxHeight = 0;
     let column = 0,
       subDeltaX = 0;
@@ -166,7 +185,6 @@ export class Paragraph {
       }
       const deltaY = this.textStyle.lineHeight * column;
       offset.setXY(subDeltaX + offset.x, deltaY);
-      offset.add(startOffset);
       maxHeight = Math.max(deltaY + this.textStyle.lineHeight, maxHeight);
       if (wordCount > 1) this.performLayoutRow(textPoint, offset, wordCount);
     }
@@ -175,7 +193,7 @@ export class Paragraph {
   /**
    *  将文字处理为[TextBox]并计算每个文字的offset
    */
-  private performLayoutTextOffset(paint: Painter) {
+  private performLayoutTextOffset(paint: Painter, startOffset: Vector) {
     const texts: Array<string> = Array.from(this.text);
     let after: TextPoint;
     let firstTextPoint: TextPoint;
@@ -186,8 +204,7 @@ export class Paragraph {
         firstTextPoint = textPoint;
       }
     }
-    this.performLayoutRow(firstTextPoint);
-    console.log(firstTextPoint);
+    this.performLayoutRow(firstTextPoint, startOffset);
   }
   /**
    * 传入一个[TextPoint],这个对象将会是渲染的第一位，接下来会一只next下去，布局的将会是从左到右进行，不会出现换行
@@ -220,6 +237,7 @@ export class Paragraph {
       currentPoint = parentData.nextPointText;
       x += box.width;
       range++;
+      this.lastTextPoint = currentPoint ?? this.lastTextPoint;
       if (maxRange && range > maxRange) break;
     }
   }
@@ -257,15 +275,12 @@ export class Paragraph {
   private getMeasureText(paint: Painter, text: string): TextMetrics {
     return paint.measureText(text);
   }
-  paint(paint: Painter, offset: Vector=Vector.zero): Vector {
-    let lastTextPointOffset: Vector = offset;
+  paint(paint: Painter, offset: Vector = Vector.zero) {
     if (this.textPoints) {
       this.textPoints.forEach((_) => {
         paint.fillText(_.text, _.offset.x + offset.x, _.offset.y + offset.y);
-        lastTextPointOffset=_.offset;
       });
     }
-    return lastTextPointOffset;
   }
 }
 
