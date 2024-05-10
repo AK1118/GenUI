@@ -212,13 +212,9 @@ class View {
 // view.render(new PaintingContext(new Painter(g)));
 
 const paragraph = new Paragraph();
-g.font = "bold 10px serif";
-const texts = `1234567890A
-B
-C
-DEFGHIJKLMNOPQRSTUVWXYZ ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890 123
-45`; //`.,;:?!"\'()（）！【】[]{}-–—/\\|_#*&@~^%$€£¥¢§°±=<>😀`
+g.font = "bold 15px serif";
+const texts =`⍰𣌪𨾇㑅茬𤉾𫗀の𛁷𛂡ไ꒦⧬𦉷⍰ ⦕⟦𤍃婂ꓭꜵ𤫞⟧⦖ ⍗ቻꬄꪀᧁ𡇅ꖾꭎꭤꭥꬶ蔩 Hello word 𦥔𫔊臫ぬ⍗ ⧸⋛𐌷ומ婂𮦚靌⋚⧹ ⍞ぬ果Ɥ処㒻𥇥丩𛂗の肑𠪰朢⍞ ༺ཌༀ𤞦𭘸𡬀𡬏ༀད༻ ⍗𛂄𛀭𩫋𫾣𛃤𣏸𨑗㍽䰲⛩𦛃⍗ ꧁𬆶Պᛙᗩᚢ寚䴐꧂ 𬥏uæŋ𦍤，朌朢著，𰻨冈𭫝3，萅兲の脚𣥕 …`// `\`.,;:?!"\'()（）！【】[]{}-–—/\\|_#*&@~^%$€£¥¢§°±=<>😀¡Hola, my dear friends! 欢！迎·来、。到 nuestra comunidad. Добро пожаловать! We are here today to celebrate la beauté de la diversité linguistique. En este texto, мы исследуем l'interconnexion entre différentes langues et cultures. Let's embark on this journey together, shall we?`; //`.,;:?!"\'()（）！【】[]{}-–—/\\|_#*&@~^%$€£¥¢§°±=<>😀`
 paragraph.addText(texts);
-paragraph.layout(new ParagraphConstraints(100), new Painter(g));
-paragraph.paint(new Painter(g), new Vector(100, 20));
-g.fillText(texts, 10, 110);
+paragraph.layout(new ParagraphConstraints(canvas.width), new Painter(g));
+paragraph.paint(new Painter(g), new Vector(0, 20));
+g.fillText(texts, 10, 200);

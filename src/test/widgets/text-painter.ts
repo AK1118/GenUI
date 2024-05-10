@@ -38,7 +38,7 @@ class ParagraphStyle {
   height: number = 20;
   letterSpacing: number = 0;
   wordSpace: number = 0;
-  lineHeight: number = 10;
+  lineHeight: number = 25;
   direction: TextDirection;
 }
 class TextBox {
@@ -81,7 +81,13 @@ class TextBox {
   }
 }
 
+class TextPointParentData {
+  public prePointText: TextPoint;
+  public nextPointText: TextPoint;
+}
+
 class TextPoint {
+  parentData: TextPointParentData = new TextPointParentData();
   text: string;
   offset: Vector = Vector.zero;
   box: TextBox;
@@ -97,13 +103,18 @@ export class Paragraph {
   textStyle: ParagraphStyle = new ParagraphStyle();
   text: string;
   boxes: TextBox[];
-  textPoints: TextPoint[];
+  textPoints: TextPoint[] = [];
   public pushStyle() {}
   public addText(text: string) {
     this.text = text;
   }
+  /**
+   * 将所有文字逐个分开并通过[getMeasureText]方法获取文字数据，生成[TextBox]列表
+   * 1.[performLayoutTextOffset]首次排序，将所有文字按ltr方向排序成一条直线并给出每个文字的offset
+   * 2.[performConstraintsWidth]约束排序，主要做换行等操作
+   */
   layout(constraints: ParagraphConstraints, paint: Painter) {
-    this.textPoints = this.performLayoutTextOffset(paint);
+    this.performLayoutTextOffset(paint);
     this.performConstraintsWidth(constraints);
   }
   /**
@@ -116,10 +127,27 @@ export class Paragraph {
     let column = 0,
       subDeltaX = 0;
     const maxWidth = constraints.width;
-    for (const textPoint of this.textPoints) {
+    const len = this.textPoints.length;
+    for (let index = 0; index < len; index++) {
+      const textPoint = this.textPoints[index];
       const codePoint = textPoint.text.charCodeAt(0);
       const offset = textPoint.offset;
-      const textOffsetX = offset.x + subDeltaX;
+      const box = textPoint.box;
+      let wordWidth = box.width + offset.x;
+      let currentPoint = textPoint;
+      let wordCount: number = 0;
+      while (currentPoint != null && currentPoint.text.charCodeAt(0) != 32) {
+        if (currentPoint?.text.charCodeAt(0) > 256) {
+          break;
+        }
+        const parentData = currentPoint.parentData;
+        wordWidth += currentPoint.box.width;
+        currentPoint = parentData.nextPointText;
+        wordCount++;
+        index++;
+      }
+
+      const textOffsetX = wordWidth + subDeltaX;
       const overflow = maxWidth - textOffsetX;
       if (overflow < 0 || TextPainter.isNewline(codePoint)) {
         //标记当前减量
@@ -128,47 +156,83 @@ export class Paragraph {
       }
       const deltaY = this.textStyle.lineHeight * column;
       offset.setXY(subDeltaX + offset.x, deltaY);
+      if (wordCount > 1) this.performLayoutRow(textPoint, offset, wordCount);
     }
   }
   /**
    *  将文字处理为[TextBox]并计算每个文字的offset
    */
-  private performLayoutTextOffset(paint: Painter): TextPoint[] {
-    const textPoints: TextPoint[] = [];
+  private performLayoutTextOffset(paint: Painter) {
+    const texts: Array<string> = Array.from(this.text);// .split(" ");
+    let after: TextPoint;
+    let firstTextPoint: TextPoint;
+    for (const text of texts) {
+      const textPoint = this.insertTextToList(text, paint, after);
+      after = textPoint;
+      if (!firstTextPoint) {
+        firstTextPoint = textPoint;
+      }
+    }
+    this.performLayoutRow(firstTextPoint);
+    console.log(firstTextPoint);
+  }
+  private performLayoutRow(
+    textPoint: TextPoint,
+    offset?: Vector,
+    maxRange?: number
+  ) {
     const symbolRegex = /\.|\(|\)|\（|\）|\!|\！/;
-    const texts: Array<string> = this.text.split("");
-    const textMetrics: Array<TextMetrics> = texts.map((_) =>
-      this.getMeasureText(paint, _)
-    );
-    this.boxes = this.genTextBoxes(textMetrics);
-    let x: number = 0;
-    this.boxes.forEach((_, ndx) => {
-      const text: string = texts[ndx];
-      const textPoint = new TextPoint(text, _);
-      const isOffset = !symbolRegex.test(text);
-      textPoint.offset.setXY(
-        isOffset ? x + _.width - _.right + _.left : x + Math.max(_.left, 0),
-        0
-      );
-      x += _.width;
-      textPoints.push(textPoint);
-    });
-    return textPoints;
+    let x: number = offset?.x ?? 0;
+    let currentPoint = textPoint;
+    let range: number = 0;
+    while (currentPoint != null) {
+      const parentData = currentPoint?.parentData;
+      const isOffset = !symbolRegex.test(currentPoint.text);
+      const offset = Vector.zero;
+      const box = currentPoint.box;
+      const offsetX = isOffset
+        ? x + box.width - box.right + box.left
+        : x + Math.max(box.left, 0);
+      const offsetY = textPoint.offset.y;
+      offset.setXY(offsetX, offsetY);
+      currentPoint.offset.set(offset);
+      currentPoint = parentData.nextPointText;
+      x += box.width;
+      range++;
+      if (maxRange && range > maxRange) break;
+    }
   }
-  private genTextBoxes(textMetrics: TextMetrics[]): TextBox[] {
-    const boxes: TextBox[] = textMetrics.map((_: any) =>
-      TextBox.fromLTRBD(
-        _.width,
-        _.hangingBaseline,
-        _.actualBoundingBoxLeft,
-        _.actualBoundingBoxRight,
-        _.actualBoundingBoxDescent,
-        _.actualBoundingBoxAscent,
-        this.textStyle.direction
-      )
-    );
-    return boxes;
+  private insertTextToList(
+    text: string,
+    paint: Painter,
+    after?: TextPoint
+  ): TextPoint {
+    const textMetrics = this.getMeasureText(paint, text);
+    const box = this.getTextBox(textMetrics);
+    const textPoint = new TextPoint(text, box);
+
+    if (after) {
+      textPoint.parentData.prePointText = after;
+      after.parentData.nextPointText = textPoint;
+    }
+
+    this.textPoints.push(textPoint);
+    return textPoint;
   }
+  private getTextBox(textMetrics: any): TextBox {
+    const letterSpacing = this.textStyle.letterSpacing;
+    const isFirstChar = this.textPoints.length == 0;
+    return TextBox.fromLTRBD(
+      textMetrics.width + (isFirstChar ? 0 : letterSpacing),
+      textMetrics.hangingBaseline,
+      textMetrics.actualBoundingBoxLeft,
+      textMetrics.actualBoundingBoxRight,
+      textMetrics.actualBoundingBoxDescent,
+      textMetrics.actualBoundingBoxAscent,
+      this.textStyle.direction
+    );
+  }
+
   private getMeasureText(paint: Painter, text: string): TextMetrics {
     return paint.measureText(text);
   }
