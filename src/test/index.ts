@@ -211,10 +211,20 @@ class View {
 // view.layout();
 // view.render(new PaintingContext(new Painter(g)));
 
-const paragraph = new Paragraph();
+
 g.font = "bold 15px serif";
-const texts =`⍰𣌪𨾇㑅茬𤉾𫗀の𛁷𛂡ไ꒦⧬𦉷⍰ ⦕⟦𤍃婂ꓭꜵ𤫞⟧⦖ ⍗ቻꬄꪀᧁ𡇅ꖾꭎꭤꭥꬶ蔩 Hello word 𦥔𫔊臫ぬ⍗ ⧸⋛𐌷ומ婂𮦚靌⋚⧹ ⍞ぬ果Ɥ処㒻𥇥丩𛂗の肑𠪰朢⍞ ༺ཌༀ𤞦𭘸𡬀𡬏ༀད༻ ⍗𛂄𛀭𩫋𫾣𛃤𣏸𨑗㍽䰲⛩𦛃⍗ ꧁𬆶Պᛙᗩᚢ寚䴐꧂ 𬥏uæŋ𦍤，朌朢著，𰻨冈𭫝3，萅兲の脚𣥕 …`// `\`.,;:?!"\'()（）！【】[]{}-–—/\\|_#*&@~^%$€£¥¢§°±=<>😀¡Hola, my dear friends! 欢！迎·来、。到 nuestra comunidad. Добро пожаловать! We are here today to celebrate la beauté de la diversité linguistique. En este texto, мы исследуем l'interconnexion entre différentes langues et cultures. Let's embark on this journey together, shall we?`; //`.,;:?!"\'()（）！【】[]{}-–—/\\|_#*&@~^%$€£¥¢§°±=<>😀`
+const texts = 'Hello word,this is my first information draw on canvas'//`这是测试文字 测 测 试 n a breakthrough for web designers and developers, a new canvas plugin called "GestiView" has emerged, promising to revolutionize the way interactive content is created and displayed on the web. Developed by a team of forward-thinking engineers at a Silicon Valley startup, GestiView introduces cutting-edge features that streamline the process of designing and implementing canvas-based graphics.`//`hello 欢！迎·来、。到 nuestra comunidad. Добро пожаловать! We are here today to celebrate la beauté de la diversité linguistique. En este texto, мы исследуем l'interconnexion entre différentes langues et cultures. Let's embark on this journey together, shall we?`; //`.,;:?!"\'()（）！【】[]{}-–—/\\|_#*&@~^%$€£¥¢§°±=<>😀`
+const paragraph = new Paragraph();
 paragraph.addText(texts);
-paragraph.layout(new ParagraphConstraints(canvas.width), new Painter(g));
-paragraph.paint(new Painter(g), new Vector(0, 20));
-g.fillText(texts, 10, 200);
+paragraph.layout(new ParagraphConstraints(200), new Painter(g));
+const las=paragraph.paint(new Painter(g), new Vector(10, 20));
+
+
+// const paragraph2 = new Paragraph();
+// paragraph2.addText(texts);
+// paragraph2.layout(new ParagraphConstraints(200), new Painter(g),las);
+// paragraph2.paint(new Painter(g));
+
+
+
+// g.fillText(texts, 10, 200);
