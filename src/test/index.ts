@@ -84,7 +84,7 @@ import {
   RenderViewOption,
   SingleChildRenderViewOption,
 } from "@/types/widget";
-import { Paragraph, ParagraphConstraints } from "./widgets/text-painter";
+import { Paragraph, ParagraphConstraints, TextAlign, TextStyle } from "./widgets/text-painter";
 
 /**
  * 假如全屏 360，    分成750份
@@ -212,17 +212,20 @@ class View {
 // view.render(new PaintingContext(new Painter(g)));
 
 const fontSize = 20;
-const paintY = 0;
+const paintY =0;
 const paintX = 0;
 g.font = `bold ${fontSize}px serif`;
 
 //This is a small text and this is large text.
-const texts = `这是测试文字 测 测 试 n a breakthrough for web designers and developers, a new canvas plugin called "GestiView" has emerged, promising to revolutionize the way interactive content is created and displayed on the web. Developed by a team of forward-thinking engineers at a Silicon Valley startup, GestiView introduces cutting-edge features that streamline the process of designing and implementing canvas-based graphics.`//`hello 欢！迎·来、。到 nuestra comunidad. Добро пожаловать! We are here today to celebrate la beauté de la diversité linguistique. En este texto, мы исследуем l'interconnexion entre différentes langues et cultures. Let's embark on this journey together, shall we?`; //`.,;:?!"\'()（）！【】[]{}-–—/\\|_#*&@~^%$€£¥¢§°±=<>😀`
+const texts = `This is a small text and this is large text`//`这是测试文字 测 测 试 n a breakthrough for web designers and developers, a new canvas plugin called "GestiView" has emerged, promising to revolutionize the way interactive content is created and displayed on the web. Developed by a team of forward-thinking engineers at a Silicon Valley startup, GestiView introduces cutting-edge features that streamline the process of designing and implementing canvas-based graphics.`//`hello 欢！迎·来、。到 nuestra comunidad. Добро пожаловать! We are here today to celebrate la beauté de la diversité linguistique. En este texto, мы исследуем l'interconnexion entre différentes langues et cultures. Let's embark on this journey together, shall we?`; //`.,;:?!"\'()（）！【】[]{}-–—/\\|_#*&@~^%$€£¥¢§°±=<>😀`
 const paragraph = new Paragraph();
 const paragraph2 = new Paragraph();
 paragraph.addText(texts);
 paragraph2.addText(texts);
 
+paragraph.pushStyle(new TextStyle({
+  textAlign:TextAlign.justify,
+}));
 
 const { nextStartOffset,height } = paragraph.layout(
   new ParagraphConstraints(200),

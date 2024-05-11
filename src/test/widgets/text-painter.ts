@@ -2,7 +2,7 @@ import Painter from "@/core/lib/painter";
 import { TextDirection } from "./basic";
 import Vector from "@/core/lib/vector";
 
-enum TextAlign {
+export enum TextAlign {
   start,
   end,
   center,
@@ -38,7 +38,22 @@ export class ParagraphConstraints {
   }
 }
 
-class ParagraphStyle {
+interface ParagraphStyleOption {
+  maxLines: number;
+  fontFamily: string;
+  fontSize: number;
+  height: number;
+  letterSpacing: number;
+  wordSpace: number;
+  lineHeight: number;
+  direction: TextDirection;
+  textAlign: TextAlign;
+}
+interface TextStyleOption{
+  color:string;
+}
+
+class ParagraphStyle implements ParagraphStyleOption {
   maxLines: number = 999;
   fontFamily: string;
   fontSize: number = 20;
@@ -47,10 +62,29 @@ class ParagraphStyle {
   wordSpace: number = 0;
   lineHeight: number = 20;
   direction: TextDirection;
-  textAlign:TextAlign=TextAlign.center;
+  textAlign: TextAlign = TextAlign.start;
+  constructor(option?:Partial<ParagraphStyleOption>){
+    if(option){
+      this.maxLines = option?.maxLines ?? this.maxLines;
+      this.fontFamily = option?.fontFamily ?? "";
+      this.fontSize = option?.fontSize ?? this.fontSize;
+      this.height = option?.height ?? this.height;
+      this.letterSpacing = option?.letterSpacing ?? this.letterSpacing;
+      this.wordSpace = option?.wordSpace ?? this.wordSpace;
+      this.lineHeight = option?.lineHeight ?? this.lineHeight;
+      this.direction = option?.direction ?? TextDirection.ltr;
+      this.textAlign = option?.textAlign ?? this.textAlign;
+    }
+  }
 }
-export class TextStyle extends ParagraphStyle {
+export class TextStyle extends ParagraphStyle implements TextStyleOption{
   color: string = "black";
+  constructor(option?: Partial<ParagraphStyleOption&TextStyle>) {
+    super(option);
+    if (option) {
+      this.color=option?.color;
+    }
+  }
 }
 
 class TextBox {
@@ -99,6 +133,7 @@ class TextPointParentData {
   public column: number;
   public offset: Vector = Vector.zero;
   public box: TextBox;
+  public broCount: number;
 }
 
 class TextPoint {
@@ -185,28 +220,33 @@ export class Paragraph {
       const row = rows[key];
       const countWidth = row.countWidth;
       const children = row.textPoints;
-      const childCount = children.length;
       const freeSpace = maxWidth - countWidth;
-
+      const wordCount:number=children.reduce<number>((count:number,textPoint:TextPoint)=>{
+        return count+(textPoint.parentData.broCount?1:0);
+      },0)
       switch (this.textStyle.textAlign) {
         case TextAlign.end:
           leading = freeSpace;
           break;
         case TextAlign.center:
-          leading = (freeSpace * 0.5);
+          leading = freeSpace * 0.5;
           break;
         case TextAlign.start:
-          leading=0;
-          between=0;
+          leading = 0;
+          between = 0;
           break;
         case TextAlign.justify:
-          between =0;
+          between = freeSpace/(wordCount-1);
           break;
-
       }
-
+      console.log("单词个数",wordCount)
+      let positionX: number = 0;
       children.forEach((_) => {
-        _.parentData.offset.add(new Vector(leading+between, 0));
+        if (_.parentData.broCount) {
+          _.parentData.offset.add(new Vector(leading + between, 0));
+          console.log(_.text, _.parentData.offset);
+          this.performLayoutRow(_, _.parentData.offset, _.parentData.broCount);
+        }
       });
     }
 
@@ -218,7 +258,15 @@ export class Paragraph {
     const lastOffset = parentData.offset.copy();
     const continueOffset = Vector.zero;
     continueOffset.add(lastOffset);
-    continueOffset.add(new Vector(this.textStyle.fontSize,-(this.textStyle.fontSize+Math.max(0,(this.textStyle.lineHeight-this.textStyle.fontSize)))));
+    continueOffset.add(
+      new Vector(
+        this.textStyle.fontSize,
+        -(
+          this.textStyle.fontSize +
+          Math.max(0, this.textStyle.lineHeight - this.textStyle.fontSize)
+        )
+      )
+    );
     return continueOffset;
   }
   /**
@@ -269,8 +317,11 @@ export class Paragraph {
       offset.setXY(subDeltaX + offset.x, deltaY);
       maxHeight = Math.max(deltaY, maxHeight);
       parentData.column = column;
+      parentData.broCount = wordCount;
+      if (wordCount > 1) {
+        this.performLayoutRow(textPoint, offset, wordCount);
+      }
       textPoint.parentData = parentData;
-      if (wordCount > 1) this.performLayoutRow(textPoint, offset, wordCount);
     }
     return maxHeight;
   }
@@ -362,6 +413,7 @@ export class Paragraph {
   }
   paint(paint: Painter, offset: Vector = Vector.zero): Vector {
     if (this.textPoints) {
+      paint.fillStyle=this.textStyle.color;
       this.textPoints.forEach((_) => {
         const parentData = _.parentData;
         paint.fillText(
