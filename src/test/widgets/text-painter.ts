@@ -2,6 +2,13 @@ import Painter from "@/core/lib/painter";
 import { TextDirection } from "./basic";
 import Vector from "@/core/lib/vector";
 
+enum TextAlign {
+  start,
+  end,
+  center,
+  justify,
+}
+
 class Accumulator {
   private _value: number = 0;
   get value() {
@@ -38,8 +45,9 @@ class ParagraphStyle {
   height: number = 20;
   letterSpacing: number = 0;
   wordSpace: number = 0;
-  lineHeight: number = 40;
+  lineHeight: number = 20;
   direction: TextDirection;
+  textAlign:TextAlign=TextAlign.center;
 }
 export class TextStyle extends ParagraphStyle {
   color: string = "black";
@@ -88,22 +96,26 @@ class TextBox {
 class TextPointParentData {
   public prePointText: TextPoint;
   public nextPointText: TextPoint;
+  public column: number;
+  public offset: Vector = Vector.zero;
+  public box: TextBox;
 }
 
 class TextPoint {
   parentData: TextPointParentData = new TextPointParentData();
   text: string;
-  offset: Vector = Vector.zero;
-  box: TextBox;
-  constructor(text: string, box: TextBox) {
+  constructor(text: string) {
     this.text = text;
-    this.box = box;
   }
 }
 type ParagraphLayouted = {
   height: number;
-  continueOffset: Vector;
+  nextStartOffset: Vector;
 };
+interface Rowed {
+  textPoints: TextPoint[];
+  countWidth: number;
+}
 /**
  * 段落
  */
@@ -114,6 +126,7 @@ export class Paragraph {
   boxes: TextBox[];
   textPoints: TextPoint[] = [];
   public lastTextPoint: TextPoint;
+  public firstTextPoint: TextPoint;
   public pushStyle(textStyle: TextStyle) {
     this.textStyle = textStyle;
   }
@@ -121,6 +134,7 @@ export class Paragraph {
     this.text = text;
   }
   /**
+   * layout函数只负责将文本进行布局操作，并返回布局后的堆叠高度height和下一段文字的startOffset
    * [startOffset]表示该文本(首个文字)从此开始布局，在[TextSpan]具有children时会按此规律排序
    * 将所有文字逐个分开并通过[getMeasureText]方法获取文字数据，生成[TextBox]列表
    * 1.[performLayoutTextOffset]首次排序使用 [performLayoutRow]将所有文字按ltr方向排序成一条直线并给出每个文字的offset,同时会设置word space
@@ -133,59 +147,129 @@ export class Paragraph {
   ): Partial<ParagraphLayouted> {
     this.performLayoutTextOffset(paint, startOffset);
     const maxHeight = this.performConstraintsWidth(constraints);
-
-    const lastOffset = this.lastTextPoint.offset.copy();
-    const continueOffset = Vector.zero;
-    continueOffset.add(lastOffset);
-    continueOffset.add(new Vector(this.textStyle.fontSize, 0));
+    // this.textPoints.forEach(_=>{
+    //   console.log(_.text,_.parentData.column)
+    // });
+    this.performLayoutTextAlignment(constraints);
     return {
       height: maxHeight,
-      continueOffset,
+      nextStartOffset: this.getNextStartOffset(),
     };
+  }
+
+  private performLayoutTextAlignment(constraints: ParagraphConstraints) {
+    let textPoint = this.firstTextPoint;
+    const rows: Record<number, Rowed> = {};
+    while (textPoint != null) {
+      const parentData = textPoint.parentData;
+      const column = parentData.column;
+      let row = rows[column];
+      if (!row) {
+        row = {
+          textPoints: [],
+          countWidth: 0,
+        };
+      }
+      row.textPoints.push(textPoint);
+      row.countWidth += parentData.box.width;
+      rows[column] = row;
+      textPoint = parentData.nextPointText;
+    }
+
+    const maxWidth = constraints.width;
+
+    let leading: number = 0;
+    let between: number = 0;
+
+    for (const key in rows) {
+      const row = rows[key];
+      const countWidth = row.countWidth;
+      const children = row.textPoints;
+      const childCount = children.length;
+      const freeSpace = maxWidth - countWidth;
+
+      switch (this.textStyle.textAlign) {
+        case TextAlign.end:
+          leading = freeSpace;
+          break;
+        case TextAlign.center:
+          leading = (freeSpace * 0.5);
+          break;
+        case TextAlign.start:
+          leading=0;
+          between=0;
+          break;
+        case TextAlign.justify:
+          between =0;
+          break;
+
+      }
+
+      children.forEach((_) => {
+        _.parentData.offset.add(new Vector(leading+between, 0));
+      });
+    }
+
+    console.log(rows);
+  }
+  private getNextStartOffset(): Vector {
+    if (this.textPoints.length === 0) return Vector.zero;
+    const parentData = this.lastTextPoint.parentData;
+    const lastOffset = parentData.offset.copy();
+    const continueOffset = Vector.zero;
+    continueOffset.add(lastOffset);
+    continueOffset.add(new Vector(this.textStyle.fontSize,-(this.textStyle.fontSize+Math.max(0,(this.textStyle.lineHeight-this.textStyle.fontSize)))));
+    return continueOffset;
   }
   /**
    * 约束文字宽度
    * 根据约束宽度判断文字是否超出宽度得到overflow,如果overflow>0说明超出
    * 超出后由于已经有布局过，需要将新的一行x设置为0,就必须让x加上反向增量达到0,反向增量为x的倒数
    * 文本是否为单词判断逻辑为next不为null与next的code码小于256与next不为空格即判定为一个单词
+   * 区别是否一个单词时，必须满足连续字母超过一个才满足为一个"单词"
    */
   private performConstraintsWidth(constraints: ParagraphConstraints): number {
     let maxHeight = 0;
-    let column = 0,
+    let column = 1,
       subDeltaX = 0;
     const maxWidth = constraints.width;
     const len = this.textPoints.length;
     for (let index = 0; index < len; index++) {
       const textPoint = this.textPoints[index];
       const codePoint = textPoint.text.charCodeAt(0);
-      const offset = textPoint.offset;
-      const box = textPoint.box;
+      const parentData = textPoint.parentData;
+      const offset = parentData.offset;
+      const box = parentData.box;
       let wordWidth = box.width + offset.x;
-      let currentPoint = textPoint;
+      let broPoint = textPoint;
       let wordCount: number = 0;
-      while (
-        currentPoint != null &&
-        !TextPainter.isSpace(currentPoint.text.charCodeAt(0))
-      ) {
-        if (currentPoint?.text.charCodeAt(0) > 256) {
+      while (broPoint != null) {
+        const broParentData = broPoint.parentData;
+        const nextBroTextPoint = broParentData.nextPointText;
+        if (
+          broPoint?.text.charCodeAt(0) > 256 ||
+          TextPainter.isSpace(broPoint?.text.charCodeAt(0))
+        ) {
           break;
         }
-        const parentData = currentPoint.parentData;
-        wordWidth += currentPoint.box.width;
-        currentPoint = parentData.nextPointText;
+        wordWidth += broParentData.box.width;
+        broPoint = nextBroTextPoint;
         wordCount++;
-        index++;
+        if (wordCount > 1) {
+          index++;
+        }
       }
       const textOffsetX = wordWidth + subDeltaX;
       const overflow = maxWidth - textOffsetX;
       if (overflow < 0 || TextPainter.isNewline(codePoint)) {
-        //标记当前反向增量
         subDeltaX = offset.x * -1;
         column++;
       }
       const deltaY = this.textStyle.lineHeight * column;
       offset.setXY(subDeltaX + offset.x, deltaY);
-      maxHeight = Math.max(deltaY + this.textStyle.lineHeight, maxHeight);
+      maxHeight = Math.max(deltaY, maxHeight);
+      parentData.column = column;
+      textPoint.parentData = parentData;
       if (wordCount > 1) this.performLayoutRow(textPoint, offset, wordCount);
     }
     return maxHeight;
@@ -196,15 +280,14 @@ export class Paragraph {
   private performLayoutTextOffset(paint: Painter, startOffset: Vector) {
     const texts: Array<string> = Array.from(this.text);
     let after: TextPoint;
-    let firstTextPoint: TextPoint;
     for (const text of texts) {
       const textPoint = this.insertTextToList(text, paint, after);
       after = textPoint;
-      if (!firstTextPoint) {
-        firstTextPoint = textPoint;
+      if (!this.firstTextPoint) {
+        this.firstTextPoint = textPoint;
       }
     }
-    this.performLayoutRow(firstTextPoint, startOffset);
+    this.performLayoutRow(this.firstTextPoint, startOffset);
   }
   /**
    * 传入一个[TextPoint],这个对象将会是渲染的第一位，接下来会一只next下去，布局的将会是从左到右进行，不会出现换行
@@ -219,11 +302,12 @@ export class Paragraph {
     let x: number = offset?.x ?? 0;
     let currentPoint = textPoint;
     let range: number = 0;
+    const headTextPointParentData = textPoint.parentData;
     while (currentPoint != null) {
       const parentData = currentPoint?.parentData;
       const isOffset = !symbolRegex.test(currentPoint.text);
       const offset = Vector.zero;
-      const box = currentPoint.box;
+      const box = parentData.box;
       if (TextPainter.isSpace(currentPoint.text.charCodeAt(0))) {
         if (parentData.prePointText != null && parentData.nextPointText != null)
           box.width += this.textStyle.wordSpace;
@@ -231,9 +315,10 @@ export class Paragraph {
       const offsetX = isOffset
         ? x + box.width - box.right + box.left
         : x + Math.max(box.left, 0);
-      const offsetY = textPoint.offset.y;
+      const offsetY = headTextPointParentData.offset.y;
       offset.setXY(offsetX, offsetY);
-      currentPoint.offset.set(offset);
+      parentData.offset.set(offset);
+      parentData.column = headTextPointParentData.column;
       currentPoint = parentData.nextPointText;
       x += box.width;
       range++;
@@ -248,13 +333,14 @@ export class Paragraph {
   ): TextPoint {
     const textMetrics = this.getMeasureText(paint, text);
     const box = this.getTextBox(textMetrics);
-    const textPoint = new TextPoint(text, box);
-
+    const textPoint = new TextPoint(text);
+    const parentData = textPoint.parentData;
+    parentData.box = box;
     if (after) {
       textPoint.parentData.prePointText = after;
       after.parentData.nextPointText = textPoint;
     }
-
+    textPoint.parentData = parentData;
     this.textPoints.push(textPoint);
     return textPoint;
   }
@@ -271,16 +357,21 @@ export class Paragraph {
       this.textStyle.direction
     );
   }
-
   private getMeasureText(paint: Painter, text: string): TextMetrics {
     return paint.measureText(text);
   }
-  paint(paint: Painter, offset: Vector = Vector.zero) {
+  paint(paint: Painter, offset: Vector = Vector.zero): Vector {
     if (this.textPoints) {
       this.textPoints.forEach((_) => {
-        paint.fillText(_.text, _.offset.x + offset.x, _.offset.y + offset.y);
+        const parentData = _.parentData;
+        paint.fillText(
+          _.text,
+          parentData.offset.x + offset.x,
+          parentData.offset.y + offset.y
+        );
       });
     }
+    return this.getNextStartOffset();
   }
 }
 
