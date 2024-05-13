@@ -182,7 +182,8 @@ export class Paragraph {
     startOffset: Vector = Vector.zero
   ): Partial<ParagraphLayouted> {
     this.performLayoutTextOffset(paint, startOffset);
-    const maxHeight = this.performConstraintsWidth(constraints);
+    const maxHeight = 0;
+      this.performConstraintsWidth(constraints);
     // let countWidth = 0;
     // this.textPoints.forEach((_) => {
     //   countWidth += _.parentData.box.width;
@@ -259,19 +260,17 @@ export class Paragraph {
           break;
       }
       let positionX: number = leadingSpace;
-      // wordList.forEach((_, ndx) => {
-      //   const parentData = _.parentData;
-      //   if (parentData.broCount) {
-      //     parentData.offset = new Vector(positionX, parentData.offset.y);
-      //     positionX += parentData.wordCountWidth || parentData.box.width;
-      //     positionX += betweenSpace;
-      //     // positionX += this.textStyle.wordSpace;
-      //     this.performLayoutRow(_, parentData.offset, parentData.broCount);
-      //   }else if(TextPainter.isSpace(_.text.charCodeAt(0))){
-      //     console.log("空格",_)
-      //      positionX +=  parentData.box.width;
-      //   }
-      // });
+      wordList.forEach((_, ndx) => {
+        const parentData = _.parentData;
+        if (parentData.broCount) {
+          parentData.offset = new Vector(positionX, parentData.offset.y);
+          positionX += parentData.wordCountWidth || parentData.box.width;
+          positionX += betweenSpace;
+          this.performLayoutRow(_, parentData.offset, parentData.broCount);
+        } else if (TextPainter.isSpace(_.text.charCodeAt(0))) {
+          positionX += parentData.box.width;
+        }
+      });
     }
 
     console.log(rows);
@@ -460,6 +459,32 @@ export class Paragraph {
           parentData.offset.x + offset.x,
           parentData.offset.y + offset.y
         );
+        console.log(_.text, _.parentData.offset);
+      
+        if (_.text === " ") {
+          paint.beginPath();
+          paint.rect(
+            parentData.offset.x + offset.x-parentData.box.width,
+            parentData.offset.y + offset.y - parentData.box.height,
+            parentData.box.width,
+            parentData.box.height
+          );
+          paint.strokeStyle = "orange";
+          paint.stroke();
+          paint.closePath()
+        } else if(_.text!==' '){
+          paint.beginPath();
+          paint.rect(
+            parentData.offset.x + offset.x,
+            parentData.offset.y + offset.y - parentData.box.height,
+            parentData.box.width,
+            parentData.box.height
+          );
+          paint.strokeStyle = "#ccc";
+          paint.closePath()
+          paint.stroke();
+        }
+       
       });
     }
     return this.getNextStartOffset();
