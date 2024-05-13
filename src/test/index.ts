@@ -212,19 +212,23 @@ class View {
 // view.render(new PaintingContext(new Painter(g)));
 
 const fontSize = 20;
-const paintY =0;
+const paintY =20;
 const paintX = 0;
 g.font = `bold ${fontSize}px serif`;
 
 //This is a small text and this is large text.
-const texts = `This is a small text and this is large text`//`这是测试文字 测 测 试 n a breakthrough for web designers and developers, a new canvas plugin called "GestiView" has emerged, promising to revolutionize the way interactive content is created and displayed on the web. Developed by a team of forward-thinking engineers at a Silicon Valley startup, GestiView introduces cutting-edge features that streamline the process of designing and implementing canvas-based graphics.`//`hello 欢！迎·来、。到 nuestra comunidad. Добро пожаловать! We are here today to celebrate la beauté de la diversité linguistique. En este texto, мы исследуем l'interconnexion entre différentes langues et cultures. Let's embark on this journey together, shall we?`; //`.,;:?!"\'()（）！【】[]{}-–—/\\|_#*&@~^%$€£¥¢§°±=<>😀`
+const texts = `This This is a`//`这是测试文字测n a hello breakthrough for web designers and developers, a new canvas plugin called "GestiView" has emerged, promising to revolutionize the way interactive content is created and displayed on the web. Developed by a team of forward-thinking engineers at a Silicon Valley startup, GestiView introduces cutting-edge features that streamline the process of designing and implementing canvas-based graphics.`//`hello 欢！迎·来、。到 nuestra comunidad. Добро пожаловать! We are here today to celebrate la beauté de la diversité linguistique. En este texto, мы исследуем l'interconnexion entre différentes langues et cultures. Let's embark on this journey together, shall we?`; //`.,;:?!"\'()（）！【】[]{}-–—/\\|_#*&@~^%$€£¥¢§°±=<>😀`
 const paragraph = new Paragraph();
 const paragraph2 = new Paragraph();
 paragraph.addText(texts);
 paragraph2.addText(texts);
 
 paragraph.pushStyle(new TextStyle({
-  textAlign:TextAlign.justify,
+  textAlign:TextAlign.start,
+  fontSize:fontSize,
+  lineHeight:fontSize,
+   wordSpace:10,
+  //letterSpacing:10,
 }));
 
 const { nextStartOffset,height } = paragraph.layout(
@@ -232,7 +236,7 @@ const { nextStartOffset,height } = paragraph.layout(
   new Painter(g)
 );
 g.fillStyle="white"
-g.fillRect(0,0,200,height)
+g.fillRect(0,0,200,Math.max(height,fontSize))
 // paragraph2.layout(
 //   new ParagraphConstraints(200),
 //   new Painter(g),
