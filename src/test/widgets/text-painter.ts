@@ -182,14 +182,13 @@ export class Paragraph {
     startOffset: Vector = Vector.zero
   ): Partial<ParagraphLayouted> {
     this.performLayoutTextOffset(paint, startOffset);
-    const maxHeight =0;
-       this.performConstraintsWidth(constraints);
-      let countWidth=0;
-    this.textPoints.forEach(_=>{
-      countWidth+=_.parentData.box.width;
-      // console.log(_.text,_.parentData.column)
-    });
-    console.log("共",countWidth)
+    const maxHeight = this.performConstraintsWidth(constraints);
+    // let countWidth = 0;
+    // this.textPoints.forEach((_) => {
+    //   countWidth += _.parentData.box.width;
+    //   console.log(_.text, _.parentData.box.width, "共", countWidth);
+    // });
+
     // this.performLayoutTextAlignment(constraints);
 
     return {
@@ -326,8 +325,7 @@ export class Paragraph {
         column++;
       }
       const deltaY = this.textStyle.lineHeight * column;
-      console.log("文字",textPoint.text,subDeltaX,offset.x,);
-      let deltaX=subDeltaX + offset.x;
+      let deltaX = subDeltaX + offset.x;
       offset.setXY(deltaX, deltaY);
       maxHeight = Math.max(deltaY, maxHeight);
       parentData.column = column;
@@ -356,7 +354,7 @@ export class Paragraph {
         this.firstTextPoint = textPoint;
       }
     }
-    this.performLayoutRow(this.firstTextPoint, startOffset);
+    this.performLayoutRow(this.firstTextPoint, startOffset, null, true);
   }
   /**
    * 传入一个[TextPoint],这个对象将会是渲染的第一位，接下来会一只next下去，布局的将会是从左到右进行，不会出现换行
@@ -365,7 +363,8 @@ export class Paragraph {
   private performLayoutRow(
     textPoint: TextPoint,
     offset?: Vector,
-    maxRange?: number
+    maxRange?: number,
+    initRow?: boolean
   ) {
     const symbolRegex = /\.|\(|\)|\（|\）|\!|\！/;
     let x: number = offset?.x ?? 0;
@@ -378,13 +377,17 @@ export class Paragraph {
       const offset = Vector.zero;
       const box = parentData.box;
       if (TextPainter.isSpace(currentPoint.text.charCodeAt(0))) {
-        if (parentData.prePointText != null && parentData.nextPointText != null)
+        if (
+          parentData.prePointText != null &&
+          parentData.nextPointText != null &&
+          initRow
+        ) {
           box.width += this.textStyle.wordSpace;
+        }
       }
       let offsetX = isOffset
         ? x + box.width - box.right + box.left
         : x + Math.max(box.left, 0);
-
       const offsetY = headTextPointParentData.offset.y;
       offset.setXY(offsetX, offsetY);
       parentData.offset.set(offset);
