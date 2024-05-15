@@ -211,34 +211,29 @@ class View {
 // view.layout();
 // view.render(new PaintingContext(new Painter(g)));
 
-const fontSize = 10;
-const paintY =10;
-const paintX = 10;
+const fontSize = 20;
+const paintY =0;
+const paintX = 0;
 g.font = `bold ${fontSize}px serif`;
 
 //This is a small text and this is large text.
-const texts=`Sure thing! Here you go:
-
-Looks like you've encountered an error while loading some JavaScript from Google AdSense in your browser, amigo. The error message "net::ERR_BLOCKED_BY_CLIENT" suggests that something's stopping the ads from loading properly. It could be those tricky browser extensions or plugins causing trouble. You might want to check if they're causing the issue. ¡Buena suerte! Bonne chance! Viel Glück! Удачи! 祝你好运! حظا سعيدا! Selamat berhasil! Bon chance! Good luck!
-
-
-
-
-
-
-`
+const texts=`This is a small text and this is large text.`
 const paragraph = new Paragraph();
 const paragraph2 = new Paragraph();
 paragraph.addText(texts);
 paragraph2.addText(texts);
 
-paragraph.pushStyle(new TextStyle({
-  textAlign:TextAlign.center,
+const textStyle=new TextStyle({
+  textAlign:TextAlign.end,
   fontSize:fontSize,
   lineHeight:fontSize,
+  height:fontSize,
    wordSpace:0,
   letterSpacing:0,
-}));
+});
+
+paragraph.pushStyle(textStyle);
+paragraph2.pushStyle(textStyle);
 
 const { nextStartOffset,height } = paragraph.layout(
   new ParagraphConstraints(200),
@@ -246,19 +241,20 @@ const { nextStartOffset,height } = paragraph.layout(
 );
 g.fillStyle="white"
 g.fillRect(paintX,paintY,200,Math.max(height,fontSize))
-g.fillStyle="orange"
+g.fillStyle="orange";
+console.log("接头",nextStartOffset)
 // g.fillRect(155,paintY+20,45,Math.max(height,fontSize))
-// paragraph2.layout(
-//   new ParagraphConstraints(200),
-//   new Painter(g),
-//   new Vector(nextStartOffset.x, 0)
-// );
+paragraph2.layout(
+  new ParagraphConstraints(200),
+  new Painter(g),
+  new Vector(nextStartOffset.x,0)
+);
 
 
 
 
 g.fillStyle="black"
 const nextStartPaintOffset=paragraph.paint(new Painter(g), new Vector(paintX, paintY));
-paragraph2.paint(new Painter(g), new Vector(paintX,nextStartPaintOffset.y));
+paragraph2.paint(new Painter(g), new Vector(paintX,nextStartPaintOffset.y+paintY));
 
 // g.fillText(texts, 10, 200);

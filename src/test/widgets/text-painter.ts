@@ -205,6 +205,7 @@ export class Paragraph {
     this.performLayoutTextOffset(paint, startOffset);
     this.handleCompileWord();
     const maxHeight = this.performConstraintsWidth(constraints);
+    this.performLayoutTextAlignment(constraints);
     let countWidth = 0;
     // this.textPoints.forEach((_) => {
     //   // if (_.parentData.broCount>1)
@@ -214,7 +215,7 @@ export class Paragraph {
     //   );
     // });
 
-    this.performLayoutTextAlignment(constraints);
+    // this.performLayoutTextAlignment(constraints);
     // console.log();
     return {
       height: maxHeight,
@@ -406,7 +407,6 @@ export class Paragraph {
     let range: number = 0;
     const headTextPointParentData = textPoint.parentData;
     while (currentPoint != null) {
-      // range+=1;
       if (maxRange && (range += 1) > maxRange) return;
       const parentData = currentPoint?.parentData;
       const isOffset = !symbolRegex.test(currentPoint.text);
