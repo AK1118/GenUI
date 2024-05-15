@@ -141,6 +141,13 @@ class TextPoint {
   parentData: TextPointParentData = new TextPointParentData();
   text: string;
   private isSpace: boolean = false;
+  private _hidden: boolean = false;
+  public hiddenTextPoint(): void {
+    this._hidden = true;
+  }
+  get hidden(): boolean {
+    return this._hidden;
+  }
   constructor(text: string) {
     this.text = text;
     this.isSpace = TextPainter.isSpace(this.charCodePoint);
@@ -196,8 +203,8 @@ export class Paragraph {
     startOffset: Vector = Vector.zero
   ): Partial<ParagraphLayouted> {
     this.performLayoutTextOffset(paint, startOffset);
-  this.handleCompileWord();
-    const maxHeight=this.performConstraintsWidth(constraints);
+    this.handleCompileWord();
+    const maxHeight = this.performConstraintsWidth(constraints);
     let countWidth = 0;
     // this.textPoints.forEach((_) => {
     //   // if (_.parentData.broCount>1)
@@ -207,7 +214,7 @@ export class Paragraph {
     //   );
     // });
 
-    // this.performLayoutTextAlignment(constraints);
+    this.performLayoutTextAlignment(constraints);
     // console.log();
     return {
       height: maxHeight,
@@ -236,9 +243,9 @@ export class Paragraph {
       current = nextBroTextPoint;
       currentHead.parentData.broCount = ++wordCount;
       //词缀无实际broCount
-      // if(wordCount>=1&&current?.isWord){
-      //   current.parentData.broCount=0;
-      // }
+      if (wordCount >= 1 && current?.isWord) {
+        current.parentData.broCount = 0;
+      }
       currentHead.parentData.wordCountWidth += parentData.box.width;
     }
 
@@ -262,12 +269,14 @@ export class Paragraph {
       //行末空格忽略
       if (
         next?.parentData.column != column &&
-        TextPainter.isSpace(textPoint.text.charCodeAt(0))
+        TextPainter.isSpace(textPoint.charCodePoint)
       ) {
         row.countWidth -= parentData.box.width;
+        textPoint.hiddenTextPoint();
       } else {
         row.textPoints.push(textPoint);
       }
+      
       rows[column] = row;
       textPoint = next;
     }
@@ -277,16 +286,16 @@ export class Paragraph {
     let leadingSpace: number = 0;
     let betweenSpace: number = 0;
 
+    const rowLen: number = Object.keys(rows).length;
     for (const key in rows) {
       const row = rows[key];
-      console.log(row.textPoints);
       const wordList = row.textPoints;
       const countWidth = row.countWidth;
       const freeSpace = Math.max(maxWidth - countWidth, 0);
-      const canLayout:boolean=freeSpace>0;
+      const canLayout: boolean = freeSpace > 0;
       const wordCount: number = wordList.reduce<number>(
         (count: number, textPoint: TextPoint) => {
-          return count + (textPoint.parentData.broCount ? 1 : 0);
+          return count + (textPoint.parentData.broCount&&!textPoint.hidden ? 1 : 0);
         },
         0
       );
@@ -303,23 +312,25 @@ export class Paragraph {
           break;
         case TextAlign.justify:
           betweenSpace = freeSpace / (wordCount - 1);
+          //最后行不需要flex
+          if (Number(key) === rowLen) {
+            leadingSpace = 0;
+            betweenSpace = 0;
+          }
           break;
       }
       let positionX: number = leadingSpace;
-      console.log(key+"单词数量", wordCount+"剩余"+freeSpace);
-      if(!canLayout)continue;
-      // wordList.forEach((_, ndx) => {
-      //   const parentData = _.parentData;
-      //   if (parentData.broCount) {
-      //    // parentData.offset.add(new Vector(leadingSpace+betweenSpace,0));
-      //     parentData.offset = new Vector(positionX, parentData.offset.y);
-      //     positionX += parentData.wordCountWidth || parentData.box.width;
-      //     positionX += betweenSpace;
-      //     this.performLayoutRow(_, parentData.offset, parentData.broCount);
-      //   }else{
-      //     positionX+=parentData.box.width;
-      //   }
-      // });
+      // console.log(key+"单词数量", wordCount+"剩余"+freeSpace);
+      if (!canLayout) continue;
+      wordList.forEach((_, ndx) => {
+        const parentData = _.parentData;
+        if (parentData.broCount) {
+          parentData.offset = new Vector(positionX, parentData.offset.y);
+          positionX += parentData.wordCountWidth || parentData.box.width;
+          positionX += betweenSpace;
+          this.performLayoutRow(_, parentData.offset, parentData.broCount);
+        }
+      });
     }
   }
 
@@ -330,7 +341,7 @@ export class Paragraph {
    * 文本是否为单词判断逻辑为next不为null与next的code码小于256与next不为空格即判定为一个单词
    * 区别是否一个单词时，必须满足连续字母超过一个才满足为一个"单词"
    * 每个单词的broCount至少为1，空格以及兄弟字母该属性为null
-   * 
+   *
    * ----
    */
   private performConstraintsWidth(constraints: ParagraphConstraints): number {
@@ -346,29 +357,19 @@ export class Paragraph {
       const broCount = parentData.broCount;
       const offset = parentData.offset;
       const box = parentData.box;
-      //文字在线性内的偏移量
       let wordWidth = (parentData.wordCountWidth || box.width) + offset.x;
-      //偏移量加反向增量得到实际宽度
       const textOffsetX = wordWidth + subDeltaX;
       const overflow = maxWidth - textOffsetX;
-      // console.log("文字实际宽度",textOffsetX)
       if (overflow < 0 || TextPainter.isNewline(codePoint)) {
-        subDeltaX = offset.x*-1;
+        subDeltaX = offset.x * -1;
         column++;
-        console.log(offset.x,"换行",subDeltaX)
       }
-      // if(column>1)console.log(textPoint.text+':',offset.x,"增量",subDeltaX,"最终定位：",subDeltaX+offset.x)
       const deltaY = this.textStyle.lineHeight * column;
-      let deltaX = subDeltaX+offset.x//)Math.max(0,subDeltaX + offset.x);
-      console.log(textPoint.text,"最终得出",deltaX);
-      // if(!textPoint.isWord){
-      //   console.log("空格",textPoint.text,box.width);
-        
-      // }
+      let deltaX = subDeltaX + offset.x;
       offset.setXY(deltaX, deltaY);
       maxHeight = Math.max(deltaY, maxHeight);
       parentData.column = column;
-      index += (broCount||1);
+      index += broCount || 1;
       this.performLayoutRow(textPoint, offset, broCount);
       textPoint.parentData = parentData;
     }
@@ -399,7 +400,6 @@ export class Paragraph {
     maxRange?: number,
     initRow?: boolean
   ) {
-    
     const symbolRegex = /\.|\(|\)|\（|\）|\!|\！/;
     let x: number = parentOffset?.x ?? 0;
     let currentPoint = textPoint;
@@ -407,23 +407,17 @@ export class Paragraph {
     const headTextPointParentData = textPoint.parentData;
     while (currentPoint != null) {
       // range+=1;
-      if (maxRange && (range+=1) > maxRange) return;
+      if (maxRange && (range += 1) > maxRange) return;
       const parentData = currentPoint?.parentData;
       const isOffset = !symbolRegex.test(currentPoint.text);
       const offset = Vector.zero;
       const box = parentData.box;
       if (TextPainter.isSpace(currentPoint.charCodePoint)) {
-        if (
-          initRow
-        ) {
+        if (initRow) {
           box.width += this.textStyle.wordSpace;
         }
       }
-      let offsetX = isOffset
-        ? x + box.width - box.right + box.left
-        : x + Math.max(box.left, 0);
       const offsetY = headTextPointParentData.offset.y;
-      if(!initRow)console.log(currentPoint.text,"Row定位",x)
       offset.setXY(x, offsetY);
       parentData.offset.set(offset);
       parentData.column = headTextPointParentData.column;
@@ -431,12 +425,11 @@ export class Paragraph {
       x += box.width;
       this.lastTextPoint = currentPoint ?? this.lastTextPoint;
     }
-    
   }
   private getNextStartOffset(): Vector {
     if (this.textPoints.length === 0) return Vector.zero;
     const parentData = this.lastTextPoint?.parentData;
-    if(!parentData)return Vector.zero;
+    if (!parentData) return Vector.zero;
     const lastOffset = parentData.offset.copy();
     const continueOffset = Vector.zero;
     continueOffset.add(lastOffset);
@@ -489,6 +482,7 @@ export class Paragraph {
     if (this.textPoints) {
       paint.fillStyle = this.textStyle.color;
       this.textPoints.forEach((_) => {
+        if(_.hidden)return;
         const parentData = _.parentData;
         paint.fillText(
           _.text,
@@ -499,7 +493,7 @@ export class Paragraph {
           paint.beginPath();
           paint.rect(
             parentData.offset.x + offset.x,
-            parentData.offset.y + offset.y - parentData.box.height-2,
+            parentData.offset.y + offset.y - parentData.box.height - 2,
             parentData.box.width,
             parentData.box.height
           );
