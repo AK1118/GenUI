@@ -133,18 +133,24 @@ class TextPointParentData {
   public column: number;
   public offset: Vector = Vector.zero;
   public box: TextBox;
-  public broCount: number = 0;
+  public broCount: number = 1;
   public wordCountWidth: number = 0;
 }
 
 class TextPoint {
   parentData: TextPointParentData = new TextPointParentData();
   text: string;
+  private isSpace: boolean = false;
   constructor(text: string) {
     this.text = text;
+    this.isSpace = TextPainter.isSpace(this.charCodePoint);
   }
   get charCodePoint(): number {
     return this.text.charCodeAt(0);
+  }
+  //空格不记为一个单词
+  get isWord(): boolean {
+    return !this.isSpace;
   }
 }
 
@@ -190,21 +196,19 @@ export class Paragraph {
     startOffset: Vector = Vector.zero
   ): Partial<ParagraphLayouted> {
     this.performLayoutTextOffset(paint, startOffset);
-    this.handleCompileWord();
-    const maxHeight = this.performConstraintsWidth(constraints);
-    // let countWidth = 0;
+  this.handleCompileWord();
+    const maxHeight=this.performConstraintsWidth(constraints);
+    let countWidth = 0;
     // this.textPoints.forEach((_) => {
     //   // if (_.parentData.broCount>1)
     //   console.log(
     //     _.text,
-    //     _.parentData.wordCountWidth,
-    //     "共",
-    //     _.parentData.broCount
+    //     _.parentData.offset
     //   );
     // });
 
     // this.performLayoutTextAlignment(constraints);
-
+    // console.log();
     return {
       height: maxHeight,
       nextStartOffset: this.getNextStartOffset(),
@@ -213,6 +217,7 @@ export class Paragraph {
   private handleCompileWord() {
     let current = this.firstTextPoint;
     let currentHead = this.firstTextPoint;
+    let wordCount = 0;
     while (current != null) {
       const parentData = current.parentData;
       const nextBroTextPoint = parentData.nextPointText;
@@ -225,16 +230,15 @@ export class Paragraph {
       ) {
         current = nextBroTextPoint;
         currentHead = current;
+        wordCount = 0;
         continue;
       }
-      if (
-        current != currentHead &&
-        !TextPainter.isSpace(current.charCodePoint)
-      ) {
-        current.parentData.broCount = 1;
-      }
       current = nextBroTextPoint;
-      currentHead.parentData.broCount++;
+      currentHead.parentData.broCount = ++wordCount;
+      //词缀无实际broCount
+      // if(wordCount>=1&&current?.isWord){
+      //   current.parentData.broCount=0;
+      // }
       currentHead.parentData.wordCountWidth += parentData.box.width;
     }
 
@@ -279,6 +283,7 @@ export class Paragraph {
       const wordList = row.textPoints;
       const countWidth = row.countWidth;
       const freeSpace = Math.max(maxWidth - countWidth, 0);
+      const canLayout:boolean=freeSpace>0;
       const wordCount: number = wordList.reduce<number>(
         (count: number, textPoint: TextPoint) => {
           return count + (textPoint.parentData.broCount ? 1 : 0);
@@ -301,20 +306,21 @@ export class Paragraph {
           break;
       }
       let positionX: number = leadingSpace;
-      wordList.forEach((_, ndx) => {
-        const parentData = _.parentData;
-        if (parentData.broCount) {
-          parentData.offset = new Vector(positionX, parentData.offset.y);
-          positionX += parentData.wordCountWidth || parentData.box.width;
-          positionX += betweenSpace;
-          this.performLayoutRow(_, parentData.offset, parentData.broCount);
-        } else if (TextPainter.isSpace(_.text.charCodeAt(0))) {
-          positionX += parentData.box.width;
-        }
-      });
+      console.log(key+"单词数量", wordCount+"剩余"+freeSpace);
+      if(!canLayout)continue;
+      // wordList.forEach((_, ndx) => {
+      //   const parentData = _.parentData;
+      //   if (parentData.broCount) {
+      //    // parentData.offset.add(new Vector(leadingSpace+betweenSpace,0));
+      //     parentData.offset = new Vector(positionX, parentData.offset.y);
+      //     positionX += parentData.wordCountWidth || parentData.box.width;
+      //     positionX += betweenSpace;
+      //     this.performLayoutRow(_, parentData.offset, parentData.broCount);
+      //   }else{
+      //     positionX+=parentData.box.width;
+      //   }
+      // });
     }
-
-    console.log(rows);
   }
 
   /**
@@ -324,6 +330,8 @@ export class Paragraph {
    * 文本是否为单词判断逻辑为next不为null与next的code码小于256与next不为空格即判定为一个单词
    * 区别是否一个单词时，必须满足连续字母超过一个才满足为一个"单词"
    * 每个单词的broCount至少为1，空格以及兄弟字母该属性为null
+   * 
+   * ----
    */
   private performConstraintsWidth(constraints: ParagraphConstraints): number {
     let maxHeight = 0;
@@ -331,28 +339,37 @@ export class Paragraph {
       subDeltaX = 0;
     const maxWidth = constraints.width;
     const len = this.textPoints.length;
-    for (let index = 0; index < len; index++) {
+    for (let index = 0; index < len; index) {
       const textPoint = this.textPoints[index];
       const codePoint = textPoint.text.charCodeAt(0);
-      const parentData = textPoint.parentData;
+      const parentData = textPoint?.parentData;
       const broCount = parentData.broCount;
       const offset = parentData.offset;
       const box = parentData.box;
-      let wordWidth = (parentData.wordCountWidth|| box.width )+ offset.x;
-      console.log("全场",wordWidth)
+      //文字在线性内的偏移量
+      let wordWidth = (parentData.wordCountWidth || box.width) + offset.x;
+      //偏移量加反向增量得到实际宽度
       const textOffsetX = wordWidth + subDeltaX;
       const overflow = maxWidth - textOffsetX;
+      // console.log("文字实际宽度",textOffsetX)
       if (overflow < 0 || TextPainter.isNewline(codePoint)) {
-        subDeltaX = offset.x * -1;
+        subDeltaX = offset.x*-1;
         column++;
+        console.log(offset.x,"换行",subDeltaX)
       }
+      // if(column>1)console.log(textPoint.text+':',offset.x,"增量",subDeltaX,"最终定位：",subDeltaX+offset.x)
       const deltaY = this.textStyle.lineHeight * column;
-      let deltaX = subDeltaX + offset.x;
+      let deltaX = subDeltaX+offset.x//)Math.max(0,subDeltaX + offset.x);
+      console.log(textPoint.text,"最终得出",deltaX);
+      // if(!textPoint.isWord){
+      //   console.log("空格",textPoint.text,box.width);
+        
+      // }
       offset.setXY(deltaX, deltaY);
       maxHeight = Math.max(deltaY, maxHeight);
       parentData.column = column;
+      index += (broCount||1);
       this.performLayoutRow(textPoint, offset, broCount);
-      index += broCount;
       textPoint.parentData = parentData;
     }
     return maxHeight;
@@ -378,24 +395,25 @@ export class Paragraph {
    */
   private performLayoutRow(
     textPoint: TextPoint,
-    offset?: Vector,
+    parentOffset?: Vector,
     maxRange?: number,
     initRow?: boolean
   ) {
+    
     const symbolRegex = /\.|\(|\)|\（|\）|\!|\！/;
-    let x: number = offset?.x ?? 0;
+    let x: number = parentOffset?.x ?? 0;
     let currentPoint = textPoint;
     let range: number = 0;
     const headTextPointParentData = textPoint.parentData;
     while (currentPoint != null) {
+      // range+=1;
+      if (maxRange && (range+=1) > maxRange) return;
       const parentData = currentPoint?.parentData;
       const isOffset = !symbolRegex.test(currentPoint.text);
       const offset = Vector.zero;
       const box = parentData.box;
-      if (TextPainter.isSpace(currentPoint.text.charCodeAt(0))) {
+      if (TextPainter.isSpace(currentPoint.charCodePoint)) {
         if (
-          parentData.prePointText != null &&
-          parentData.nextPointText != null &&
           initRow
         ) {
           box.width += this.textStyle.wordSpace;
@@ -405,19 +423,20 @@ export class Paragraph {
         ? x + box.width - box.right + box.left
         : x + Math.max(box.left, 0);
       const offsetY = headTextPointParentData.offset.y;
-      offset.setXY(offsetX, offsetY);
+      if(!initRow)console.log(currentPoint.text,"Row定位",x)
+      offset.setXY(x, offsetY);
       parentData.offset.set(offset);
       parentData.column = headTextPointParentData.column;
       currentPoint = parentData.nextPointText;
       x += box.width;
-      range++;
       this.lastTextPoint = currentPoint ?? this.lastTextPoint;
-      if (maxRange && range > maxRange) break;
     }
+    
   }
   private getNextStartOffset(): Vector {
     if (this.textPoints.length === 0) return Vector.zero;
-    const parentData = this.lastTextPoint.parentData;
+    const parentData = this.lastTextPoint?.parentData;
+    if(!parentData)return Vector.zero;
     const lastOffset = parentData.offset.copy();
     const continueOffset = Vector.zero;
     continueOffset.add(lastOffset);
@@ -479,8 +498,8 @@ export class Paragraph {
         if (_.text === " ") {
           paint.beginPath();
           paint.rect(
-            parentData.offset.x + offset.x - parentData.box.width,
-            parentData.offset.y + offset.y - parentData.box.height,
+            parentData.offset.x + offset.x,
+            parentData.offset.y + offset.y - parentData.box.height-2,
             parentData.box.width,
             parentData.box.height
           );

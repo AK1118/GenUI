@@ -211,24 +211,28 @@ class View {
 // view.layout();
 // view.render(new PaintingContext(new Painter(g)));
 
-const fontSize = 20;
-const paintY =0;
-const paintX = 0;
+const fontSize = 10;
+const paintY =10;
+const paintX = 10;
 g.font = `bold ${fontSize}px serif`;
 
 //This is a small text and this is large text.
-const texts=`这是测试文字测n a hello breakthrough for web designers and developers, a new canvas plugin called "GestiView" has emerged, promising to revolutionize the way interactive content is created and displayed on the web. Developed by a team of forward-thinking engineers at a Silicon Valley startup, GestiView introduces cutting-edge features that streamline the process of designing and implementing canvas-based graphics.`//`hello 欢！迎·来、。到 nuestra comunidad. Добро пожаловать! We are here today to celebrate la beauté de la diversité linguistique. En este texto, мы исследуем l'interconnexion entre différentes langues et cultures. Let's embark on this journey together, shall we?`; //`.,;:?!"\'()（）！【】[]{}-–—/\\|_#*&@~^%$€£¥¢§°±=<>😀`
+const texts=`* layout函数只负责将文本进行布局操作，并返回布局后的堆叠高度height和下一段文字的startOffset
+* [startOffset]表示该文本(首个文字)从此开始布局，在[TextSpan]具有children时会按此规律排序
+* 将所有文字逐个分开并通过[getMeasureText]方法获取文字数据，生成[TextBox]列表
+* 1.[performLayoutTextOffset]首次排序使用 [performLayoutRow]将所有文字按ltr方向排序成一条直线并给出每个文字的offset,同时会设置word space
+* 2.[performConstraintsWidth]约束排序，主要做换行等操作,根据文字特性判定换行规则,并返回堆叠高度[maxHeight]`//` //This is a small text and this is large text. 这是测试文字测n a hello breakthrough for web designers and developers, a new canvas plugin called "GestiView" has emerged, promising to revolutionize the way interactive content is created and displayed on the web. Developed by a team of forward-thinking engineers at a Silicon Valley startup, GestiView introduces cutting-edge features that streamline the process of designing and implementing canvas-based graphics.`//`hello 欢！迎·来、。到 nuestra comunidad. Добро пожаловать! We are here today to celebrate la beauté de la diversité linguistique. En este texto, мы исследуем l'interconnexion entre différentes langues et cultures. Let's embark on this journey together, shall we?`; //`.,;:?!"\'()（）！【】[]{}-–—/\\|_#*&@~^%$€£¥¢§°±=<>😀`
 const paragraph = new Paragraph();
 const paragraph2 = new Paragraph();
 paragraph.addText(texts);
 paragraph2.addText(texts);
 
 paragraph.pushStyle(new TextStyle({
-  textAlign:TextAlign.end,
+  textAlign:TextAlign.justify,
   fontSize:fontSize,
   lineHeight:fontSize,
    wordSpace:10,
-  letterSpacing:2,
+  letterSpacing:0,
 }));
 
 const { nextStartOffset,height } = paragraph.layout(
@@ -237,6 +241,8 @@ const { nextStartOffset,height } = paragraph.layout(
 );
 g.fillStyle="white"
 g.fillRect(paintX,paintY,200,Math.max(height,fontSize))
+g.fillStyle="orange"
+// g.fillRect(155,paintY+20,45,Math.max(height,fontSize))
 // paragraph2.layout(
 //   new ParagraphConstraints(200),
 //   new Painter(g),
