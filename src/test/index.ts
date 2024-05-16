@@ -84,7 +84,13 @@ import {
   RenderViewOption,
   SingleChildRenderViewOption,
 } from "@/types/widget";
-import { Paragraph, ParagraphConstraints, TextAlign, TextStyle } from "./widgets/text-painter";
+import {
+  MulParagraph,
+  Paragraph,
+  ParagraphConstraints,
+  TextAlign,
+  TextStyle,
+} from "./widgets/text-painter";
 
 /**
  * 假如全屏 360，    分成750份
@@ -157,6 +163,7 @@ Gesti.installPlugin(
 // });
 // // gesti.debug=true;
 // const controller = gesti.controller;
+
 // console.log("屏幕1大小", canvas.width, canvas.height);
 
 // const screenUtil1 = controller.generateScreenUtils({
@@ -211,50 +218,64 @@ class View {
 // view.layout();
 // view.render(new PaintingContext(new Painter(g)));
 
-const fontSize = 20;
-const paintY =0;
+const fontSize = 10;
+const paintY = 50;
 const paintX = 0;
-g.font = `bold ${fontSize}px serif`;
 
 //This is a small text and this is large text.
-const texts=`This is a small text and this is large text.`
+const texts = `你可以根据需要在`;
 const paragraph = new Paragraph();
 const paragraph2 = new Paragraph();
+const paragraph3 = new Paragraph();
 paragraph.addText(texts);
-paragraph2.addText(texts);
+paragraph2.addText(" paragraphs ");
+paragraph3.addText("数组中继续添加新的段落，然后将它们传递给 MulParagraph 实例");
 
-const textStyle=new TextStyle({
-  textAlign:TextAlign.end,
-  fontSize:fontSize,
-  lineHeight:fontSize,
-  height:fontSize,
-   wordSpace:0,
-  letterSpacing:0,
+const textStyle = new TextStyle({
+  textAlign: TextAlign.unset,
+  fontSize: fontSize,
+  lineHeight: fontSize * 1.2,
+  height: fontSize,
+  wordSpace: 0,
+  letterSpacing: 0,
 });
 
 paragraph.pushStyle(textStyle);
-paragraph2.pushStyle(textStyle);
+paragraph2.pushStyle({
+  ...textStyle,
+  color:'orange',
+  lineHeight:20,
+  fontSize:20,
+});
+paragraph3.pushStyle({
+  ...textStyle,
+  color:'black'
+});
 
-const { nextStartOffset,height } = paragraph.layout(
-  new ParagraphConstraints(200),
-  new Painter(g)
-);
-g.fillStyle="white"
-g.fillRect(paintX,paintY,200,Math.max(height,fontSize))
-g.fillStyle="orange";
-console.log("接头",nextStartOffset)
-// g.fillRect(155,paintY+20,45,Math.max(height,fontSize))
-paragraph2.layout(
-  new ParagraphConstraints(200),
-  new Painter(g),
-  new Vector(nextStartOffset.x,0)
-);
+g.fillStyle = "white";
+g.fillRect(paintX, paintY, 200, Math.max(100, fontSize));
+g.fillStyle = "black";
+const mul = new MulParagraph([paragraph, paragraph2, paragraph3]);
+mul.layout(new ParagraphConstraints(200), new Painter(g));
+mul.paint(new Painter(g), new Vector(paintX, paintY));
+// const { nextStartOffset,height } = paragraph.layout(
+//   new ParagraphConstraints(200),
+//   new Painter(g)
+// );
 
+// g.fillStyle="orange";
+// console.log("接头",nextStartOffset)
+// // g.fillRect(155,paintY+20,45,Math.max(height,fontSize))
+// paragraph2.layout(
+//   new ParagraphConstraints(200),
+//   new Painter(g),
+//   new Vector(nextStartOffset.x,0)
+// );
 
+// console.log("大小",paragraph.width,paragraph.height)
 
-
-g.fillStyle="black"
-const nextStartPaintOffset=paragraph.paint(new Painter(g), new Vector(paintX, paintY));
-paragraph2.paint(new Painter(g), new Vector(paintX,nextStartPaintOffset.y+paintY));
+// g.fillStyle="black"
+// const nextStartPaintOffset=paragraph.paint(new Painter(g), new Vector(paintX, paintY));
+// paragraph2.paint(new Painter(g), new Vector(paintX,nextStartPaintOffset.y+paintY));
 
 // g.fillText(texts, 10, 200);
