@@ -226,7 +226,7 @@ const paintY =10;
 const paintX = 10;
 
 //This is a small text and this is large text.
-const texts = `你可以根据需要在数组中继续添加新的段落`;
+const texts = `😀你可以根据需要在数组中继续添加新的段落👊`;
 const paragraph = new Paragraph();
 const paragraph2 = new Paragraph();
 const paragraph3 = new Paragraph();

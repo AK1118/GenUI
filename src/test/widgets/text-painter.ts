@@ -211,25 +211,22 @@ export class Paragraph {
    * [startOffset]表示该文本(首个文字)从此开始布局，在[TextSpan]具有children时会按此规律排序
    * 将所有文字逐个分开并通过[getMeasureText]方法获取文字数据，生成[TextBox]列表
    * 1.[performLayoutTextOffset]首次排序使用 [performLayoutRow]将所有文字按ltr方向排序成一条直线并给出每个文字的offset,同时会设置word space
-   * 2.[performConstraintsWidth]约束排序，主要做换行等操作,根据文字特性判定换行规则,并返回堆叠高度[maxHeight]
+   * 2.[performConstraintsWidth]约束排序，主要做换行等操作,根据文字特性判定换行规则
+   * 3.[performLayoutOffsetYByColumn] 通过宽度约束行计算文字所在的y轴
+   * 4.[performLayoutTextAlignment] 通过 [TextAlign] 进行对齐布局
    */
   layout(
     constraints: ParagraphConstraints,
     paint: Painter,
     startOffset: Vector = Vector.zero
-  ): Partial<ParagraphLayouted> {
+  ) {
     this.performLayoutTextOffset(paint, startOffset);
     this.handleCompileWord();
     this.performConstraintsWidth(constraints);
     this.performLayoutOffsetYByColumn();
     this.performLayoutTextAlignment(constraints);
-    return {
-      height: this.height,
-      nextStartOffset: this.getNextStartOffset(),
-    };
   }
-  private applyTextStyle(paint: Painter) {
-    console.log("设置字体大小", `bold ${this.textStyle.fontSize}px serif`);
+  protected applyTextStyle(paint: Painter) {
     paint.font = `bold ${this.textStyle.fontSize}px serif`;
   }
   public handleCompileWord() {
@@ -549,26 +546,25 @@ export class Paragraph {
 }
 
 /**
- * 文本排版算法：Flutter 使用一系列排版算法来计算文字的位置和大小。这些算法考虑了文本的样式、字体、字号、行高等因素，并根据文本的上下文关系来确定每个文字的准确位置。Flutter 的文本排版算法是高度优化的，能够在短时间内处理大量文字，并保持良好的性能。
-
-文本样式处理：在文本流中，每个文字都可以具有自己的样式，比如字体、字号、颜色、下划线等。Flutter 的文本流机制能够有效地处理不同样式的文字，并根据需要进行合并或分割，以确保最终的文字布局和渲染是正确的。
-
-嵌套文本处理：Flutter 支持嵌套文本，即将一个 TextSpan 放在另一个 TextSpan 的内部。在文本流中，嵌套文本被视为一个整体，并由递归算法处理。这意味着嵌套文本中的每个层级都会经过相同的排版算法，以确保整个文本链的布局和渲染都是正确的。
-
-文本行的生成：在文本流中，文本通常被分为多行进行排版。Flutter 的文本流机制会根据容器的宽度和文本的内容，将文本分割成适当的行，并确定每行的起始位置和结束位置。这样做可以确保文本在水平方向上自动换行，并根据需要进行对齐。
-
-文本渲染：最终，Flutter 的文本流机制会将计算出的文本布局信息传递给底层的渲染引擎（例如 Skia），以便实际渲染文本到屏幕上。渲染引擎会将文本转换为实际的像素数据，并在屏幕上绘制出来，完成整个文本流的布局和渲染过程。
-
-111111222233333 3
-1.结合字号、行高确定横向布局
-2.宽度约束生成行，标记每个文字所在的column，用于后面alignment对其
-3.alignment对齐
-
-11111122
-2233333
-3.
-
-*/
+ * 多行文本嵌套布局其实是将所有传入的 [Paragraph] (段落) 转为链表并进行后续布局。在布局时，它不会生成新的 [Paragraph] 和其他生成物，它仅仅是代理了 [Paragraph] 的
+ * layout 方法。并将每个段落对象内的 [textPoint] 通过 [applyPerformLayoutConstraints] 约束分为若干行，并以行为单位进行后续布局和计算。
+ *
+ * 当 [Paragraph] 被作为嵌入段落传入是，意味着它本身的 [TextStyle] 会在某些情况下失效，并被 [MulParagraph] 控制。
+ *
+ *
+ * [applyPerformLayoutHorizontalOffset] 方法将传入的文字从string转换为textPoint并横向水平布局，在该过程中不会出现任何换行，且该方法的startOffset参数是
+ * 水平布局的其实坐标。当这个坐标的x不为0时，最开始的那一个文字将会从x处开始布局，并从该处开始，x将会一只递归下去直至string全部被水平布局。它是必须被调用的，
+ * 往后的所有计算步骤都基于该方法的运行结果。
+ *
+ * [applyPerformLayoutConstraints] 方法至少接收一个 [ParagraphConstraints] 用于约束文字的最大宽度并返回约束后的文字最大行数。约束宽度决定着文字的换行时机，
+ * 如果不执行该方法，所有文字将会保留水平布局状态，它是必须被调用的方法。
+ *
+ * [handleLevelRowsLineHeight] 方法至少接收一个最大行数参数，它需要通过这个参数获取该嵌套对象的所有文字行以便于后面更好的通过行为单位计算并抹平每行的行高和
+ * 文字渲染基线偏移量。同时，这个方法内将会被计算出该嵌套文本的 [最大高度] 值，这是唯一能计算整个嵌套文本高度的方法，并且它是必须被调用的，否则文字将会塌陷为五高度box。
+ *
+ * [applyAlignText] 方法至少传入最大行数 [maxColumn] 和 [ParagraphConstraints]。它的作用在于它可以将指定的行通过 [textAlign] 对其。文字默认对其值是 [TextAlign.unset]
+ * 即不做任何操作，也就是默认从左往右开始布局，并被宽度约束。该方法可选调用，在 [textAlign]值为 [TextAlign.unset] 不会出现明显效果。
+ **/
 export class MulParagraph extends Paragraph {
   private firstChild: Paragraph;
   constructor(children: Paragraph[]) {
@@ -593,12 +589,11 @@ export class MulParagraph extends Paragraph {
     constraints: ParagraphConstraints,
     paint: Painter,
     startOffset?: Vector
-  ): Partial<ParagraphLayouted> {
+  ) {
     this.applyPerformLayoutHorizontalOffset(paint, startOffset);
     const maxColumn = this.applyPerformLayoutConstraints(constraints);
     this.handleLevelRowsLineHeight(maxColumn);
     this.applyAlignText(maxColumn, constraints);
-    return {};
   }
   /**
    *抹平指定Row内所有TextPoint的line-height并将具有差异的TextPoint的基线Y偏移量校准给line-height较小的一方
@@ -618,16 +613,17 @@ export class MulParagraph extends Paragraph {
         const parentData = textPoint.parentData;
         const box = parentData.box;
         const maxBox = maxLineHeightTextPoint?.parentData?.box || box;
-        const offsetBaseLineY =maxBox.height - box.height;
+        const offsetBaseLineY = maxBox.height - box.height;
         box.lineHeight = row.maxLineHeight;
         let y = parentData.box.lineHeight + preColumnHeight;
         if (offsetBaseLineY != 0) {
-          parentData.baseLineOffsetY = offsetBaseLineY*.5;
+          parentData.baseLineOffsetY = offsetBaseLineY * 0.5;
         }
         parentData.offset.setXY(parentData.offset.x, y);
       });
       preColumnHeight += row.maxLineHeight;
     });
+    this.size.setHeight(preColumnHeight);
   }
   private getRows(maxColumn: number) {
     let child = this.firstChild;
@@ -659,7 +655,6 @@ export class MulParagraph extends Paragraph {
     let child = this.firstChild;
     let lastedOffset: number = 0;
     let lastedColumn: number = 1;
-    let height: number = 0;
     while (child != null) {
       const parentData = child.parentData;
       const { column, subDeltaX } = child.performConstraintsWidth(
@@ -667,7 +662,6 @@ export class MulParagraph extends Paragraph {
         lastedOffset,
         lastedColumn
       );
-      height = child.getNextStartOffset().y;
       lastedColumn = column;
       lastedOffset = subDeltaX;
       this.size.setHeight(
@@ -676,39 +670,33 @@ export class MulParagraph extends Paragraph {
       this.size.setWidth(Math.min(this.size.width, constraints.width));
       child = parentData.nextNode;
     }
-
     //最大行数
     return lastedColumn;
   }
   private applyPerformLayoutHorizontalOffset(
     paint: Painter,
-    startOffset: Vector
+    startOffset: Vector = Vector.zero
   ) {
     let child = this.firstChild;
-    let lastedOffset: Vector = Vector.zero;
+    let lastedOffset: Vector = startOffset;
     while (child != null) {
       const parentData = child.parentData;
       child.performLayoutTextOffset(paint, lastedOffset);
       child.handleCompileWord();
       lastedOffset = child.getNextStartOffset();
-
       child = parentData.nextNode;
     }
   }
   public paint(paint: Painter, offset: Vector = Vector.zero): Vector {
     let child = this.firstChild;
     let lastedOffset: Vector = Vector.zero;
-    let lastedLineHeight: number = child.textStyle.lineHeight;
     while (child != null) {
       const parentData = child.parentData;
-      const currentLineHeight = child.textStyle.lineHeight;
-      const subLinHeight = Math.min(lastedLineHeight - currentLineHeight, 0);
       lastedOffset = child.paint(
         paint,
-        Vector.add(offset, new Vector(0, 0)), //subLinHeight
+        offset,
         true
       );
-      lastedLineHeight = child.textStyle.lineHeight;
       child = parentData.nextNode;
     }
     return Vector.zero;
