@@ -218,25 +218,24 @@ class View {
 // view.layout();
 // view.render(new PaintingContext(new Painter(g)));
 
-const fontSize = 10;
+const fontSize = 20;
 const paintY = 50;
 const paintX = 0;
 
 //This is a small text and this is large text.
-const texts = `你可以根据需要在`;
+const texts = `你可以根据需要在数组中继续添加新的段落`;
 const paragraph = new Paragraph();
 const paragraph2 = new Paragraph();
 const paragraph3 = new Paragraph();
 paragraph.addText(texts);
-paragraph2.addText(" paragraphs ");
+paragraph2.addText("我靠");
 paragraph3.addText("数组中继续添加新的段落，然后将它们传递给 MulParagraph 实例");
 
 const textStyle = new TextStyle({
   textAlign: TextAlign.unset,
   fontSize: fontSize,
-  lineHeight: fontSize * 1.2,
-  height: fontSize,
-  wordSpace: 0,
+  lineHeight: fontSize*1.2,
+  wordSpace: 10,
   letterSpacing: 0,
 });
 
@@ -244,20 +243,26 @@ paragraph.pushStyle(textStyle);
 paragraph2.pushStyle({
   ...textStyle,
   color:'orange',
-  lineHeight:20,
-  fontSize:20,
 });
 paragraph3.pushStyle({
   ...textStyle,
   color:'black'
 });
 
+const constraints=new ParagraphConstraints(300)
+
 g.fillStyle = "white";
-g.fillRect(paintX, paintY, 200, Math.max(100, fontSize));
+g.fillRect(paintX, paintY, constraints.width, Math.max(100, fontSize));
 g.fillStyle = "black";
 const mul = new MulParagraph([paragraph, paragraph2, paragraph3]);
-mul.layout(new ParagraphConstraints(200), new Painter(g));
+mul.pushStyle(
+  new TextStyle(
+    {textAlign:TextAlign.justify},
+  ),
+);
+mul.layout(constraints, new Painter(g));
 mul.paint(new Painter(g), new Vector(paintX, paintY));
+
 // const { nextStartOffset,height } = paragraph.layout(
 //   new ParagraphConstraints(200),
 //   new Painter(g)

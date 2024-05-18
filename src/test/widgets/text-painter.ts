@@ -97,6 +97,7 @@ class TextBox {
   top: number;
   bottom: number;
   direction: TextDirection;
+  lineHeight: number;
 
   constructor(
     width: number,
@@ -216,11 +217,11 @@ export class Paragraph {
   ): Partial<ParagraphLayouted> {
     this.performLayoutTextOffset(paint, startOffset);
     this.handleCompileWord();
-    const maxHeight = this.performConstraintsWidth(constraints);
+    this.performConstraintsWidth(constraints);
     this.performLayoutTextAlignment(constraints);
 
     return {
-      height: maxHeight,
+      height: this.height,
       nextStartOffset: this.getNextStartOffset(),
     };
   }
@@ -256,88 +257,94 @@ export class Paragraph {
       currentHead.parentData.wordCountWidth += parentData.box.width;
     }
   }
+  //通过树形获取一行的数据
+  // public getRowsByNodeTree(startTextPoint: TextPoint): Map<number, Rowed> {
+  //   let textPoint = startTextPoint;
+  //   const rows: Map<number, Rowed> = new Map();
+  //   while (textPoint != null) {
+  //     const parentData = textPoint.parentData;
+  //     const next = parentData.nextNode;
+  //     const column = parentData.column;
+  //     let row = rows.get(column);
+  //     if (!row) {
+  //       row = {
+  //         textPoints: [],
+  //         countWidth: 0,
+  //       };
+  //     }
+  //     row.countWidth += parentData.box.width;
+  //     //行末空格忽略
+  //     if (
+  //       next?.parentData.column != column &&
+  //       TextPainter.isSpace(textPoint.charCodePoint)
+  //     ) {
+  //       row.countWidth -= parentData.box.width;
+  //       textPoint.hiddenTextPoint();
+  //     } else {
+  //       row.textPoints.push(textPoint);
+  //     }
+  //     rows.set(column, row);
+  //     textPoint = next;
+  //   }
+  //   return rows;
+  // }
+  public getRowByColumn(rowIndex: number): Rowed {
+    const rows: Map<number, Rowed> = TextPainter.getRowsByNodeTree(
+      this.firstTextPoint
+    );
+    return rows.get(rowIndex);
+  }
   public performLayoutTextAlignment(constraints: ParagraphConstraints) {
     if (this.textStyle.textAlign === TextAlign.unset) return;
-    let textPoint = this.firstTextPoint;
-    const rows: Record<number, Rowed> = {};
-    while (textPoint != null) {
-      const parentData = textPoint.parentData;
-      const next = parentData.nextNode;
-      const column = parentData.column;
-      let row = rows[column];
-      if (!row) {
-        row = {
-          textPoints: [],
-          countWidth: 0,
-        };
-      }
-      row.countWidth += parentData.box.width;
-      //行末空格忽略
-      if (
-        next?.parentData.column != column &&
-        TextPainter.isSpace(textPoint.charCodePoint)
-      ) {
-        row.countWidth -= parentData.box.width;
-        textPoint.hiddenTextPoint();
-      } else {
-        row.textPoints.push(textPoint);
-      }
-
-      rows[column] = row;
-      textPoint = next;
+    const rows = TextPainter.getRowsByNodeTree(this.firstTextPoint);
+    for (const key in rows) {
+      const row = rows.get(Number(key));
+      this.applyLayoutAlignByRow(row, constraints);
     }
-
+  }
+  public applyLayoutAlignByRow(row: Rowed, constraints: ParagraphConstraints) {
     const maxWidth = constraints.width;
     let leadingSpace: number = 0;
     let betweenSpace: number = 0;
-    const rowLen: number = Object.keys(rows).length;
-    for (const key in rows) {
-      const row = rows[key];
-      const wordList = row.textPoints;
-      const countWidth = row.countWidth;
-      const freeSpace = Math.max(maxWidth - countWidth, 0);
-      const canLayout: boolean = freeSpace > 0;
-      const wordCount: number = wordList.reduce<number>(
-        (count: number, textPoint: TextPoint) => {
-          return (
-            count + (textPoint.parentData.broCount && !textPoint.hidden ? 1 : 0)
-          );
-        },
-        0
-      );
-      switch (this.textStyle.textAlign) {
-        case TextAlign.end:
-          leadingSpace = freeSpace;
-          break;
-        case TextAlign.center:
-          leadingSpace = freeSpace * 0.5;
-          break;
-        case TextAlign.start:
-          leadingSpace = 0;
-          betweenSpace = 0;
-          break;
-        case TextAlign.justify:
-          betweenSpace = freeSpace / (wordCount - 1);
-          //最后行不需要flex
-          if (Number(key) === rowLen) {
-            leadingSpace = 0;
-            betweenSpace = 0;
-          }
-          break;
-      }
-      let positionX: number = leadingSpace;
-      // console.log(key+"单词数量", wordCount+"剩余"+freeSpace);
-      if (!canLayout) continue;
-      wordList.forEach((_, ndx) => {
-        const parentData = _.parentData;
-        if (parentData.broCount) {
-          parentData.offset = new Vector(positionX, parentData.offset.y);
-          positionX += parentData.wordCountWidth || parentData.box.width;
-          positionX += betweenSpace;
-          this.performLayoutRow(_, parentData.offset, parentData.broCount);
-        }
-      });
+    const wordList = row.textPoints;
+    const countWidth = row.countWidth;
+    const freeSpace = Math.max(maxWidth - countWidth, 0);
+    const canLayout: boolean = freeSpace > 0;
+    const wordCount: number = wordList.reduce<number>(
+      (count: number, textPoint: TextPoint) => {
+        return (
+          count + (textPoint.parentData.broCount && !textPoint.hidden ? 1 : 0)
+        );
+      },
+      0
+    );
+    console.log("对其",row.countWidth,this.textStyle.textAlign===TextAlign.center,row.textPoints)
+    switch (this.textStyle.textAlign) {
+      case TextAlign.end:
+        leadingSpace = freeSpace;
+        break;
+      case TextAlign.center:
+        leadingSpace = freeSpace * 0.5;
+        break;
+      case TextAlign.start:
+        leadingSpace = 0;
+        betweenSpace = 0;
+        break;
+      case TextAlign.justify:
+        betweenSpace = freeSpace / (wordCount - 1);
+        break;
     }
+    let positionX: number = leadingSpace;
+    if (!canLayout) return;
+    wordList.forEach((_, ndx) => {
+      const parentData = _.parentData;
+      if (parentData.broCount) {
+        parentData.offset = new Vector(positionX, parentData.offset.y);
+        positionX += parentData.wordCountWidth || parentData.box.width;
+        positionX += betweenSpace;
+        this.performLayoutRow(_, parentData.offset, parentData.broCount);
+      }
+    });
   }
 
   /**
@@ -353,16 +360,16 @@ export class Paragraph {
   public performConstraintsWidth(
     constraints: ParagraphConstraints,
     lastSubDeltaX: number = 0,
-    lastHeight: number = 0
-  ): number {
+    lastHeight: number = 0,
+    lastColumn: number = 0
+  ) {
     let maxHeight = 0;
     let maxWidth = 0;
     let column = 1,
       subDeltaX = lastSubDeltaX;
     const constraintsWidth = constraints.width;
     const len = this.textPoints.length;
-    const rowHeight = this.textStyle.lineHeight;
-    console.log("上次高度", lastHeight);
+    let rowHeight = this.textStyle.lineHeight;
     for (let index = 0; index < len; index) {
       const textPoint = this.textPoints[index];
       const codePoint = textPoint.text.charCodeAt(0);
@@ -376,20 +383,24 @@ export class Paragraph {
       if (overflow < 0 || TextPainter.isNewline(codePoint)) {
         subDeltaX = offset.x * -1;
         column++;
+        lastColumn += 1;
       }
       const deltaY = rowHeight * column + lastHeight;
       let deltaX = subDeltaX + offset.x;
       offset.setXY(deltaX, deltaY);
       maxHeight = Math.max(deltaY, maxHeight);
       maxWidth = Math.max(deltaX, maxWidth);
-      parentData.column = column;
+      parentData.column = lastColumn;
       index += broCount || 1;
       this.performLayoutRow(textPoint, offset, broCount);
       textPoint.parentData = parentData;
     }
     this.size.setHeight(maxHeight);
     this.size.setWidth(maxWidth);
-    return subDeltaX;
+    return {
+      column: lastColumn,
+      subDeltaX,
+    };
   }
   /**
    *  将文字处理为[TextBox]并计算每个文字的offset
@@ -422,6 +433,7 @@ export class Paragraph {
     let currentPoint = textPoint;
     let range: number = 0;
     const headTextPointParentData = textPoint.parentData;
+    const lineHeight: number = this.textStyle.lineHeight;
     while (currentPoint != null) {
       if (maxRange && (range += 1) > maxRange) return;
       const parentData = currentPoint?.parentData;
@@ -438,6 +450,7 @@ export class Paragraph {
       parentData.column = headTextPointParentData.column;
       currentPoint = parentData.nextNode;
       x += box.width;
+      box.lineHeight = lineHeight;
       this.lastTextPoint = currentPoint ?? this.lastTextPoint;
     }
   }
@@ -508,25 +521,32 @@ export class Paragraph {
 
   private performPaint(paint: Painter, offset: Vector, debugRect: boolean) {
     let child = this.firstTextPoint;
+
     while (child != null) {
       const parentData = child.parentData;
       const { x, y } = parentData.offset;
       const currentX = x + offset.x,
         currentY = y + offset.y;
-      const { width, height } = parentData.box;
-      if (child.hidden) return;
-      paint.fillText(child.text, currentX, currentY);
-
+      const { width, height, lineHeight } = parentData.box;
+      if (child.hidden) {
+        child = parentData.nextNode;
+        continue;
+      }
+      paint.fillText(
+        child.text,
+        currentX,
+        currentY - (lineHeight * 0.5 - height * 0.5)
+      );
       if (debugRect) {
         if (TextPainter.isSpace(child.charCodePoint)) {
           paint.beginPath();
-          paint.rect(currentX, currentY - height, width, height);
+          paint.rect(currentX, currentY - lineHeight, width, lineHeight);
           paint.strokeStyle = "orange";
           paint.stroke();
           paint.closePath();
         } else {
           paint.beginPath();
-          paint.rect(currentX, currentY - height, width, height);
+          paint.rect(currentX, currentY - lineHeight, width, lineHeight);
           paint.strokeStyle = "#ccc";
           paint.closePath();
           paint.stroke();
@@ -585,23 +605,59 @@ export class MulParagraph extends Paragraph {
     startOffset?: Vector
   ): Partial<ParagraphLayouted> {
     this.applyPerformLayoutHorizontalOffset(paint, startOffset);
-    this.applyPerformLayoutConstraints(constraints);
+    const maxColumn = this.applyPerformLayoutConstraints(constraints);
+    this.applyAlignText(maxColumn,constraints);
     return {};
   }
-  private applyPerformLayoutConstraints(constraints: ParagraphConstraints) {
+  public applyAlignText(maxColumn: number,constraints: ParagraphConstraints,) {
+    let child = this.firstChild;
+    const textPoints=new Array<TextPoint>();
+    while (child != null) {
+      const parentData = child.parentData;
+      for (let column = 1; column <= maxColumn; column++) {
+        const row = child.getRowByColumn(column);
+        if (row) {
+          textPoints.push(...row.textPoints);
+        }
+      }
+      child = parentData.nextNode;
+    }
+    const rows: Map<number, Rowed> = TextPainter.getRowsByArray(textPoints);
+    for (const [key,row] of rows) {
+      console.log("分配到",row)
+      // const row = rows.get(Number(key));
+      this.applyLayoutAlignByRow(row, constraints);
+      
+    }
+    // console.log("分配到",rows)
+  }
+  public applyLayoutAlignByRow(row: Rowed, constraints: ParagraphConstraints): void {
+      console.log("对齐",row)
+      super.applyLayoutAlignByRow(row,constraints)
+  }
+  private applyPerformLayoutConstraints(
+    constraints: ParagraphConstraints
+  ): number {
     let child = this.firstChild;
     let lastedOffset: number = 0;
+    let lastedColumn: number = 1;
     let height: number = 0;
     while (child != null) {
       const parentData = child.parentData;
-      lastedOffset = child.performConstraintsWidth(
+      const { column, subDeltaX } = child.performConstraintsWidth(
         constraints,
         lastedOffset,
-        height
+        height,
+        lastedColumn
       );
       height = child.getNextStartOffset().y;
+      lastedColumn = column;
+      lastedOffset = subDeltaX;
       child = parentData.nextNode;
     }
+
+    //最大行数
+    return lastedColumn;
   }
   private applyPerformLayoutHorizontalOffset(
     paint: Painter,
@@ -614,16 +670,32 @@ export class MulParagraph extends Paragraph {
       child.performLayoutTextOffset(paint, lastedOffset);
       child.handleCompileWord();
       lastedOffset = child.getNextStartOffset();
-      // console.log("开始",lastedOffset)
+
       child = parentData.nextNode;
     }
   }
   public paint(paint: Painter, offset: Vector = Vector.zero): Vector {
     let child = this.firstChild;
     let lastedOffset: Vector = Vector.zero;
+    let lastedLineHeight: number = child.textStyle.lineHeight;
     while (child != null) {
       const parentData = child.parentData;
-      lastedOffset = child.paint(paint, offset, true);
+      const currentLineHeight = child.textStyle.lineHeight;
+      const subLinHeight = Math.min(lastedLineHeight - currentLineHeight, 0);
+      console.log(
+        "上次",
+        lastedLineHeight,
+        "本次",
+        currentLineHeight,
+        "插件",
+        subLinHeight
+      );
+      lastedOffset = child.paint(
+        paint,
+        Vector.add(offset, new Vector(0, subLinHeight)),
+        true
+      );
+      lastedLineHeight = child.textStyle.lineHeight;
       child = parentData.nextNode;
     }
     return Vector.zero;
@@ -664,7 +736,72 @@ class TextPainter {
   static isSpace(codePoint: number): boolean {
     return codePoint === 32;
   }
-
+  //通过Array获取rows数据
+  public static getRowsByArray(arr: TextPoint[]): Map<number, Rowed> {
+    const rows: Map<number, Rowed> = new Map();
+    
+    arr.forEach(textPoint => {
+      const parentData = textPoint.parentData;
+      const column = parentData.column;
+      let row = rows.get(column);
+      if (!row) {
+        row = {
+          textPoints: [],
+          countWidth: 0,
+        };
+      }
+      row.countWidth += parentData.box.width;
+      //行末空格忽略
+      const nextIndex = arr.indexOf(textPoint) + 1;
+      const next = nextIndex < arr.length ? arr[nextIndex] : null;
+      if (
+        next?.parentData.column != column &&
+        TextPainter.isSpace(textPoint.charCodePoint)
+      ) {
+        row.countWidth -= parentData.box.width;
+        textPoint.hiddenTextPoint();
+      } else {
+        row.textPoints.push(textPoint);
+      }
+      rows.set(column, row);
+    });
+  
+    return rows;
+  }
+  
+  //通过Node树获取rows数据
+  public static getRowsByNodeTree(
+    startTextPoint: TextPoint
+  ): Map<number, Rowed> {
+    let textPoint = startTextPoint;
+    const rows: Map<number, Rowed> = new Map();
+    while (textPoint != null) {
+      const parentData = textPoint.parentData;
+      const next = parentData.nextNode;
+      const column = parentData.column;
+      let row = rows.get(column);
+      if (!row) {
+        row = {
+          textPoints: [],
+          countWidth: 0,
+        };
+      }
+      row.countWidth += parentData.box.width;
+      //行末空格忽略
+      if (
+        next?.parentData.column != column &&
+        TextPainter.isSpace(textPoint.charCodePoint)
+      ) {
+        row.countWidth -= parentData.box.width;
+        textPoint.hiddenTextPoint();
+      } else {
+        row.textPoints.push(textPoint);
+      }
+      rows.set(column, row);
+      textPoint = next;
+    }
+    return rows;
+  }
   //是否是一个新的换行点
   static isNewline(codePoint: number): boolean {
     switch (codePoint) {
