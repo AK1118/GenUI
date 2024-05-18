@@ -217,10 +217,13 @@ class View {
 // view.mount();
 // view.layout();
 // view.render(new PaintingContext(new Painter(g)));
-
-const fontSize = 20;
-const paintY = 50;
-const paintX = 0;
+let linHeightScale=5;
+// setInterval(()=>{
+  g.clearRect(0,0,1000,1000)
+  linHeightScale+=.1;
+  const fontSize = 10;
+const paintY =10;
+const paintX = 10;
 
 //This is a small text and this is large text.
 const texts = `你可以根据需要在数组中继续添加新的段落`;
@@ -228,40 +231,45 @@ const paragraph = new Paragraph();
 const paragraph2 = new Paragraph();
 const paragraph3 = new Paragraph();
 paragraph.addText(texts);
-paragraph2.addText("我靠");
-paragraph3.addText("数组中继续添加新的段落，然后将它们传递给 MulParagraph 实例");
-
+paragraph2.addText(`测试`);
+paragraph3.addText(`你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落,Hello.this is my order test.`);
 const textStyle = new TextStyle({
   textAlign: TextAlign.unset,
   fontSize: fontSize,
-  lineHeight: fontSize*1.2,
-  wordSpace: 10,
+  lineHeight: fontSize*1.5,
+  wordSpace: 0,
   letterSpacing: 0,
 });
 
 paragraph.pushStyle(textStyle);
+const fontSize2=20;
 paragraph2.pushStyle({
   ...textStyle,
   color:'orange',
+  fontSize: fontSize2,
+  lineHeight: fontSize2*linHeightScale,
 });
 paragraph3.pushStyle({
   ...textStyle,
   color:'black'
 });
 
-const constraints=new ParagraphConstraints(300)
+const constraints=new ParagraphConstraints(200)
 
-g.fillStyle = "white";
-g.fillRect(paintX, paintY, constraints.width, Math.max(100, fontSize));
-g.fillStyle = "black";
+
 const mul = new MulParagraph([paragraph, paragraph2, paragraph3]);
 mul.pushStyle(
   new TextStyle(
-    {textAlign:TextAlign.justify},
+    {textAlign:TextAlign.start,wordSpace:20},
   ),
 );
 mul.layout(constraints, new Painter(g));
+g.fillStyle = "white";
+g.fillRect(paintX, paintY, constraints.width, Math.max(mul.height, fontSize));
+g.fillStyle = "black";
 mul.paint(new Painter(g), new Vector(paintX, paintY));
+if(linHeightScale>=5)linHeightScale=0;
+// },30000)
 
 // const { nextStartOffset,height } = paragraph.layout(
 //   new ParagraphConstraints(200),
