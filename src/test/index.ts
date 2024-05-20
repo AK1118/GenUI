@@ -89,6 +89,8 @@ import {
   Paragraph,
   ParagraphConstraints,
   TextAlign,
+  TextPainter,
+  TextSpan,
   TextStyle,
 } from "./widgets/text-painter";
 
@@ -217,78 +219,89 @@ class View {
 // view.mount();
 // view.layout();
 // view.render(new PaintingContext(new Painter(g)));
-let linHeightScale=5;
-// setInterval(()=>{
-  g.clearRect(0,0,1000,1000)
-  linHeightScale+=.1;
-  const fontSize = 10;
-const paintY =10;
-const paintX = 10;
 
-//This is a small text and this is large text.
-const texts = `😀你可以根据需要在数组中继续添加新的段落👊`;
-const paragraph = new Paragraph();
-const paragraph2 = new Paragraph();
-const paragraph3 = new Paragraph();
-paragraph.addText(texts);
-paragraph2.addText(`测试`);
-paragraph3.addText(`你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落,Hello.this is my order test.`);
-const textStyle = new TextStyle({
-  textAlign: TextAlign.unset,
-  fontSize: fontSize,
-  lineHeight: fontSize*1.5,
-  wordSpace: 0,
-  letterSpacing: 0,
-});
-
-paragraph.pushStyle(textStyle);
-const fontSize2=20;
-paragraph2.pushStyle({
-  ...textStyle,
-  color:'orange',
-  fontSize: fontSize2,
-  lineHeight: fontSize2*linHeightScale,
-});
-paragraph3.pushStyle({
-  ...textStyle,
-  color:'black'
-});
-
-const constraints=new ParagraphConstraints(200)
-
-
-const mul = new MulParagraph([paragraph, paragraph2, paragraph3]);
-mul.pushStyle(
-  new TextStyle(
-    {textAlign:TextAlign.start,wordSpace:20},
-  ),
-);
-mul.layout(constraints, new Painter(g));
-g.fillStyle = "white";
-g.fillRect(paintX, paintY, constraints.width, Math.max(mul.height, fontSize));
-g.fillStyle = "black";
-mul.paint(new Painter(g), new Vector(paintX, paintY));
-if(linHeightScale>=5)linHeightScale=0;
 // },30000)
 
-// const { nextStartOffset,height } = paragraph.layout(
-//   new ParagraphConstraints(200),
-//   new Painter(g)
+// let linHeightScale=5;
+// // setInterval(()=>{
+//   g.clearRect(0,0,1000,1000)
+//   linHeightScale+=.1;
+//   const fontSize = 10;
+// const paintY =10;
+// const paintX = 10;
+
+// const texts = `😀你可以根据需要在数组中继续添加新的段落👊`;
+// const paragraph = new Paragraph();
+// const paragraph2 = new Paragraph();
+// const paragraph3 = new Paragraph();
+// paragraph.addText(texts);
+// paragraph2.addText(`测试`);
+// paragraph3.addText(`你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落,Hello.this is my order test.`);
+// const textStyle = new TextStyle({
+//   textAlign: TextAlign.unset,
+//   fontSize: fontSize,
+//   lineHeight: fontSize*1.5,
+//   wordSpace: 0,
+//   letterSpacing: 0,
+// });
+
+// paragraph.pushStyle(textStyle);
+// const fontSize2=20;
+// paragraph2.pushStyle({
+//   ...textStyle,
+//   color:'orange',
+//   fontSize: fontSize2,
+//   lineHeight: fontSize2*linHeightScale,
+// });
+// paragraph3.pushStyle({
+//   ...textStyle,
+//   color:'black'
+// });
+
+// const constraints=new ParagraphConstraints(200)
+
+// const mul = new MulParagraph([paragraph, paragraph2, paragraph3]);
+// mul.pushStyle(
+//   new TextStyle(
+//     {textAlign:TextAlign.start,wordSpace:20},
+//   ),
 // );
+// mul.layout(constraints, new Painter(g));
+// g.fillStyle = "white";
+// g.fillRect(paintX, paintY, constraints.width, Math.max(mul.height, fontSize));
+// g.fillStyle = "black";
+// mul.paint(new Painter(g), new Vector(paintX, paintY));
+// if(linHeightScale>=5)linHeightScale=0;
 
-// g.fillStyle="orange";
-// console.log("接头",nextStartOffset)
-// // g.fillRect(155,paintY+20,45,Math.max(height,fontSize))
-// paragraph2.layout(
-//   new ParagraphConstraints(200),
-//   new Painter(g),
-//   new Vector(nextStartOffset.x,0)
-// );
+const textSpan = new TextSpan({
+  text: "😀你可以根据需要在数组中继续添加新的段落👊",
+  textStyle: new TextStyle({
+    textAlign: TextAlign.start,
+    wordSpacing: 0,
+    fontSize:20,
+    color: "red",
+     fontFamily:"楷体",
+     height:20*1.4
+  }),
+  children: [
+    new TextSpan({
+      text: "Aenean rutrum tempor ligula, at luctus ligula auctor vestibulum",
+      textStyle: new TextStyle({
+        color: "orange",
+        fontSize:10,
+        height:10*1.4
+      }),
+    }),
+    new TextSpan({
+      text: "Aenean rutrum tempor ligula, at luctus ligula auctor vestibulum",
+      textStyle: new TextStyle({
+        color: "black",
+      }),
+    }),
+  ],
+});
 
-// console.log("大小",paragraph.width,paragraph.height)
+const textPainter = new TextPainter(textSpan, new Painter(g));
 
-// g.fillStyle="black"
-// const nextStartPaintOffset=paragraph.paint(new Painter(g), new Vector(paintX, paintY));
-// paragraph2.paint(new Painter(g), new Vector(paintX,nextStartPaintOffset.y+paintY));
-
-// g.fillText(texts, 10, 200);
+textPainter.layout(200, 200);
+textPainter.paint(new Painter(g), new Vector(10, 10));

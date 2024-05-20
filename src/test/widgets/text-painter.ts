@@ -1,15 +1,6 @@
 import Painter from "@/core/lib/painter";
-import { TextDirection } from "./basic";
 import Vector from "@/core/lib/vector";
 import { Size } from "@/core/lib/rect";
-
-export enum TextAlign {
-  start,
-  end,
-  center,
-  justify,
-  unset,
-}
 
 class Accumulator {
   private _value: number = 0;
@@ -24,7 +15,7 @@ class Accumulator {
 type InlineSpanVisitor = (span: InlineSpan) => boolean;
 
 abstract class InlineSpan {
-  abstract build(): void;
+  abstract build(builder: ParagraphBuilder): void;
   abstract getSpanForPosition(offset: Accumulator): InlineSpan;
   abstract visitChildren(visitor: InlineSpanVisitor): boolean;
   abstract computeToPlainText(): void;
@@ -39,52 +30,98 @@ export class ParagraphConstraints {
     return this._width;
   }
 }
+export enum TextDirection {
+  ltr = "ltr",
+  rtl = "rtl",
+}
+
+export enum TextAlign {
+  left = "left",
+  right = "right",
+  center = "center",
+  justify = "justify",
+  start = "start",
+  end = "end",
+  unset = "unset",
+}
 
 interface ParagraphStyleOption {
-  maxLines: number;
-  fontFamily: string;
-  fontSize: number;
-  height: number;
-  letterSpacing: number;
-  wordSpace: number;
-  lineHeight: number;
-  direction: TextDirection;
-  textAlign: TextAlign;
-}
-interface TextStyleOption {
-  color: string;
+  textAlign?: TextAlign;
+  textDirection?: TextDirection;
+  maxLines?: number;
+  ellipsis?: string;
+  height?: number;
+  fontFamily?: string;
 }
 
-class ParagraphStyle implements ParagraphStyleOption {
-  maxLines: number = 999;
-  fontFamily: string;
-  fontSize: number = 20;
-  height: number = 20;
-  letterSpacing: number = 0;
-  wordSpace: number = 0;
-  lineHeight: number = 20;
-  direction: TextDirection;
+export class ParagraphStyle implements ParagraphStyleOption {
   textAlign: TextAlign = TextAlign.unset;
-  constructor(option?: Partial<ParagraphStyleOption>) {
+  textDirection: TextDirection = TextDirection.ltr;
+  maxLines: number = 1;
+  ellipsis?: string;
+  height?: number;
+  fontFamily: string = "serif"; // 默认值为 'serif'
+
+  constructor(option?: ParagraphStyleOption) {
     if (option) {
-      this.maxLines = option?.maxLines ?? this.maxLines;
-      this.fontFamily = option?.fontFamily ?? "";
-      this.fontSize = option?.fontSize ?? this.fontSize;
-      this.height = option?.height ?? this.height;
-      this.letterSpacing = option?.letterSpacing ?? this.letterSpacing;
-      this.wordSpace = option?.wordSpace ?? this.wordSpace;
-      this.lineHeight = option?.lineHeight ?? this.lineHeight;
-      this.direction = option?.direction ?? TextDirection.ltr;
-      this.textAlign = option?.textAlign ?? this.textAlign;
+      this.textAlign = option.textAlign ?? this.textAlign;
+      this.textDirection = option.textDirection ?? this.textDirection;
+      this.maxLines = option.maxLines ?? this.maxLines;
+      this.ellipsis = option.ellipsis;
+      this.height = option.height;
+      this.fontFamily = option.fontFamily ?? this.fontFamily;
     }
   }
 }
+
+export enum FontWeight {
+  normal = "normal",
+  bold = "bold",
+}
+
+export enum FontStyle {
+  normal = "normal",
+  italic = "italic",
+}
+
+export enum TextDecoration {
+  none = "none",
+  underline = "underline",
+  overline = "overline",
+  lineThrough = "line-through",
+}
+
+interface TextStyleOption extends ParagraphStyleOption {
+  color?: string;
+  fontSize?: number;
+  fontWeight?: FontWeight;
+  fontStyle?: FontStyle;
+  letterSpacing?: number;
+  wordSpacing?: number;
+  decoration?: TextDecoration;
+}
+
 export class TextStyle extends ParagraphStyle implements TextStyleOption {
   color: string = "black";
-  constructor(option?: Partial<ParagraphStyleOption & TextStyle>) {
+  fontSize: number = 14;
+  fontWeight: FontWeight = FontWeight.normal;
+  fontStyle: FontStyle = FontStyle.normal;
+  letterSpacing: number = 0;
+  wordSpacing: number = 0;
+  decoration: TextDecoration = TextDecoration.none;
+
+  constructor(option?: TextStyleOption) {
     super(option);
     if (option) {
-      this.color = option?.color;
+      this.color = option.color ?? this.color;
+      this.fontSize = option.fontSize ?? this.fontSize;
+      this.fontWeight = option.fontWeight ?? this.fontWeight;
+      this.fontStyle = option.fontStyle ?? this.fontStyle;
+      this.letterSpacing = option.letterSpacing ?? this.letterSpacing;
+      this.wordSpacing = option.wordSpacing ?? this.wordSpacing;
+      this.decoration = option.decoration ?? this.decoration;
+
+      if (this.height == null) this.height = this.fontSize * 1.4; //默认
     }
   }
 }
@@ -186,13 +223,12 @@ class ParagraphParentData extends TreeNode<Paragraph> {}
  * 段落
  */
 export class Paragraph {
-  parentData: ParagraphParentData = new ParagraphParentData();
-  textStyle: TextStyle = new TextStyle();
-  text: string;
-  boxes: TextBox[];
-  textPoints: TextPoint[] = [];
-  public lastTextPoint: TextPoint;
-  public firstTextPoint: TextPoint;
+  public parentData: ParagraphParentData = new ParagraphParentData();
+  public textStyle: TextStyle = new TextStyle();
+  public text: string;
+  private textPoints: TextPoint[] = [];
+  private lastTextPoint: TextPoint;
+  private firstTextPoint: TextPoint;
   protected size: Size = Size.zero;
   get width(): number {
     return this.size.width;
@@ -227,7 +263,10 @@ export class Paragraph {
     this.performLayoutTextAlignment(constraints);
   }
   protected applyTextStyle(paint: Painter) {
-    paint.font = `bold ${this.textStyle.fontSize}px serif`;
+    paint.fillStyle = this.textStyle.color;
+    //${bold} ${italic}
+    // paint.font `${~~this.textStyle.fontSize}px ${this.textStyle.fontFamily}`;
+    paint.font = `${this.textStyle.fontWeight} ${this.textStyle.fontStyle} ${~~this.textStyle.fontSize}px ${this.textStyle.fontFamily}`;
   }
   public handleCompileWord() {
     let current = this.firstTextPoint;
@@ -420,7 +459,7 @@ export class Paragraph {
     let currentPoint = textPoint;
     let range: number = 0;
     const headTextPointParentData = textPoint.parentData;
-    const lineHeight: number = this.textStyle.lineHeight;
+    const lineHeight: number = this.textStyle.height;
     while (currentPoint != null) {
       if (maxRange && (range += 1) > maxRange) return;
       const parentData = currentPoint?.parentData;
@@ -429,7 +468,7 @@ export class Paragraph {
       if (initRow) {
         box.lineHeight = lineHeight;
         if (TextPainter.isSpace(currentPoint.charCodePoint)) {
-          box.width += this.textStyle.wordSpace;
+          box.width += this.textStyle.wordSpacing;
         }
       }
       const offsetY = headTextPointParentData.offset.y;
@@ -453,7 +492,7 @@ export class Paragraph {
         this.textStyle.fontSize,
         -(
           this.textStyle.fontSize +
-          Math.max(0, this.textStyle.lineHeight - this.textStyle.fontSize)
+          Math.max(0, this.textStyle.height - this.textStyle.fontSize)
         )
       )
     );
@@ -487,7 +526,7 @@ export class Paragraph {
       textMetrics.actualBoundingBoxRight,
       textMetrics.actualBoundingBoxDescent,
       textMetrics.actualBoundingBoxAscent,
-      this.textStyle.direction
+      this.textStyle.textDirection
     );
   }
   private getMeasureText(paint: Painter, text: string): TextMetrics {
@@ -499,8 +538,7 @@ export class Paragraph {
     debugRect: boolean = false
   ): Vector {
     if (this.textPoints) {
-      paint.fillStyle = this.textStyle.color;
-      paint.font = `${this.textStyle.fontSize}px serif`;
+      this.applyTextStyle(paint);
       this.performPaint(paint, offset, debugRect);
     }
     return this.getNextStartOffset();
@@ -567,11 +605,12 @@ export class Paragraph {
  **/
 export class MulParagraph extends Paragraph {
   private firstChild: Paragraph;
-  constructor(children: Paragraph[]) {
+  constructor(children?: Paragraph[]) {
     super();
     this.addAll(children);
   }
-  addAll(children: Paragraph[]) {
+  public addAll(children: Paragraph[]) {
+    if (!children) return;
     let lastChild: Paragraph;
     children.forEach((_) => {
       if (!this.firstChild) {
@@ -581,7 +620,7 @@ export class MulParagraph extends Paragraph {
       lastChild = _;
     });
   }
-  addChild(paragraph: Paragraph, after: Paragraph) {
+  private addChild(paragraph: Paragraph, after: Paragraph) {
     paragraph.parentData.preNode = after;
     if (after) after.parentData.nextNode = paragraph;
   }
@@ -640,7 +679,7 @@ export class MulParagraph extends Paragraph {
     }
     return TextPainter.getRowsByArray(textPoints);
   }
-  public applyAlignText(maxColumn: number, constraints: ParagraphConstraints) {
+  private applyAlignText(maxColumn: number, constraints: ParagraphConstraints) {
     const rows = this.getRows(maxColumn);
     const keys = [...rows.keys()];
     for (let index = 0; index < keys.length; index++) {
@@ -692,32 +731,110 @@ export class MulParagraph extends Paragraph {
     let lastedOffset: Vector = Vector.zero;
     while (child != null) {
       const parentData = child.parentData;
-      lastedOffset = child.paint(
-        paint,
-        offset,
-        true
-      );
+      lastedOffset = child.paint(paint, offset, true);
       child = parentData.nextNode;
     }
     return Vector.zero;
   }
 }
 
-class TextSpan extends InlineSpan {
+interface TextElement {
+  text: string;
+  textStyle: TextStyle;
+}
+
+/**
+ * 根据推入文字和样式生成一个 [Paragraph] 对象，当在被调用 build 函数后，该builder对象将不能再被使用
+ * textStyles 栈用于存储被推入样式
+ * elements 栈用于存储被推入文本，并将文本与对应的样式绑定
+ * **/
+class ParagraphBuilder {
+  private paragraphStyle: ParagraphStyle;
+  constructor(paragraphStyle: ParagraphStyle) {
+    this.paragraphStyle = paragraphStyle;
+  }
+  private textStyles: Array<TextStyle> = [];
+  private elements: Array<TextElement> = [];
+  addText(text: string) {
+    this.elements.push({
+      text: text,
+      textStyle: this.lastTextStyle,
+    });
+  }
+  private get lastTextStyle(): TextStyle {
+    const len = this.textStyles.length;
+    if (len >= 1) {
+      return this.textStyles[len - 1];
+    }
+    return null;
+  }
+  pushStyle(style: TextStyle) {
+    this.textStyles.push(style);
+  }
+  /**
+   * 保证样式只影响到子节点，在每次将自己推入后需要立即pop，避免污染其他
+   * 段落样式
+   **/
+  pop() {
+    this.textStyles.pop();
+  }
+  build(): Paragraph {
+    let resultParagraphs: Paragraph;
+    const paragraphs: Array<Paragraph> = [];
+    for (const element of this.elements) {
+      const paragraph = new Paragraph();
+      paragraph.addText(element.text);
+      paragraph.pushStyle(element.textStyle);
+      resultParagraphs = paragraph;
+      paragraphs.push(paragraph);
+    }
+    if (paragraphs.length > 1) {
+      resultParagraphs = new MulParagraph(paragraphs);
+      resultParagraphs.pushStyle(this.lastTextStyle);
+    }
+
+    resultParagraphs.pushStyle({
+      ...resultParagraphs.textStyle,
+      ...this.paragraphStyle,
+    });
+    return resultParagraphs;
+  }
+}
+
+interface TextSpanOption {
+  text: string;
+  textStyle: TextStyle;
+  children: InlineSpan[];
+}
+export class TextSpan extends InlineSpan {
   children: InlineSpan[];
   text: string;
-  /**
-   * 将文字转为
-   */
-  build(): void {
+  paragraph: Paragraph;
+  textStyle: TextStyle;
+  constructor(option: Partial<TextSpanOption>) {
+    super();
+    const { textStyle, children, text } = option;
+    this.textStyle = textStyle;
+    this.children = children;
+    this.text = text;
+  }
+
+  build(builder: ParagraphBuilder): void {
+    const hasStyle: boolean = this.textStyle != null;
+    if (hasStyle) {
+      builder.pushStyle(this.textStyle);
+    }
     if (this.text) {
+      builder.addText(this.text);
     }
     if (this.children) {
       for (const child of this.children) {
-        child.build();
+        child.build(builder);
       }
     }
-    throw new Error("Method not implemented.");
+    if (hasStyle) {
+      builder.pop();
+    }
   }
   getSpanForPosition(offset: Accumulator): InlineSpan {
     throw new Error("Method not implemented.");
@@ -728,12 +845,41 @@ class TextSpan extends InlineSpan {
   computeToPlainText(): void {
     throw new Error("Method not implemented.");
   }
+  public getParagraphStyle(
+    paragraphStyle: Partial<ParagraphStyleOption> = {}
+  ): ParagraphStyle {
+    return {
+      ...this.textStyle,
+      ...paragraphStyle,
+    };
+  }
 }
 
-class TextPainter {
-  private text: InlineSpan;
-  layout(minWidth: number = 0, maxWidth: number = Infinity) {}
-
+export class TextPainter {
+  private text: TextSpan;
+  private paragraph: Paragraph;
+  private painter: Painter;
+  constructor(text: TextSpan, painter: Painter) {
+    this.text = text;
+    this.painter = painter;
+  }
+  private createParagraph() {
+    const builder: ParagraphBuilder = new ParagraphBuilder(
+      this.text.getParagraphStyle()
+    );
+    this.text.build(builder);
+    this.paragraph = builder.build();
+    console.log(this.paragraph);
+  }
+  layout(minWidth: number = 0, maxWidth: number = Infinity) {
+    if (!this.paragraph) {
+      this.createParagraph();
+    }
+    this.paragraph.layout(new ParagraphConstraints(minWidth), this.painter);
+  }
+  paint(paint: Painter, offset: Vector = Vector.zero) {
+    this.paragraph.paint(paint, offset);
+  }
   static isSpace(codePoint: number): boolean {
     return codePoint === 32;
   }
