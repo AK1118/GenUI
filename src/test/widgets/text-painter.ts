@@ -1,6 +1,7 @@
 import Painter from "@/core/lib/painter";
 import Vector from "@/core/lib/vector";
 import { Size } from "@/core/lib/rect";
+import { Row } from "@/core/lib/rendering/flex";
 
 class Accumulator {
   private _value: number = 0;
@@ -43,6 +44,7 @@ export enum TextAlign {
   start = "start",
   end = "end",
   unset = "unset",
+  none='none',
 }
 
 interface ParagraphStyleOption {
@@ -206,10 +208,6 @@ class TextPoint {
   }
 }
 
-type ParagraphLayouted = {
-  height: number;
-  nextStartOffset: Vector;
-};
 interface Rowed {
   textPoints: TextPoint[];
   countWidth: number;
@@ -227,6 +225,10 @@ export class Paragraph {
   public textStyle: TextStyle = new TextStyle();
   public text: string;
   private textPoints: TextPoint[] = [];
+  private linePoints: Array<{
+    start: Vector;
+    end: Vector;
+  }>;
   private lastTextPoint: TextPoint;
   private firstTextPoint: TextPoint;
   protected size: Size = Size.zero;
@@ -261,12 +263,70 @@ export class Paragraph {
     this.performConstraintsWidth(constraints);
     this.performLayoutOffsetYByColumn();
     this.performLayoutTextAlignment(constraints);
+    this.performLayoutLinePoints();
+  }
+
+  public performLayoutLinePoints() {
+    const height = this.textStyle.fontSize;
+    const rows = TextPainter.getRowsByNodeTree(this.firstTextPoint);
+    const values = rows.values();
+    let row: Rowed;
+    this.linePoints = [];
+    while (true) {
+      const next = values.next();
+      if (next.done) break;
+      row = next.value;
+      const textPoints = row.textPoints;
+      const len = textPoints.length;
+      if (len > 1) {
+        const lineHeight = textPoints[0].parentData.box.lineHeight;
+        const width = textPoints[0].parentData.box.width;
+        const start = textPoints[0].parentData.offset.copy();
+        const end = textPoints[len - 1].parentData.offset.copy();
+        end.x += width;
+        let offsetY = 0;
+
+        switch (this.textStyle.decoration) {
+          case TextDecoration.none:
+            break;
+          case TextDecoration.underline:
+            offsetY = (lineHeight-height)*-.5;
+            break;
+          case TextDecoration.overline:
+            offsetY = (lineHeight-height)*-.5-height;
+            break;
+          case TextDecoration.lineThrough:
+            offsetY = (lineHeight-height)*-.5-height*.5;
+            break;
+        }
+        start.y += offsetY;
+        end.y += offsetY;
+        this.linePoints.push({
+          start,
+          end,
+        });
+      } 
+      // else if (len === 1) {
+      //   const lineHeight = textPoints[0].parentData.box.lineHeight;
+      //   const width = textPoints[0].parentData.box.width;
+      //   const start = textPoints[0].parentData.offset.copy();
+      //   const end = start.copy();
+      //   start.y -= lineHeight;
+      //   end.y -= lineHeight;
+      //   end.x += width;
+      //   this.linePoints.push({
+      //     start,
+      //     end,
+      //   });
+      // }
+    }
+    console.log(this.linePoints);
   }
   protected applyTextStyle(paint: Painter) {
     paint.fillStyle = this.textStyle.color;
-    //${bold} ${italic}
-    // paint.font `${~~this.textStyle.fontSize}px ${this.textStyle.fontFamily}`;
-    paint.font = `${this.textStyle.fontWeight} ${this.textStyle.fontStyle} ${~~this.textStyle.fontSize}px ${this.textStyle.fontFamily}`;
+    paint.font = `${this.textStyle.fontWeight} ${
+      this.textStyle.fontStyle
+    } ${~~this.textStyle.fontSize}px ${this.textStyle.fontFamily}`;
   }
   public handleCompileWord() {
     let current = this.firstTextPoint;
@@ -539,11 +599,20 @@ export class Paragraph {
   ): Vector {
     if (this.textPoints) {
       this.applyTextStyle(paint);
+      this.performPaintLines(paint, offset);
       this.performPaint(paint, offset, debugRect);
     }
     return this.getNextStartOffset();
   }
-
+  private performPaintLines(paint: Painter, offset: Vector) {
+    paint.beginPath();
+    this.linePoints.forEach((_) => {
+      paint.moveTo(_.start.x + offset.x, _.start.y + offset.y);
+      paint.lineTo(_.end.x + offset.x, _.end.y + offset.y);
+    });
+    paint.closePath();
+    paint.stroke();
+  }
   private performPaint(paint: Painter, offset: Vector, debugRect: boolean) {
     let child = this.firstTextPoint;
     while (child != null) {
@@ -633,6 +702,15 @@ export class MulParagraph extends Paragraph {
     const maxColumn = this.applyPerformLayoutConstraints(constraints);
     this.handleLevelRowsLineHeight(maxColumn);
     this.applyAlignText(maxColumn, constraints);
+    this.applyPerformLayoutLinePoint();
+  }
+  private applyPerformLayoutLinePoint() {
+    let child = this.firstChild;
+    while (child != null) {
+      const parentData = child.parentData;
+      child.performLayoutLinePoints();
+      child = parentData.nextNode;
+    }
   }
   /**
    *抹平指定Row内所有TextPoint的line-height并将具有差异的TextPoint的基线Y偏移量校准给line-height较小的一方
@@ -731,7 +809,7 @@ export class MulParagraph extends Paragraph {
     let lastedOffset: Vector = Vector.zero;
     while (child != null) {
       const parentData = child.parentData;
-      lastedOffset = child.paint(paint, offset, true);
+      lastedOffset = child.paint(paint, offset, false);
       child = parentData.nextNode;
     }
     return Vector.zero;

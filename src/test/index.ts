@@ -85,10 +85,12 @@ import {
   SingleChildRenderViewOption,
 } from "@/types/widget";
 import {
+  FontStyle,
   MulParagraph,
   Paragraph,
   ParagraphConstraints,
   TextAlign,
+  TextDecoration,
   TextPainter,
   TextSpan,
   TextStyle,
@@ -273,30 +275,38 @@ class View {
 // mul.paint(new Painter(g), new Vector(paintX, paintY));
 // if(linHeightScale>=5)linHeightScale=0;
 
+
+
 const textSpan = new TextSpan({
   text: "😀你可以根据需要在数组中继续添加新的段落👊",
   textStyle: new TextStyle({
     textAlign: TextAlign.start,
     wordSpacing: 0,
-    fontSize:20,
+    fontSize: 20,
     color: "red",
-     fontFamily:"楷体",
-     height:20*1.4
+    fontFamily: "楷体",
+    fontStyle: FontStyle.italic,
+    decoration:TextDecoration.lineThrough,
   }),
   children: [
     new TextSpan({
       text: "Aenean rutrum tempor ligula, at luctus ligula auctor vestibulum",
       textStyle: new TextStyle({
         color: "orange",
-        fontSize:10,
-        height:10*1.4
+        fontSize: 10,
       }),
     }),
     new TextSpan({
-      text: "Aenean rutrum tempor ligula, at luctus ligula auctor vestibulum",
-      textStyle: new TextStyle({
-        color: "black",
-      }),
+      text: "☠你可以根据需要在数组中继续添加新的段落👊",
+      // textStyle: new TextStyle({
+      //   textAlign: TextAlign.start,
+      //   wordSpacing: 0,
+      //   fontSize: 20,
+      //   color: "red",
+      //   fontFamily: "楷体",
+      //   fontStyle: FontStyle.italic,
+      //   decoration:TextDecoration.none
+      // }),
     }),
   ],
 });
@@ -304,4 +314,5 @@ const textSpan = new TextSpan({
 const textPainter = new TextPainter(textSpan, new Painter(g));
 
 textPainter.layout(200, 200);
-textPainter.paint(new Painter(g), new Vector(10, 10));
+textPainter.paint(new Painter(g), new Vector(30, 30));
+
