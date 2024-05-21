@@ -1,4 +1,4 @@
-import Painter from "@/core/lib/painter";
+import Painter, { PaintingStyle } from "@/core/lib/painter";
 import Vector from "@/core/lib/vector";
 import { Size } from "@/core/lib/rect";
 import { Row } from "@/core/lib/rendering/flex";
@@ -44,7 +44,7 @@ export enum TextAlign {
   start = "start",
   end = "end",
   unset = "unset",
-  none='none',
+  none = "none",
 }
 
 interface ParagraphStyleOption {
@@ -92,18 +92,29 @@ export enum TextDecoration {
   overline = "overline",
   lineThrough = "line-through",
 }
-
-interface TextStyleOption extends ParagraphStyleOption {
-  color?: string;
-  fontSize?: number;
-  fontWeight?: FontWeight;
-  fontStyle?: FontStyle;
-  letterSpacing?: number;
-  wordSpacing?: number;
-  decoration?: TextDecoration;
+export enum TextDecorationStyle {
+  solid = "solid",
+  dashed = "dashed",
 }
 
-export class TextStyle extends ParagraphStyle implements TextStyleOption {
+interface TextDecorationOption {
+  decoration: TextDecoration;
+  decorationStyle: TextDecorationStyle;
+  decorationColor: string;
+}
+interface TextStyleOption extends ParagraphStyleOption, TextDecorationOption {
+  color: string;
+  fontSize: number;
+  fontWeight: FontWeight;
+  fontStyle: FontStyle;
+  letterSpacing: number;
+  wordSpacing: number;
+  foreground: Painter;
+}
+export class TextStyle
+  extends ParagraphStyle
+  implements TextStyleOption, TextDecorationOption
+{
   color: string = "black";
   fontSize: number = 14;
   fontWeight: FontWeight = FontWeight.normal;
@@ -111,8 +122,10 @@ export class TextStyle extends ParagraphStyle implements TextStyleOption {
   letterSpacing: number = 0;
   wordSpacing: number = 0;
   decoration: TextDecoration = TextDecoration.none;
-
-  constructor(option?: TextStyleOption) {
+  decorationStyle: TextDecorationStyle = TextDecorationStyle.solid;
+  decorationColor: string = "black";
+  foreground: Painter;
+  constructor(option?: Partial<TextStyleOption>) {
     super(option);
     if (option) {
       this.color = option.color ?? this.color;
@@ -122,7 +135,9 @@ export class TextStyle extends ParagraphStyle implements TextStyleOption {
       this.letterSpacing = option.letterSpacing ?? this.letterSpacing;
       this.wordSpacing = option.wordSpacing ?? this.wordSpacing;
       this.decoration = option.decoration ?? this.decoration;
-
+      this.decorationStyle = option?.decorationStyle ?? this.decorationStyle;
+      this.decorationColor = option?.decorationColor ?? this.decorationColor;
+      this.foreground = option?.foreground;
       if (this.height == null) this.height = this.fontSize * 1.4; //默认
     }
   }
@@ -282,21 +297,22 @@ export class Paragraph {
         const lineHeight = textPoints[0].parentData.box.lineHeight;
         const width = textPoints[0].parentData.box.width;
         const start = textPoints[0].parentData.offset.copy();
-        const end = textPoints[len - 1].parentData.offset.copy();
+        const end = (
+          len === 1 ? textPoints[0] : textPoints[len - 1]
+        ).parentData.offset.copy();
         end.x += width;
         let offsetY = 0;
-
         switch (this.textStyle.decoration) {
           case TextDecoration.none:
             break;
           case TextDecoration.underline:
-            offsetY = (lineHeight-height)*-.5;
+            offsetY = (lineHeight - height) * -0.5;
             break;
           case TextDecoration.overline:
-            offsetY = (lineHeight-height)*-.5-height;
+            offsetY = (lineHeight - height) * -0.5 - height;
             break;
           case TextDecoration.lineThrough:
-            offsetY = (lineHeight-height)*-.5-height*.5;
+            offsetY = (lineHeight - height) * -0.5 - height * 0.5;
             break;
         }
         start.y += offsetY;
@@ -305,28 +321,21 @@ export class Paragraph {
           start,
           end,
         });
-      } 
-      // else if (len === 1) {
-      //   const lineHeight = textPoints[0].parentData.box.lineHeight;
-      //   const width = textPoints[0].parentData.box.width;
-      //   const start = textPoints[0].parentData.offset.copy();
-      //   const end = start.copy();
-      //   start.y -= lineHeight;
-      //   end.y -= lineHeight;
-      //   end.x += width;
-      //   this.linePoints.push({
-      //     start,
-      //     end,
-      //   });
-      // }
+      }
     }
-    console.log(this.linePoints);
   }
-  protected applyTextStyle(paint: Painter) {
-    paint.fillStyle = this.textStyle.color;
+  protected applyTextStyle(
+    paint: Painter,
+    callback?: (paint: Painter) => void
+  ) {
+    if (callback) paint.save();
     paint.font = `${this.textStyle.fontWeight} ${
       this.textStyle.fontStyle
     } ${~~this.textStyle.fontSize}px ${this.textStyle.fontFamily}`;
+    callback?.(paint);
+    if (callback) {
+      paint.restore();
+    }
   }
   public handleCompileWord() {
     let current = this.firstTextPoint;
@@ -598,9 +607,24 @@ export class Paragraph {
     debugRect: boolean = false
   ): Vector {
     if (this.textPoints) {
-      this.applyTextStyle(paint);
-      this.performPaintLines(paint, offset);
-      this.performPaint(paint, offset, debugRect);
+      this.applyTextStyle(paint, (paint) => {
+        if (this.textStyle.decorationStyle === TextDecorationStyle.dashed) {
+          paint.setLineDash([5, 5]);
+        }
+        paint.strokeStyle = this.textStyle.decorationColor;
+        this.performPaintLines(paint, offset);
+      });
+
+      this.applyTextStyle(paint, (paint) => {
+        if(this.textStyle.foreground){
+          const paint=this.textStyle.foreground;
+          this.performPaint(paint, offset, debugRect);
+        }else{
+          paint.fillStyle = this.textStyle.color;
+          this.performPaint(paint, offset, debugRect);
+        }
+       
+      });
     }
     return this.getNextStartOffset();
   }
@@ -610,8 +634,8 @@ export class Paragraph {
       paint.moveTo(_.start.x + offset.x, _.start.y + offset.y);
       paint.lineTo(_.end.x + offset.x, _.end.y + offset.y);
     });
-    paint.closePath();
     paint.stroke();
+    paint.closePath();
   }
   private performPaint(paint: Painter, offset: Vector, debugRect: boolean) {
     let child = this.firstTextPoint;
@@ -626,11 +650,14 @@ export class Paragraph {
         continue;
       }
       let baselineY =
-        currentY - (lineHeight - height) * 0.5 + parentData.baseLineOffsetY; //Math.max(currentY - lineHeight * 0.4, 0); // 假设基线在行高的75%位置，这个比例可以调整
-      // if(((lineHeight-height)*.5<height)){
-      //   baselineY =currentY-(lineHeight-height)*.5
-      // }
-      paint.fillText(child.text, currentX, baselineY);
+        currentY - (lineHeight - height) * 0.5 + parentData.baseLineOffsetY;
+    
+      if(paint.style===PaintingStyle.fill){
+        paint.fillText(child.text, currentX, baselineY);
+      }else {
+        paint.strokeText(child.text, currentX, baselineY);
+      }
+
       if (debugRect) {
         if (TextPainter.isSpace(child.charCodePoint)) {
           paint.beginPath();
@@ -847,7 +874,10 @@ class ParagraphBuilder {
     return null;
   }
   pushStyle(style: TextStyle) {
-    this.textStyles.push(style);
+    this.textStyles.push({
+      ...(this.lastTextStyle ?? {}),
+      ...style,
+    });
   }
   /**
    * 保证样式只影响到子节点，在每次将自己推入后需要立即pop，避免污染其他

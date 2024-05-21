@@ -2,7 +2,7 @@ import { CloseIcon, DefaultIcon, ImageIcon, LockIcon } from "@/composite/icons";
 import ViewObject from "@/core/abstract/view-object";
 import GestiController from "@/core/lib/controller";
 import LineGradientDecoration from "@/core/lib/graphics/gradients/lineGradientDecoration";
-import Painter from "@/core/lib/painter";
+import Painter, { PaintingStyle } from "@/core/lib/painter";
 import Alignment from "@/core/lib/painting/alignment";
 import BoxFit from "@/core/lib/painting/box-fit";
 import Plugins from "@/core/lib/plugins";
@@ -91,6 +91,7 @@ import {
   ParagraphConstraints,
   TextAlign,
   TextDecoration,
+  TextDecorationStyle,
   TextPainter,
   TextSpan,
   TextStyle,
@@ -274,9 +275,13 @@ class View {
 // g.fillStyle = "black";
 // mul.paint(new Painter(g), new Vector(paintX, paintY));
 // if(linHeightScale>=5)linHeightScale=0;
-
-
-
+Painter.setPaint(g);
+const forge=new Painter();
+const forge2=new Painter();
+forge2.fillStyle="blue";
+forge.style=PaintingStyle.stroke;
+forge.lineWidth=1;
+forge.strokeStyle="#ccc"
 const textSpan = new TextSpan({
   text: "😀你可以根据需要在数组中继续添加新的段落👊",
   textStyle: new TextStyle({
@@ -286,27 +291,27 @@ const textSpan = new TextSpan({
     color: "red",
     fontFamily: "楷体",
     fontStyle: FontStyle.italic,
-    decoration:TextDecoration.lineThrough,
+    decoration:TextDecoration.underline,
+    decorationStyle:TextDecorationStyle.dashed,
+    decorationColor:'orange',
+    foreground:forge,
   }),
   children: [
     new TextSpan({
       text: "Aenean rutrum tempor ligula, at luctus ligula auctor vestibulum",
       textStyle: new TextStyle({
         color: "orange",
-        fontSize: 10,
+        fontSize:20,
+        decorationStyle:TextDecorationStyle.solid,
+        decorationColor:"black",
       }),
     }),
     new TextSpan({
       text: "☠你可以根据需要在数组中继续添加新的段落👊",
-      // textStyle: new TextStyle({
-      //   textAlign: TextAlign.start,
-      //   wordSpacing: 0,
-      //   fontSize: 20,
-      //   color: "red",
-      //   fontFamily: "楷体",
-      //   fontStyle: FontStyle.italic,
-      //   decoration:TextDecoration.none
-      // }),
+      textStyle: new TextStyle({
+        decorationColor:'blue',
+        foreground:forge2
+      }),
     }),
   ],
 });
