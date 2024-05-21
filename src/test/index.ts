@@ -86,6 +86,7 @@ import {
 } from "@/types/widget";
 import {
   FontStyle,
+  FontWeight,
   MulParagraph,
   Paragraph,
   ParagraphConstraints,
@@ -276,48 +277,48 @@ class View {
 // mul.paint(new Painter(g), new Vector(paintX, paintY));
 // if(linHeightScale>=5)linHeightScale=0;
 Painter.setPaint(g);
-const forge=new Painter();
-const forge2=new Painter();
-forge2.fillStyle="blue";
-forge.style=PaintingStyle.stroke;
-forge.lineWidth=1;
-forge.strokeStyle="#ccc"
+const forge = new Painter();
+forge.fillStyle = "black";
+forge.style = PaintingStyle.fill;
+
 const textSpan = new TextSpan({
-  text: "😀你可以根据需要在数组中继续添加新的段落👊",
+  text: "你可以根据需要",
   textStyle: new TextStyle({
-    textAlign: TextAlign.start,
-    wordSpacing: 0,
-    fontSize: 20,
-    color: "red",
-    fontFamily: "楷体",
-    fontStyle: FontStyle.italic,
-    decoration:TextDecoration.underline,
-    decorationStyle:TextDecorationStyle.dashed,
-    decorationColor:'orange',
-    foreground:forge,
+    textAlign: TextAlign.unset,
+    wordSpacing: 10,
+    fontSize:20,
+    letterSpacing: 0,
+    fontWeight: FontWeight.bold,
+    decoration: TextDecoration.underline,
+    decorationStyle: TextDecorationStyle.dashed,
+    decorationColor: "orange",
+    color:"white"
+    // foreground: forge,
   }),
   children: [
     new TextSpan({
-      text: "Aenean rutrum tempor ligula, at luctus ligula auctor vestibulum",
-      textStyle: new TextStyle({
-        color: "orange",
-        fontSize:20,
-        decorationStyle:TextDecorationStyle.solid,
-        decorationColor:"black",
-      }),
+      text: "什么",
     }),
     new TextSpan({
-      text: "☠你可以根据需要在数组中继续添加新的段落👊",
-      textStyle: new TextStyle({
-        decorationColor:'blue',
-        foreground:forge2
-      }),
+      text: "g.fillRect(paintX, paintY, constraints.width, Math.max(mul.height, fontSize));",
+      // textStyle: new TextStyle({
+      //   color: "red",
+      //   foreground:null,
+      //   fontSize:50,
+      //   // decoration:TextDecoration.lineThrough
+      // }),
     }),
   ],
 });
 
 const textPainter = new TextPainter(textSpan, new Painter(g));
 
+const offset=new Vector(30,30);
 textPainter.layout(200, 200);
-textPainter.paint(new Painter(g), new Vector(30, 30));
+console.log("最后大小",textPainter.size)
+g.fillStyle="#ccc";
+g.fillRect(offset.x,offset.y,textPainter.size.width,textPainter.size.height);
+textPainter.paint(new Painter(g), offset);
+
+
 

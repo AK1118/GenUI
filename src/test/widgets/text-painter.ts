@@ -2,6 +2,7 @@ import Painter, { PaintingStyle } from "@/core/lib/painter";
 import Vector from "@/core/lib/vector";
 import { Size } from "@/core/lib/rect";
 import { Row } from "@/core/lib/rendering/flex";
+import { Shadow } from "@/types/gesti";
 
 class Accumulator {
   private _value: number = 0;
@@ -61,7 +62,7 @@ export class ParagraphStyle implements ParagraphStyleOption {
   textDirection: TextDirection = TextDirection.ltr;
   maxLines: number = 1;
   ellipsis?: string;
-  height?: number;
+  height?: number = 0;
   fontFamily: string = "serif"; // 默认值为 'serif'
 
   constructor(option?: ParagraphStyleOption) {
@@ -73,6 +74,18 @@ export class ParagraphStyle implements ParagraphStyleOption {
       this.height = option.height;
       this.fontFamily = option.fontFamily ?? this.fontFamily;
     }
+  }
+  public getParagraphStyle(
+    paragraphStyle: Partial<ParagraphStyleOption> = {}
+  ): ParagraphStyle {
+    return new ParagraphStyle({
+      textAlign: paragraphStyle?.textAlign ?? this.textAlign,
+      textDirection: paragraphStyle?.textDirection ?? this.textDirection,
+      fontFamily: paragraphStyle?.fontFamily ?? this.fontFamily,
+      height: paragraphStyle?.height ?? this.height,
+      ellipsis: paragraphStyle.ellipsis ?? this.ellipsis,
+      maxLines: paragraphStyle?.maxLines ?? this.maxLines,
+    });
   }
 }
 
@@ -110,21 +123,23 @@ interface TextStyleOption extends ParagraphStyleOption, TextDecorationOption {
   letterSpacing: number;
   wordSpacing: number;
   foreground: Painter;
+  shadow: Shadow;
 }
 export class TextStyle
   extends ParagraphStyle
   implements TextStyleOption, TextDecorationOption
 {
-  color: string = "black";
-  fontSize: number = 14;
+  color: string;
+  fontSize: number;
   fontWeight: FontWeight = FontWeight.normal;
   fontStyle: FontStyle = FontStyle.normal;
   letterSpacing: number = 0;
   wordSpacing: number = 0;
   decoration: TextDecoration = TextDecoration.none;
   decorationStyle: TextDecorationStyle = TextDecorationStyle.solid;
-  decorationColor: string = "black";
+  decorationColor: string;
   foreground: Painter;
+  shadow: Shadow;
   constructor(option?: Partial<TextStyleOption>) {
     super(option);
     if (option) {
@@ -138,8 +153,36 @@ export class TextStyle
       this.decorationStyle = option?.decorationStyle ?? this.decorationStyle;
       this.decorationColor = option?.decorationColor ?? this.decorationColor;
       this.foreground = option?.foreground;
-      if (this.height == null) this.height = this.fontSize * 1.4; //默认
+      this.shadow = option?.shadow;
+
+      // this.fontSize??=14;
+      this.height ??= (this.fontSize ?? 10) * 1.4; //默认
+      this.decorationColor ??= "black";
+
+      if (this.foreground && this.color) {
+        throw Error(
+          "The 'foreground' and 'color' cannot exist at the same time."
+        );
+      } else if (!this.foreground&&!this.color) {
+        this.color = "black";
+      }
     }
+  }
+
+  public getTextStyle(style?: Partial<TextStyleOption>): TextStyle {
+    return new TextStyle({
+      color: style?.color ?? this.color,
+      fontSize: style?.fontSize ?? this.fontSize,
+      fontWeight: style?.fontWeight ?? this.fontWeight,
+      fontStyle: style?.fontStyle ?? this.fontStyle,
+      letterSpacing: style?.letterSpacing ?? this.letterSpacing,
+      wordSpacing: style?.wordSpacing ?? this.wordSpacing,
+      decoration: style?.decoration ?? this.decoration,
+      decorationStyle: style?.decorationStyle ?? this.decorationStyle,
+      decorationColor: style?.decorationColor ?? this.decorationColor,
+      foreground: style?.color ? null : style?.foreground ?? this.foreground, // 注意：如果 TextStyle 支持这个属性
+      shadow: style?.shadow ?? this.shadow, // 注意：如果 TextStyle 支持这个属性
+    });
   }
 }
 
@@ -267,6 +310,7 @@ export class Paragraph {
    * 2.[performConstraintsWidth]约束排序，主要做换行等操作,根据文字特性判定换行规则
    * 3.[performLayoutOffsetYByColumn] 通过宽度约束行计算文字所在的y轴
    * 4.[performLayoutTextAlignment] 通过 [TextAlign] 进行对齐布局
+   * 5.[performLayoutLinePoints] 对下划线进行布局，以行为单位，将行首行尾 [TextPoint] 坐标为基础计算下划线位置。
    */
   layout(
     constraints: ParagraphConstraints,
@@ -282,6 +326,7 @@ export class Paragraph {
   }
 
   public performLayoutLinePoints() {
+    if (this.textStyle.decoration == TextDecoration.none) return;
     const height = this.textStyle.fontSize;
     const rows = TextPainter.getRowsByNodeTree(this.firstTextPoint);
     const values = rows.values();
@@ -293,18 +338,17 @@ export class Paragraph {
       row = next.value;
       const textPoints = row.textPoints;
       const len = textPoints.length;
-      if (len > 1) {
-        const lineHeight = textPoints[0].parentData.box.lineHeight;
-        const width = textPoints[0].parentData.box.width;
-        const start = textPoints[0].parentData.offset.copy();
+      if (len >= 1) {
+        const textPoint = textPoints[0];
+        const lineHeight = textPoint.parentData.box.lineHeight;
+        const width = textPoint.parentData.box.width;
+        const start = textPoint.parentData.offset.copy();
         const end = (
-          len === 1 ? textPoints[0] : textPoints[len - 1]
+          len === 1 ? textPoint : textPoints[len - 1]
         ).parentData.offset.copy();
         end.x += width;
         let offsetY = 0;
         switch (this.textStyle.decoration) {
-          case TextDecoration.none:
-            break;
           case TextDecoration.underline:
             offsetY = (lineHeight - height) * -0.5;
             break;
@@ -315,8 +359,8 @@ export class Paragraph {
             offsetY = (lineHeight - height) * -0.5 - height * 0.5;
             break;
         }
-        start.y += offsetY;
-        end.y += offsetY;
+        start.y += offsetY + textPoint.parentData.baseLineOffsetY;
+        end.y += offsetY + textPoint.parentData.baseLineOffsetY;
         this.linePoints.push({
           start,
           end,
@@ -332,6 +376,9 @@ export class Paragraph {
     paint.font = `${this.textStyle.fontWeight} ${
       this.textStyle.fontStyle
     } ${~~this.textStyle.fontSize}px ${this.textStyle.fontFamily}`;
+    if (this.textStyle.shadow) {
+      paint.setShadow(this.textStyle.shadow);
+    }
     callback?.(paint);
     if (callback) {
       paint.restore();
@@ -446,10 +493,8 @@ export class Paragraph {
   public performConstraintsWidth(
     constraints: ParagraphConstraints,
     lastSubDeltaX: number = 0,
-    lastColumn: number = 0
+    lastColumn: number = 1
   ) {
-    let maxHeight = 0;
-    let maxWidth = 0;
     let column = 1,
       subDeltaX = lastSubDeltaX;
     const constraintsWidth = constraints.width;
@@ -472,15 +517,12 @@ export class Paragraph {
       const deltaY = 0;
       let deltaX = subDeltaX + offset.x;
       offset.setXY(deltaX, deltaY);
-      maxHeight = Math.max(deltaY, maxHeight);
-      maxWidth = Math.max(deltaX, maxWidth);
       parentData.column = lastColumn;
       index += broCount || 1;
       this.performLayoutRow(textPoint, offset, broCount);
       textPoint.parentData = parentData;
     }
-    this.size.setHeight(maxHeight);
-    this.size.setWidth(maxWidth);
+   
     return {
       column: lastColumn,
       subDeltaX,
@@ -494,6 +536,8 @@ export class Paragraph {
       const y = column * parentData.box.lineHeight + lastHeight;
       parentData.offset.setXY(parentData.offset.x, y);
       currentPoint = parentData.nextNode;
+      this.size.setHeight(Math.max(y,this.height));
+      this.size.setWidth(Math.max(parentData.offset.x+parentData.box.width,this.width));
     }
   }
   /**
@@ -589,7 +633,7 @@ export class Paragraph {
     const letterSpacing = this.textStyle.letterSpacing;
     const isFirstChar = this.textPoints.length == 0;
     return TextBox.fromLTRBD(
-      textMetrics.width + (isFirstChar ? 0 : letterSpacing),
+      textMetrics.width + letterSpacing, //(isFirstChar ? 0 : letterSpacing),
       textMetrics.hangingBaseline,
       textMetrics.actualBoundingBoxLeft,
       textMetrics.actualBoundingBoxRight,
@@ -616,19 +660,19 @@ export class Paragraph {
       });
 
       this.applyTextStyle(paint, (paint) => {
-        if(this.textStyle.foreground){
-          const paint=this.textStyle.foreground;
+        if (this.textStyle.foreground) {
+          const paint = this.textStyle.foreground;
           this.performPaint(paint, offset, debugRect);
-        }else{
+        } else {
           paint.fillStyle = this.textStyle.color;
           this.performPaint(paint, offset, debugRect);
         }
-       
       });
     }
     return this.getNextStartOffset();
   }
   private performPaintLines(paint: Painter, offset: Vector) {
+    if (!this.linePoints) return;
     paint.beginPath();
     this.linePoints.forEach((_) => {
       paint.moveTo(_.start.x + offset.x, _.start.y + offset.y);
@@ -651,10 +695,10 @@ export class Paragraph {
       }
       let baselineY =
         currentY - (lineHeight - height) * 0.5 + parentData.baseLineOffsetY;
-    
-      if(paint.style===PaintingStyle.fill){
+
+      if (paint.style === PaintingStyle.fill) {
         paint.fillText(child.text, currentX, baselineY);
-      }else {
+      } else {
         paint.strokeText(child.text, currentX, baselineY);
       }
 
@@ -694,13 +738,15 @@ export class Paragraph {
  * 如果不执行该方法，所有文字将会保留水平布局状态，它是必须被调用的方法。
  *
  * [handleLevelRowsLineHeight] 方法至少接收一个最大行数参数，它需要通过这个参数获取该嵌套对象的所有文字行以便于后面更好的通过行为单位计算并抹平每行的行高和
- * 文字渲染基线偏移量。同时，这个方法内将会被计算出该嵌套文本的 [最大高度] 值，这是唯一能计算整个嵌套文本高度的方法，并且它是必须被调用的，否则文字将会塌陷为五高度box。
+ * 文字渲染基线偏移量。同时，这个方法内将会被计算出该嵌套文本的 [最大高度] 值，这是唯一能计算整个嵌套文本高度的方法，并且它是必须被调用的，否则文字将会塌陷为无高度box。
  *
  * [applyAlignText] 方法至少传入最大行数 [maxColumn] 和 [ParagraphConstraints]。它的作用在于它可以将指定的行通过 [textAlign] 对其。文字默认对其值是 [TextAlign.unset]
  * 即不做任何操作，也就是默认从左往右开始布局，并被宽度约束。该方法可选调用，在 [textAlign]值为 [TextAlign.unset] 不会出现明显效果。
  **/
 export class MulParagraph extends Paragraph {
   private firstChild: Paragraph;
+  private maxWidth:number=0;
+  private maxHeight:number=0;
   constructor(children?: Paragraph[]) {
     super();
     this.addAll(children);
@@ -730,6 +776,10 @@ export class MulParagraph extends Paragraph {
     this.handleLevelRowsLineHeight(maxColumn);
     this.applyAlignText(maxColumn, constraints);
     this.applyPerformLayoutLinePoint();
+
+
+    this.size.setWidth(this.maxWidth);
+    this.size.setHeight(this.maxHeight);
   }
   private applyPerformLayoutLinePoint() {
     let child = this.firstChild;
@@ -746,6 +796,7 @@ export class MulParagraph extends Paragraph {
   private handleLevelRowsLineHeight(maxColumn: number) {
     const rows = this.getRows(maxColumn);
     let preColumnHeight: number = 0;
+    let maxWidth:number=0;
     rows.forEach((row) => {
       let maxLineHeightTextPoint: TextPoint;
       if (row.maxLineHeight !== row.minLineHeight) {
@@ -764,10 +815,12 @@ export class MulParagraph extends Paragraph {
           parentData.baseLineOffsetY = offsetBaseLineY * 0.5;
         }
         parentData.offset.setXY(parentData.offset.x, y);
+        maxWidth=Math.max(maxWidth,(parentData.offset.x+box.width));
       });
       preColumnHeight += row.maxLineHeight;
     });
-    this.size.setHeight(preColumnHeight);
+    this.maxWidth=maxWidth;
+    this.maxHeight=preColumnHeight;
   }
   private getRows(maxColumn: number) {
     let child = this.firstChild;
@@ -808,10 +861,6 @@ export class MulParagraph extends Paragraph {
       );
       lastedColumn = column;
       lastedOffset = subDeltaX;
-      this.size.setHeight(
-        Math.max(this.size.height - child.height, 0) + child.height
-      );
-      this.size.setWidth(Math.min(this.size.width, constraints.width));
       child = parentData.nextNode;
     }
     //最大行数
@@ -836,7 +885,8 @@ export class MulParagraph extends Paragraph {
     let lastedOffset: Vector = Vector.zero;
     while (child != null) {
       const parentData = child.parentData;
-      lastedOffset = child.paint(paint, offset, false);
+      lastedOffset = child.paint(paint, offset, true);
+      console.log(child);
       child = parentData.nextNode;
     }
     return Vector.zero;
@@ -874,10 +924,14 @@ class ParagraphBuilder {
     return null;
   }
   pushStyle(style: TextStyle) {
-    this.textStyles.push({
-      ...(this.lastTextStyle ?? {}),
-      ...style,
-    });
+    if (this.lastTextStyle) {
+      const newStyle: TextStyle = this.lastTextStyle?.getTextStyle({
+        ...style,
+      });
+      this.textStyles.push(newStyle);
+    } else {
+      this.textStyles.push(style);
+    }
   }
   /**
    * 保证样式只影响到子节点，在每次将自己推入后需要立即pop，避免污染其他
@@ -901,10 +955,11 @@ class ParagraphBuilder {
       resultParagraphs.pushStyle(this.lastTextStyle);
     }
 
+    // resultParagraphs.pushStyle(resultParagraphs.textStyle);
     resultParagraphs.pushStyle({
       ...resultParagraphs.textStyle,
       ...this.paragraphStyle,
-    });
+    } as TextStyle);
     return resultParagraphs;
   }
 }
@@ -918,19 +973,19 @@ export class TextSpan extends InlineSpan {
   children: InlineSpan[];
   text: string;
   paragraph: Paragraph;
-  textStyle: TextStyle;
+  style: TextStyle;
   constructor(option: Partial<TextSpanOption>) {
     super();
     const { textStyle, children, text } = option;
-    this.textStyle = textStyle;
+    this.style = textStyle;
     this.children = children;
     this.text = text;
   }
 
   build(builder: ParagraphBuilder): void {
-    const hasStyle: boolean = this.textStyle != null;
+    const hasStyle: boolean = this.style != null;
     if (hasStyle) {
-      builder.pushStyle(this.textStyle);
+      builder.pushStyle(this.style.getTextStyle());
     }
     if (this.text) {
       builder.addText(this.text);
@@ -953,37 +1008,37 @@ export class TextSpan extends InlineSpan {
   computeToPlainText(): void {
     throw new Error("Method not implemented.");
   }
-  public getParagraphStyle(
-    paragraphStyle: Partial<ParagraphStyleOption> = {}
-  ): ParagraphStyle {
-    return {
-      ...this.textStyle,
-      ...paragraphStyle,
-    };
-  }
 }
 
 export class TextPainter {
   private text: TextSpan;
   private paragraph: Paragraph;
   private painter: Painter;
+  public size:Size=Size.zero;
+  get width():number{
+    return this.size.width;
+  }
+  get height():number{
+    return this.size.height;
+  }
   constructor(text: TextSpan, painter: Painter) {
     this.text = text;
     this.painter = painter;
   }
   private createParagraph() {
     const builder: ParagraphBuilder = new ParagraphBuilder(
-      this.text.getParagraphStyle()
+      this.text.style.getParagraphStyle()
     );
     this.text.build(builder);
     this.paragraph = builder.build();
-    console.log(this.paragraph);
   }
   layout(minWidth: number = 0, maxWidth: number = Infinity) {
     if (!this.paragraph) {
       this.createParagraph();
     }
     this.paragraph.layout(new ParagraphConstraints(minWidth), this.painter);
+    this.size.setWidth(this.paragraph.width);
+    this.size.setHeight(this.paragraph.height);
   }
   paint(paint: Painter, offset: Vector = Vector.zero) {
     this.paragraph.paint(paint, offset);
