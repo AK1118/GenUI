@@ -214,10 +214,9 @@ export class ColoredRender extends SingleChildRenderView {
     this.color = color;
   }
   performLayout(constraints: BoxConstraints, parentUseSize?: boolean): void {
-    // console.log("颜色约束", constraints);
-    // if (!this.child) {
-    //   this.size = Size.zero;
-    // }
+      if(!this.child){
+        this.size=Size.zero;
+      }
   }
   render(context: PaintingContext, offset?: Vector): void {
     const paint = context.paint;
@@ -252,9 +251,9 @@ export class SizeRender extends SingleChildRenderView {
       this.child.layout(this.additionalConstraints.enforce(constraints), true);
       this.size = this.child.size;
     } else {
-      this.size = this.additionalConstraints.enforce(constraints)
+      this.size = this.additionalConstraints
+        .enforce(constraints)
         .constrain(Size.zero);
-      // console.log("约束大小",constraints, constraints.enforce(this.additionalConstraints));
     }
   }
 }
@@ -673,9 +672,15 @@ export class Flex extends MultiChildRenderView {
         //当设置了cross方向也需要拉伸时,子盒子约束需要设置为max = min = parent.max
         if (this.crossAxisAlignment === CrossAxisAlignment.stretch) {
           if (this.direction === Axis.horizontal) {
-            innerConstraint = BoxConstraints.tightFor(0, constraints.maxHeight);
+            innerConstraint = BoxConstraints.tightFor(
+              null,
+              constraints.maxHeight
+            );
           } else if (this.direction === Axis.vertical) {
-            innerConstraint = BoxConstraints.tightFor(constraints.maxWidth, 0);
+            innerConstraint = BoxConstraints.tightFor(
+              constraints.maxWidth,
+              null
+            );
           }
         } else {
           //cross未设置拉伸，仅设置子盒子 max
@@ -738,14 +743,14 @@ export class Flex extends MultiChildRenderView {
                 minWidth: minChildExtend,
                 maxWidth: maxChildExtent,
                 maxHeight: constraints.maxHeight,
-                minHeight: constraints.minHeight,
+                minHeight: 0,
               });
             } else if (this.direction === Axis.vertical) {
               innerConstraint = new BoxConstraints({
                 minHeight: minChildExtend,
                 maxHeight: maxChildExtent,
-                maxWidth: constraints.maxWidth,
-                minWidth: constraints.minWidth,
+                maxWidth: constraints.minWidth,
+                minWidth: 0,
               });
             }
           }

@@ -231,7 +231,6 @@ class LimitedRender extends SingleChildRenderView {
 
   }
 }
-
 class View {
   private renderer: RenderView;
 
@@ -245,21 +244,21 @@ class View {
         // mainAxisAlignment:MainAxisAlignment.spaceBetween,
         direction:Axis.horizontal,
         children: [
-          // new Expanded({
-          //   flex: 1,
-          //   child: new ColoredRender("orange", new SizeRender(10, 10)),
-          // }),
-          // new Expanded({
-          //   flex: 2,
-          //   child: new ColoredRender("red", new SizeRender(10, 10)),
-          // }),
+          new Expanded({
+            flex: 1,
+            child: new ColoredRender("orange", new SizeRender(10, 10)),
+          }),
+          new Expanded({
+            flex: 2,
+            child: new ColoredRender("red", new SizeRender(10, 10)),
+          }),
           new ColoredRender("green", new SizeRender(10, 10)),
           new ColoredRender("orange", new SizeRender(10, 20)),
           new ColoredRender("red", new SizeRender(10, 30)),
-          // new Expanded({
-          //   flex: 3,
-          //   child: new ColoredRender("green", new SizeRender(10, 10)),
-          // }),
+          new Expanded({
+            flex: 3,
+            child: new ColoredRender("green", new SizeRender(10, 10)),
+          }),
         ],
       })
     );
