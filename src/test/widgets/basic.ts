@@ -214,9 +214,9 @@ export class ColoredRender extends SingleChildRenderView {
     this.color = color;
   }
   performLayout(constraints: BoxConstraints, parentUseSize?: boolean): void {
-      if(!this.child){
-        this.size=Size.zero;
-      }
+    if (!this.child) {
+      this.size = Size.zero;
+    }
   }
   render(context: PaintingContext, offset?: Vector): void {
     const paint = context.paint;
@@ -558,13 +558,9 @@ export class Flex extends MultiChildRenderView {
     this.mainAxisAlignment = mainAxisAlignment ?? this.mainAxisAlignment;
     this.crossAxisAlignment = crossAxisAlignment ?? this.crossAxisAlignment;
   }
-
-  layout(constraints: BoxConstraints): void {
-    super.layout(constraints);
-  }
-
   performLayout(constraints: BoxConstraints): void {
     const computeSize: LayoutSizes = this.computeSize(constraints);
+    console.log(computeSize);
     if (this.direction === Axis.horizontal) {
       this.size = constraints.constrain(
         new Size(computeSize.mainSize, computeSize.crossSize)
@@ -621,20 +617,22 @@ export class Flex extends MultiChildRenderView {
       const childMainSize = this.getMainSize(child.size),
         childCrossSize = this.getCrossSize(child.size);
 
+      const crossSize = this.getCrossSize(this.size);
       switch (this.crossAxisAlignment) {
         case CrossAxisAlignment.start:
           break;
         case CrossAxisAlignment.end:
-          childCrossPosition = computeSize.crossSize - childCrossSize;
+          childCrossPosition = crossSize - childCrossSize;
           break;
         case CrossAxisAlignment.center:
-          childCrossPosition =
-            computeSize.crossSize * 0.5 - childCrossSize * 0.5;
+          childCrossPosition = crossSize * 0.5 - childCrossSize * 0.5;
           break;
         case CrossAxisAlignment.stretch:
           childCrossPosition = 0;
           break;
         case CrossAxisAlignment.baseline:
+          childCrossPosition =
+            computeSize.crossSize * 0.5 - childCrossSize * 0.5;
       }
       if (this.direction === Axis.horizontal) {
         parentData.offset = new Vector(childMainPosition, childCrossPosition);
