@@ -12,8 +12,8 @@ export class Size {
   private _width: number;
   private _height: number;
   constructor(width: number, height: number) {
-    this._width = width;
-    this._height = height;
+    this._width = isNaN(width)?0:width;
+    this._height = isNaN(height)?0:height;
   }
   static get zero(): Size {
     return new Size(0, 0);

@@ -188,6 +188,10 @@ export abstract class SingleChildRenderView extends RenderBox {
     this.child = child;
   }
   render(context: PaintingContext, offset?: Vector) {
+    const parentData: BoxParentData = this.child?.parentData as BoxParentData;
+    if (offset && parentData) {
+      offset.add(parentData.offset);
+    }
     context.paintChild(this.child!, offset);
   }
   //默认大小等于子大小，被子撑开
@@ -209,8 +213,15 @@ export class ColoredRender extends SingleChildRenderView {
     super(child);
     this.color = color;
   }
+  performLayout(constraints: BoxConstraints, parentUseSize?: boolean): void {
+    // console.log("颜色约束", constraints);
+    // if (!this.child) {
+    //   this.size = Size.zero;
+    // }
+  }
   render(context: PaintingContext, offset?: Vector): void {
     const paint = context.paint;
+    const parentData: BoxParentData = this.parentData as BoxParentData;
     paint.beginPath();
     paint.fillStyle = this.color;
     paint.fillRect(
@@ -236,48 +247,75 @@ export class SizeRender extends SingleChildRenderView {
       minHeight: height,
     });
   }
-
-  layout(constraints: BoxConstraints, parentUseSize?: boolean): void {
-    super.layout(this.additionalConstraints.enforce(constraints), true);
+  performLayout(constraints: BoxConstraints, parentUseSize?: boolean): void {
+    if (this.child) {
+      this.child.layout(this.additionalConstraints.enforce(constraints), true);
+      this.size = this.child.size;
+    } else {
+      this.size = this.additionalConstraints.enforce(constraints)
+        .constrain(Size.zero);
+      // console.log("约束大小",constraints, constraints.enforce(this.additionalConstraints));
+    }
   }
 }
 
+interface RectTLRB<T = number> {
+  left: T;
+  right: T;
+  top: T;
+  bottom: T;
+}
+
+interface PaddingOption extends SingleChildRenderViewOption {
+  padding: Partial<RectTLRB>;
+}
 export class Padding extends SingleChildRenderView {
-  private padding: number = 0;
-  constructor(padding: number, child?: RenderBox) {
-    super(child);
-    this.padding = padding;
+  private padding: Partial<RectTLRB> = {
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  };
+  constructor(option?: Partial<PaddingOption>) {
+    super(option?.child);
+    this.padding = option?.padding;
   }
-  performLayout(constraints: BoxConstraints): void {
-    /**
-     * 增量约束
-     * padding box最大约束
-     */
-    const additionalConstraints = new BoxConstraints({
-      minWidth: Math.max(
-        this.padding * 2,
-        constraints.minWidth + this.padding * -2
-      ),
-      minHeight: this.padding * 2,
-      maxWidth: Math.max(
-        this.padding * 2,
-        constraints.maxWidth + this.padding * -2
-      ),
-      maxHeight: Math.max(
-        this.padding * 2,
-        constraints.maxHeight + this.padding * -2
-      ),
-    });
-    this.size = new Size(
-      Math.max(constraints.constrainWidth(this.size.width), this.padding * 2),
-      this.size.height + this.padding * 2
+  performLayout(constraints: BoxConstraints, parentUseSize?: boolean): void {
+    const horizontal = (this.padding?.left || 0) + (this.padding?.right || 0);
+    const vertical = (this.padding?.top || 0) + (this.padding?.bottom || 0);
+
+    if (!this.child) {
+      if (parentUseSize) {
+        this.size = new Size(
+          Math.max(constraints.maxWidth, horizontal),
+          vertical
+        ); //constraints.constrain());
+      } else {
+        this.size = new Size(horizontal, vertical);
+      }
+      return;
+    }
+
+    const innerConstraint: BoxConstraints = constraints.deflate(
+      new Vector(horizontal, vertical)
     );
-  }
-  render(context: PaintingContext, offset?: Vector): void {
-    // 计算新的偏移量
-    const paddedOffsetX = offset ? offset?.x + this.padding : this.padding;
-    const paddedOffsetY = offset ? offset?.y + this.padding : this.padding;
-    super.render(context, new Vector(paddedOffsetX, paddedOffsetY));
+
+    const childParent: BoxParentData = this.child.parentData as BoxParentData;
+    this.child.layout(innerConstraint, true);
+
+    childParent.offset = new Vector(
+      this.padding?.left || 0,
+      this.padding?.top || 0
+    );
+
+    this.size = constraints.constrain(
+      new Size(
+        horizontal + this.child.size.width,
+        vertical + this.child.size.height
+      )
+    );
+
+    console.log("约束传入", constraints, this.size, this.child);
   }
 }
 
@@ -399,7 +437,7 @@ abstract class ClipContext {
 }
 
 export class PaintingContext extends ClipContext {
-  paintChild(child: RenderView, offset?: Vector): void {
+  paintChild(child: RenderView, offset: Vector = Vector.zero): void {
     child?.render(this, offset);
   }
 }
@@ -499,6 +537,9 @@ export class Expanded extends ParentDataRenderView<FlexParentData> {
     super(child);
     this.flex = flex;
   }
+  layout(constraints: BoxConstraints, parentUseSize?: boolean): void {
+    super.layout(constraints, true);
+  }
   applyParentData(renderObject: RenderView): void {
     if (renderObject.parentData instanceof FlexParentData) {
       renderObject.parentData.flex = this.flex;
@@ -514,9 +555,9 @@ export class Flex extends MultiChildRenderView {
     const { direction, children, mainAxisAlignment, crossAxisAlignment } =
       option;
     super(children);
-    this.direction = direction;
-    this.mainAxisAlignment = mainAxisAlignment!;
-    this.crossAxisAlignment = crossAxisAlignment!;
+    this.direction = direction ?? this.direction;
+    this.mainAxisAlignment = mainAxisAlignment ?? this.mainAxisAlignment;
+    this.crossAxisAlignment = crossAxisAlignment ?? this.crossAxisAlignment;
   }
 
   layout(constraints: BoxConstraints): void {
@@ -583,6 +624,7 @@ export class Flex extends MultiChildRenderView {
 
       switch (this.crossAxisAlignment) {
         case CrossAxisAlignment.start:
+          break;
         case CrossAxisAlignment.end:
           childCrossPosition = computeSize.crossSize - childCrossSize;
           break;
@@ -630,16 +672,11 @@ export class Flex extends MultiChildRenderView {
       } else {
         //当设置了cross方向也需要拉伸时,子盒子约束需要设置为max = min = parent.max
         if (this.crossAxisAlignment === CrossAxisAlignment.stretch) {
-          this.direction === Axis.horizontal &&
-            (innerConstraint = BoxConstraints.tightFor(
-              0,
-              constraints.maxHeight
-            ));
-          this.direction === Axis.vertical &&
-            (innerConstraint = BoxConstraints.tightFor(
-              constraints.maxWidth,
-              0
-            ));
+          if (this.direction === Axis.horizontal) {
+            innerConstraint = BoxConstraints.tightFor(0, constraints.maxHeight);
+          } else if (this.direction === Axis.vertical) {
+            innerConstraint = BoxConstraints.tightFor(constraints.maxWidth, 0);
+          }
         } else {
           //cross未设置拉伸，仅设置子盒子 max
           if (this.direction === Axis.horizontal) {

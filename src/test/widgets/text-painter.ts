@@ -4,6 +4,8 @@ import { Size } from "@/core/lib/rect";
 import { Row } from "@/core/lib/rendering/flex";
 import { Shadow } from "@/types/gesti";
 
+const _kDefaultFontSize:number = 14.0;
+
 class Accumulator {
   private _value: number = 0;
   get value() {
@@ -109,7 +111,14 @@ export enum TextDecorationStyle {
   solid = "solid",
   dashed = "dashed",
 }
-
+export enum TextOverflow {
+  /// Clip the overflowing text to fix its container.
+  clip = "clip",
+  /// Use an ellipsis to indicate that the text has overflowed.
+  ellipsis = "ellipsis",
+  /// Render overflowing text outside of its container.
+  visible = "visible",
+}
 interface TextDecorationOption {
   decoration: TextDecoration;
   decorationStyle: TextDecorationStyle;
@@ -124,6 +133,7 @@ interface TextStyleOption extends ParagraphStyleOption, TextDecorationOption {
   wordSpacing: number;
   foreground: Painter;
   shadow: Shadow;
+  overflow: TextOverflow;
 }
 export class TextStyle
   extends ParagraphStyle
@@ -140,6 +150,7 @@ export class TextStyle
   decorationColor: string;
   foreground: Painter;
   shadow: Shadow;
+  overflow: TextOverflow;
   constructor(option?: Partial<TextStyleOption>) {
     super(option);
     if (option) {
@@ -153,6 +164,7 @@ export class TextStyle
       this.decorationStyle = option?.decorationStyle ?? this.decorationStyle;
       this.decorationColor = option?.decorationColor ?? this.decorationColor;
       this.foreground = option?.foreground;
+      this.overflow = option?.overflow;
       this.shadow = option?.shadow;
 
       // this.fontSize??=14;
@@ -163,7 +175,7 @@ export class TextStyle
         throw Error(
           "The 'foreground' and 'color' cannot exist at the same time."
         );
-      } else if (!this.foreground&&!this.color) {
+      } else if (!this.foreground && !this.color) {
         this.color = "black";
       }
     }
@@ -182,6 +194,39 @@ export class TextStyle
       decorationColor: style?.decorationColor ?? this.decorationColor,
       foreground: style?.color ? null : style?.foreground ?? this.foreground, // 注意：如果 TextStyle 支持这个属性
       shadow: style?.shadow ?? this.shadow, // 注意：如果 TextStyle 支持这个属性
+      overflow: style?.overflow ?? this.overflow,
+    });
+  }
+  public apply(style?: Partial<TextStyleOption>): TextStyle {
+    return new TextStyle({
+      color: style?.color ?? this.color,
+      fontSize: style?.fontSize ?? this.fontSize,
+      fontWeight: style?.fontWeight ?? this.fontWeight,
+      fontStyle: style?.fontStyle ?? this.fontStyle,
+      letterSpacing: style?.letterSpacing ?? this.letterSpacing,
+      wordSpacing: style?.wordSpacing ?? this.wordSpacing,
+      decoration: style?.decoration ?? this.decoration,
+      decorationStyle: style?.decorationStyle ?? this.decorationStyle,
+      decorationColor: style?.decorationColor ?? this.decorationColor,
+      foreground: style?.foreground, // 注意：如果 TextStyle 支持这个属性
+      shadow: style?.shadow ?? this.shadow, // 注意：如果 TextStyle 支持这个属性
+      overflow: style?.overflow ?? this.overflow,
+    });
+  }
+  public copyWith(style?: Partial<TextStyleOption>): TextStyle {
+    return new TextStyle({
+      color: style?.color ?? this.color,
+      fontSize: style?.fontSize ?? this.fontSize,
+      fontWeight: style?.fontWeight ?? this.fontWeight,
+      fontStyle: style?.fontStyle ?? this.fontStyle,
+      letterSpacing: style?.letterSpacing ?? this.letterSpacing,
+      wordSpacing: style?.wordSpacing ?? this.wordSpacing,
+      decoration: style?.decoration ?? this.decoration,
+      decorationStyle: style?.decorationStyle ?? this.decorationStyle,
+      decorationColor: style?.decorationColor ?? this.decorationColor,
+      foreground: style?.foreground ?? this.foreground, // 注意：如果 TextStyle 支持这个属性
+      shadow: style?.shadow ?? this.shadow, // 注意：如果 TextStyle 支持这个属性
+      overflow: style?.overflow ?? this.overflow,
     });
   }
 }
@@ -248,6 +293,9 @@ class TextPoint {
   private isSpace: boolean = false;
   private _hidden: boolean = false;
   public hiddenTextPoint(): void {
+    this._hidden = true;
+  }
+  disable() {
     this._hidden = true;
   }
   get hidden(): boolean {
@@ -522,7 +570,7 @@ export class Paragraph {
       this.performLayoutRow(textPoint, offset, broCount);
       textPoint.parentData = parentData;
     }
-   
+
     return {
       column: lastColumn,
       subDeltaX,
@@ -530,15 +578,19 @@ export class Paragraph {
   }
   public performLayoutOffsetYByColumn(lastHeight: number = 0) {
     let currentPoint = this.firstTextPoint;
+    let maxHeight: number = 0;
+    let maxWidth: number = 0;
     while (currentPoint != null) {
       const parentData = currentPoint?.parentData;
       const column = parentData.column;
       const y = column * parentData.box.lineHeight + lastHeight;
       parentData.offset.setXY(parentData.offset.x, y);
+      maxHeight = Math.max(y, maxHeight);
+      maxWidth = Math.max(parentData.offset.x + parentData.box.width, maxWidth);
       currentPoint = parentData.nextNode;
-      this.size.setHeight(Math.max(y,this.height));
-      this.size.setWidth(Math.max(parentData.offset.x+parentData.box.width,this.width));
     }
+    this.size.setHeight(maxHeight);
+    this.size.setWidth(maxWidth);
   }
   /**
    *  将文字处理为[TextBox]并计算每个文字的offset
@@ -745,8 +797,8 @@ export class Paragraph {
  **/
 export class MulParagraph extends Paragraph {
   private firstChild: Paragraph;
-  private maxWidth:number=0;
-  private maxHeight:number=0;
+  private maxWidth: number = 0;
+  private maxHeight: number = 0;
   constructor(children?: Paragraph[]) {
     super();
     this.addAll(children);
@@ -777,7 +829,6 @@ export class MulParagraph extends Paragraph {
     this.applyAlignText(maxColumn, constraints);
     this.applyPerformLayoutLinePoint();
 
-
     this.size.setWidth(this.maxWidth);
     this.size.setHeight(this.maxHeight);
   }
@@ -796,7 +847,7 @@ export class MulParagraph extends Paragraph {
   private handleLevelRowsLineHeight(maxColumn: number) {
     const rows = this.getRows(maxColumn);
     let preColumnHeight: number = 0;
-    let maxWidth:number=0;
+    let maxWidth: number = 0;
     rows.forEach((row) => {
       let maxLineHeightTextPoint: TextPoint;
       if (row.maxLineHeight !== row.minLineHeight) {
@@ -815,12 +866,12 @@ export class MulParagraph extends Paragraph {
           parentData.baseLineOffsetY = offsetBaseLineY * 0.5;
         }
         parentData.offset.setXY(parentData.offset.x, y);
-        maxWidth=Math.max(maxWidth,(parentData.offset.x+box.width));
+        maxWidth = Math.max(maxWidth, parentData.offset.x + box.width);
       });
       preColumnHeight += row.maxLineHeight;
     });
-    this.maxWidth=maxWidth;
-    this.maxHeight=preColumnHeight;
+    this.maxWidth = maxWidth;
+    this.maxHeight = preColumnHeight;
   }
   private getRows(maxColumn: number) {
     let child = this.firstChild;
@@ -925,7 +976,7 @@ class ParagraphBuilder {
   }
   pushStyle(style: TextStyle) {
     if (this.lastTextStyle) {
-      const newStyle: TextStyle = this.lastTextStyle?.getTextStyle({
+      const newStyle: TextStyle = this.lastTextStyle?.apply({
         ...style,
       });
       this.textStyles.push(newStyle);
@@ -1014,14 +1065,14 @@ export class TextPainter {
   private text: TextSpan;
   private paragraph: Paragraph;
   private painter: Painter;
-  public size:Size=Size.zero;
-  get width():number{
+  public size: Size = Size.zero;
+  get width(): number {
     return this.size.width;
   }
-  get height():number{
+  get height(): number {
     return this.size.height;
   }
-  constructor(text: TextSpan, painter: Painter) {
+  constructor(text: TextSpan, painter: Painter=new Painter()) {
     this.text = text;
     this.painter = painter;
   }

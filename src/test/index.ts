@@ -93,6 +93,7 @@ import {
   TextAlign,
   TextDecoration,
   TextDecorationStyle,
+  TextOverflow,
   TextPainter,
   TextSpan,
   TextStyle,
@@ -130,7 +131,7 @@ const g = canvas.getContext("2d", {
   // willReadFrequently: true,
 });
 // g.imageSmoothingEnabled = false;
-
+Painter.setPaint(g);
 Gesti.installPlugin(
   "offScreenBuilder",
   new OffScreenCanvasGenerator({
@@ -182,27 +183,84 @@ Gesti.installPlugin(
 
 //具有renderbox的对象，用来作为装载RenderObject的容器
 
+interface ParagraphViewOption {
+  text: TextSpan;
+}
+
+class ParagraphView extends SingleChildRenderView {
+  private textPainter: TextPainter;
+  private text: TextSpan;
+  constructor(option?: ParagraphViewOption) {
+    super();
+    const { text } = option;
+    this.text = text;
+  }
+  performLayout(constraints: BoxConstraints, parentUseSize?: boolean): void {
+    this.textPainter = new TextPainter(this.text);
+    this.textPainter.layout(constraints.minWidth, constraints.maxWidth);
+    const textSize = this.textPainter.size;
+    this.size = constraints.constrain(textSize);
+  }
+  render(context: PaintingContext, offset?: Vector): void {
+    this.textPainter.paint(context.paint, offset);
+  }
+}
+
+interface LimitedOption extends SingleChildRenderViewOption {
+  maxWidth: number;
+  maxHeight: number;
+}
+
+class LimitedRender extends SingleChildRenderView {
+  maxWidth: number = 0;
+  maxHeight: number = 0;
+  constructor(option: Partial<LimitedOption>) {
+    super(option?.child);
+    this.maxWidth = option?.maxWidth ?? 0;
+    this.maxHeight = option?.maxHeight ?? 0;
+  }
+  private limitedConstraint(constrain:BoxConstraints):BoxConstraints{
+    return new BoxConstraints({
+      minWidth:constrain.maxWidth,
+      minHeight:constrain.minHeight,
+      maxWidth:constrain.hasBoundedWidth?this.maxWidth:constrain.constrainWidth(this.maxWidth),
+      maxHeight:constrain.hasBoundedHeight?this.maxHeight:constrain.constrainHeight(this.maxHeight),
+    });
+  }
+  performLayout(constraints: BoxConstraints, parentUseSize?: boolean): void {
+
+  }
+}
+
 class View {
   private renderer: RenderView;
 
   build(): RenderView {
     return new SizeRender(
       canvas.width,
-      canvas.height,
-      new Stack({
+      30,
+      new Flex({
+        crossAxisAlignment:CrossAxisAlignment.stretch,
+        mainAxisAlignment:MainAxisAlignment.start,
+        // mainAxisAlignment:MainAxisAlignment.spaceBetween,
+        direction:Axis.horizontal,
         children: [
-          new Expanded({
-            flex: 1,
-            child: new ColoredRender("orange", new SizeRender(50, 50)),
-          }),
-          new ColoredRender("white", new SizeRender(20, 20)),
-          new Positioned({
-            bottom: 10,
-            top: 10,
-            child: new ColoredRender("red", new SizeRender(10, 10)),
-          }),
+          // new Expanded({
+          //   flex: 1,
+          //   child: new ColoredRender("orange", new SizeRender(10, 10)),
+          // }),
+          // new Expanded({
+          //   flex: 2,
+          //   child: new ColoredRender("red", new SizeRender(10, 10)),
+          // }),
+          new ColoredRender("green", new SizeRender(10, 10)),
+          new ColoredRender("orange", new SizeRender(10, 20)),
+          new ColoredRender("red", new SizeRender(10, 30)),
+          // new Expanded({
+          //   flex: 3,
+          //   child: new ColoredRender("green", new SizeRender(10, 10)),
+          // }),
         ],
-        alignment: Alignment.center,
       })
     );
   }
@@ -218,107 +276,53 @@ class View {
   }
 }
 
-// const view = new View();
-// console.log(view);
-// view.mount();
-// view.layout();
-// view.render(new PaintingContext(new Painter(g)));
+const view = new View();
+console.log(view);
+view.mount();
+view.layout();
+view.render(new PaintingContext(new Painter(g)));
 
-// },30000)
-
-// let linHeightScale=5;
-// // setInterval(()=>{
-//   g.clearRect(0,0,1000,1000)
-//   linHeightScale+=.1;
-//   const fontSize = 10;
-// const paintY =10;
-// const paintX = 10;
-
-// const texts = `😀你可以根据需要在数组中继续添加新的段落👊`;
-// const paragraph = new Paragraph();
-// const paragraph2 = new Paragraph();
-// const paragraph3 = new Paragraph();
-// paragraph.addText(texts);
-// paragraph2.addText(`测试`);
-// paragraph3.addText(`你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落,Hello.this is my order test.`);
-// const textStyle = new TextStyle({
-//   textAlign: TextAlign.unset,
-//   fontSize: fontSize,
-//   lineHeight: fontSize*1.5,
-//   wordSpace: 0,
-//   letterSpacing: 0,
-// });
-
-// paragraph.pushStyle(textStyle);
-// const fontSize2=20;
-// paragraph2.pushStyle({
-//   ...textStyle,
-//   color:'orange',
-//   fontSize: fontSize2,
-//   lineHeight: fontSize2*linHeightScale,
-// });
-// paragraph3.pushStyle({
-//   ...textStyle,
-//   color:'black'
-// });
-
-// const constraints=new ParagraphConstraints(200)
-
-// const mul = new MulParagraph([paragraph, paragraph2, paragraph3]);
-// mul.pushStyle(
-//   new TextStyle(
-//     {textAlign:TextAlign.start,wordSpace:20},
-//   ),
-// );
-// mul.layout(constraints, new Painter(g));
-// g.fillStyle = "white";
-// g.fillRect(paintX, paintY, constraints.width, Math.max(mul.height, fontSize));
-// g.fillStyle = "black";
-// mul.paint(new Painter(g), new Vector(paintX, paintY));
-// if(linHeightScale>=5)linHeightScale=0;
-Painter.setPaint(g);
 const forge = new Painter();
 forge.fillStyle = "black";
 forge.style = PaintingStyle.fill;
 
 const textSpan = new TextSpan({
-  text: "你可以根据需要",
+  text: "你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落😊",
   textStyle: new TextStyle({
     textAlign: TextAlign.unset,
     wordSpacing: 10,
-    fontSize:20,
+    fontSize: 20,
     letterSpacing: 0,
     fontWeight: FontWeight.bold,
     decoration: TextDecoration.underline,
     decorationStyle: TextDecorationStyle.dashed,
     decorationColor: "orange",
-    color:"white"
+    maxLines: 2,
+    color: "white",
+    overflow: TextOverflow.clip,
     // foreground: forge,
   }),
-  children: [
-    new TextSpan({
-      text: "什么",
-    }),
-    new TextSpan({
-      text: "g.fillRect(paintX, paintY, constraints.width, Math.max(mul.height, fontSize));",
-      // textStyle: new TextStyle({
-      //   color: "red",
-      //   foreground:null,
-      //   fontSize:50,
-      //   // decoration:TextDecoration.lineThrough
-      // }),
-    }),
-  ],
+  // children: [
+  //   new TextSpan({
+  //     text: "什么",
+  //   }),
+  //   new TextSpan({
+  //     text: "g.fillRect(paintX, paintY, constraints.width, Math.max(mul.height, fontSize));",
+  //     // textStyle: new TextStyle({
+  //     //   color: "red",
+  //     //   foreground:null,
+  //     //   fontSize:50,
+  //     //   // decoration:TextDecoration.lineThrough
+  //     // }),
+  //   }),
+  // ],
 });
 
-const textPainter = new TextPainter(textSpan, new Painter(g));
+// const textPainter = new TextPainter(textSpan, new Painter(g));
 
-const offset=new Vector(30,30);
-textPainter.layout(200, 200);
-console.log("最后大小",textPainter.size)
-g.fillStyle="#ccc";
-g.fillRect(offset.x,offset.y,textPainter.size.width,textPainter.size.height);
-textPainter.paint(new Painter(g), offset);
-
-
-
+// const offset=new Vector(30,30);
+// textPainter.layout(200, 200);
+// console.log("最后大小",textPainter.size)
+// g.fillStyle="#ccc";
+// g.fillRect(offset.x,offset.y,textPainter.size.width,textPainter.size.height);
+// textPainter.paint(new Painter(g), offset);

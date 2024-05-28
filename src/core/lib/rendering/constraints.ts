@@ -67,6 +67,22 @@ class BoxConstraints extends Constraints {
     );
   }
 
+  /**
+   * 返回一个新的约束盒，约束盒的大小是此约束盒缩小 edges 
+   */
+  deflate(edges: Vector): BoxConstraints {
+    const horizontal = edges.x;
+    const vertical = edges.y;
+    const deflatedMinWidth = Math.max(0.0, this.minWidth - horizontal);
+    const deflatedMinHeight = Math.max(0.0, this.minHeight - vertical);
+    return new BoxConstraints({
+      minWidth: deflatedMinWidth,
+      maxWidth: Math.max(deflatedMinWidth, this.maxWidth - horizontal),
+      minHeight: deflatedMinHeight,
+      maxHeight: Math.max(deflatedMinHeight, this.maxHeight - vertical),
+    });
+  }
+
   tighten(width?: number, height?: number): BoxConstraints {
     const minWidth = this.minWidth,
       minHeight = this.minHeight,
@@ -133,8 +149,6 @@ class BoxConstraints extends Constraints {
   static get zero(): BoxConstraints {
     return new BoxConstraints();
   }
-
-
 
   static tightFor(width?: number, height?: number): BoxConstraints {
     return new BoxConstraints({
