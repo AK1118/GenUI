@@ -118,6 +118,7 @@ export abstract class RenderView extends AbstractNode {
   public parentData: ParentData = null;
   public size: Size = Size.zero;
   abstract render(context: PaintingContext, offset?: Vector): void;
+  abstract debugRender(context: PaintingContext, offset?: Vector): void;
   //默认大小等于子大小，被子撑开
   abstract layout(constraints: BoxConstraints, parentUseSize?: boolean): void;
   abstract performLayout(
@@ -181,6 +182,9 @@ export abstract class ParentDataRenderView<
   render(context: PaintingContext, offset?: Vector) {
     context.paintChild(this.child!, offset);
   }
+  debugRender(context: PaintingContext, offset?: Vector): void {
+    context.paintChildDebug(this.child!, offset);
+  }
 }
 
 export abstract class SingleChildRenderView extends RenderBox {
@@ -188,6 +192,13 @@ export abstract class SingleChildRenderView extends RenderBox {
   constructor(child?: RenderBox) {
     super();
     this.child = child;
+  }
+  debugRender(context: PaintingContext, offset?: Vector): void {
+    const parentData: BoxParentData = this.child?.parentData as BoxParentData;
+    if (offset && parentData) {
+      offset.add(parentData.offset);
+    }
+    context.paintChildDebug(this.child!, offset);
   }
   render(context: PaintingContext, offset?: Vector) {
     const parentData: BoxParentData = this.child?.parentData as BoxParentData;
@@ -219,6 +230,9 @@ export class ColoredRender extends SingleChildRenderView {
     if (!this.child) {
       this.size = Size.zero;
     }
+  }
+  debugRender(context: PaintingContext, offset?: Vector): void {
+      this.render(context,offset);
   }
   render(context: PaintingContext, offset?: Vector): void {
     const paint = context.paint;
@@ -438,6 +452,9 @@ abstract class ClipContext {
 }
 
 export class PaintingContext extends ClipContext {
+  paintChildDebug(child: RenderView, offset: Vector = Vector.zero): void {
+    child?.debugRender(this, offset);
+  }
   paintChild(child: RenderView, offset: Vector = Vector.zero): void {
     child?.render(this, offset);
   }
@@ -490,6 +507,10 @@ export abstract class MultiChildRenderView extends RenderBox {
   render(context: PaintingContext, offset?: Vector): void {
     this.defaultRenderChild(context, offset);
   }
+  
+  debugRender(context: PaintingContext, offset?: Vector): void {
+    this.defaultRenderChildDebug(context, offset);
+  }
   layout(constraints: BoxConstraints): void {
     this.performLayout(constraints);
   }
@@ -523,6 +544,18 @@ export abstract class MultiChildRenderView extends RenderBox {
       const parentData =
         child.parentData as ContainerRenderViewParentData<RenderView>;
       context.paintChild(
+        child,
+        Vector.add(parentData.offset ?? Vector.zero, offset ?? Vector.zero)
+      );
+      child = parentData?.nextSibling;
+    }
+  }
+  protected defaultRenderChildDebug(context: PaintingContext, offset?: Vector) {
+    let child = this.firstChild;
+    while (child != null) {
+      const parentData =
+        child.parentData as ContainerRenderViewParentData<RenderView>;
+      context.paintChildDebug(
         child,
         Vector.add(parentData.offset ?? Vector.zero, offset ?? Vector.zero)
       );

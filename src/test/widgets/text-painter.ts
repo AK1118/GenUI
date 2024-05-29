@@ -168,7 +168,7 @@ export class TextStyle
       this.shadow = option?.shadow;
 
       // this.fontSize??=14;
-      this.height ??= (this.fontSize ?? 10) * 1.4; //默认
+      this.height ??= (this.fontSize ?? _kDefaultFontSize) * 1.4; //默认
       this.decorationColor ??= "black";
 
       if (this.foreground && this.color) {
@@ -423,7 +423,7 @@ export class Paragraph {
     if (callback) paint.save();
     paint.font = `${this.textStyle.fontWeight} ${
       this.textStyle.fontStyle
-    } ${~~this.textStyle.fontSize}px ${this.textStyle.fontFamily}`;
+    } ${~~(this.textStyle.fontSize??_kDefaultFontSize)}px ${this.textStyle.fontFamily}`;
     if (this.textStyle.shadow) {
       paint.setShadow(this.textStyle.shadow);
     }
@@ -481,11 +481,12 @@ export class Paragraph {
     constraints: ParagraphConstraints,
     isLastRow: boolean = false
   ) {
+    if(!row)return;
     const maxWidth = constraints.width;
     let leadingSpace: number = 0;
     let betweenSpace: number = 0;
-    const wordList = row.textPoints;
-    const countWidth = row.countWidth;
+    const wordList = row?.textPoints;
+    const countWidth = row?.countWidth;
     const freeSpace = Math.max(maxWidth - countWidth, 0);
     const canLayout: boolean = freeSpace > 0;
     const wordCount: number = wordList.reduce<number>(
@@ -581,16 +582,26 @@ export class Paragraph {
       subDeltaX,
     };
   }
+  //替换超出后文字...
   private replaceEllipsis(lastTextPoint: TextPoint) {
     if (!lastTextPoint) return;
     if (lastTextPoint) {
-      lastTextPoint.text = _kDefaultEllipsis;
+      //是否有自定义ellipsis字符传入
+      const hasCustomEllipsis:boolean=!!this.textStyle.ellipsis;
+      const ellipsis=this.textStyle.ellipsis??_kDefaultEllipsis;
+      lastTextPoint.text = ellipsis;
       const preBox = lastTextPoint.parentData.box;
       const currentBox = this.getTextBox(
-        this.getMeasureText(new Painter(), _kDefaultEllipsis)
+        this.getMeasureText(new Painter(), ellipsis)
       );
       currentBox.lineHeight = preBox.lineHeight;
-      currentBox.height=preBox.lineHeight;
+      if(hasCustomEllipsis){
+
+      }else{
+        //使用默认字符时需要做对齐基线处理
+        currentBox.height=preBox.lineHeight;
+      }
+      
       lastTextPoint.parentData.box = currentBox;
     }
   }
@@ -1112,8 +1123,8 @@ export class TextPainter {
     this.size.setWidth(this.paragraph.width);
     this.size.setHeight(this.paragraph.height);
   }
-  paint(paint: Painter, offset: Vector = Vector.zero) {
-    this.paragraph.paint(paint, offset,true);
+  paint(paint: Painter, offset: Vector = Vector.zero,debug:boolean=false) {
+    this.paragraph.paint(paint, offset,debug);
   }
   static isSpace(codePoint: number): boolean {
     return codePoint === 32;

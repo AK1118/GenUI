@@ -228,14 +228,30 @@ class ParagraphView extends SingleChildRenderView {
         }
       );
     }
-
     this.textPainter.paint(context.paint, offset);
+  }
+  debugRender(context: PaintingContext, offset?: Vector): void {
+    if (this.needClip) {
+      context.clipRectAndPaint(
+        Clip.antiAlias,
+        {
+          x: offset?.x ?? 0,
+          y: offset?.y ?? 0,
+          width: this.size.width,
+          height: this.size.height,
+        },
+        () => {
+          this.textPainter.paint(context.paint, offset, true);
+        }
+      );
+    }
+    this.textPainter.paint(context.paint, offset, true);
   }
 }
 
 class View {
   private renderer: RenderView;
-
+  private debug: boolean = true;
   build(): RenderView {
     return new SizeRender(
       canvas.width,
@@ -243,8 +259,8 @@ class View {
       new Align(
         Alignment.center,
         new Flex({
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
           // mainAxisAlignment:MainAxisAlignment.spaceBetween,
           direction: Axis.vertical,
           children: [
@@ -257,15 +273,17 @@ class View {
             //   child: new ColoredRender("red", new SizeRender(10, 10)),
             // }),
             new SizeRender(
-              100,
+              null,
               null,
               new ParagraphView({
                 text: new TextSpan({
-                  text: "根据,需…要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落😊",
+                  text: "The @media CSS at-rule can be used to apply part of a style sheet based on the result of one or more media queries. With it, you specify a media query and a block of CSS to apply to the document if and only if the media query matches the device on which the content is being used.😊",
                   textStyle: new TextStyle({
                     color: "black",
-                    fontSize: 20,
-                    maxLines:3,
+                    // fontSize: 14,
+                    maxLines: 1,
+                    textAlign: TextAlign.justify,
+
                     // overflow: TextOverflow.clip,
                   }),
                   // children:[
@@ -299,7 +317,28 @@ class View {
     console.log(this.renderer);
   }
   render(context: PaintingContext) {
-    this.renderer.render(context);
+    if (this.debug) {
+      this.renderer.debugRender(context);
+      context.clipRectAndPaint(
+        Clip.antiAlias,
+        {
+          x: 0,
+          y: 0,
+          width: 60,
+          height: 20,
+        },
+        () => {
+          context.paint.fillStyle = "rgba(255,0,0,.3)";
+          context.paint.fillRect(0, 0, 40, 16);
+          context.paint.fillStyle = "white";
+          context.paint.fillText("Debug", 2, 12);
+        }
+      );
+    } else {
+      this.renderer.render(context);
+    }
+    // this.renderer.render(context);
+    //this.renderer.debugRender(context);
   }
 }
 
