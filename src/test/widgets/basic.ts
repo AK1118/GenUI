@@ -20,7 +20,9 @@ import {
 
 export enum Clip {
   none,
+  //使用硬边裁剪
   hardEdge,
+  //使用抗锯齿裁剪
   antiAlias,
 }
 export enum Axis {

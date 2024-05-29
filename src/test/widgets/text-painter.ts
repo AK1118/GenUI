@@ -4,8 +4,8 @@ import { Size } from "@/core/lib/rect";
 import { Row } from "@/core/lib/rendering/flex";
 import { Shadow } from "@/types/gesti";
 
-const _kDefaultFontSize:number = 14.0;
-
+const _kDefaultFontSize: number = 14.0;
+const _kDefaultEllipsis: string = "…";
 class Accumulator {
   private _value: number = 0;
   get value() {
@@ -367,7 +367,7 @@ export class Paragraph {
   ) {
     this.performLayoutTextOffset(paint, startOffset);
     this.handleCompileWord();
-    this.performConstraintsWidth(constraints);
+    this.performConstraintsWidth(constraints, 0, 1, this.textStyle.maxLines);
     this.performLayoutOffsetYByColumn();
     this.performLayoutTextAlignment(constraints);
     this.performLayoutLinePoints();
@@ -541,7 +541,8 @@ export class Paragraph {
   public performConstraintsWidth(
     constraints: ParagraphConstraints,
     lastSubDeltaX: number = 0,
-    lastColumn: number = 1
+    lastColumn: number = 1,
+    maxLine: number = Infinity
   ) {
     let column = 1,
       subDeltaX = lastSubDeltaX;
@@ -561,6 +562,10 @@ export class Paragraph {
         subDeltaX = offset.x * -1;
         column++;
         lastColumn += 1;
+        if (lastColumn > maxLine) {
+          this.replaceEllipsis(textPoint.parentData.preNode);
+          break;
+        }
       }
       const deltaY = 0;
       let deltaX = subDeltaX + offset.x;
@@ -576,6 +581,19 @@ export class Paragraph {
       subDeltaX,
     };
   }
+  private replaceEllipsis(lastTextPoint: TextPoint) {
+    if (!lastTextPoint) return;
+    if (lastTextPoint) {
+      lastTextPoint.text = _kDefaultEllipsis;
+      const preBox = lastTextPoint.parentData.box;
+      const currentBox = this.getTextBox(
+        this.getMeasureText(new Painter(), _kDefaultEllipsis)
+      );
+      currentBox.lineHeight = preBox.lineHeight;
+      currentBox.height=preBox.lineHeight;
+      lastTextPoint.parentData.box = currentBox;
+    }
+  }
   public performLayoutOffsetYByColumn(lastHeight: number = 0) {
     let currentPoint = this.firstTextPoint;
     let maxHeight: number = 0;
@@ -585,8 +603,8 @@ export class Paragraph {
       const column = parentData.column;
       const y = column * parentData.box.lineHeight + lastHeight;
       parentData.offset.setXY(parentData.offset.x, y);
-      maxHeight = Math.max(y, maxHeight);
-      maxWidth = Math.max(parentData.offset.x + parentData.box.width, maxWidth);
+      maxHeight = Math.max(isNaN(y) ? 0 : y, maxHeight);
+      maxWidth = Math.max(maxWidth, parentData.offset.x + parentData.box.width);
       currentPoint = parentData.nextNode;
     }
     this.size.setHeight(maxHeight);
@@ -824,13 +842,15 @@ export class MulParagraph extends Paragraph {
     startOffset?: Vector
   ) {
     this.applyPerformLayoutHorizontalOffset(paint, startOffset);
-    const maxColumn = this.applyPerformLayoutConstraints(constraints);
+    const maxColumn = this.applyPerformLayoutConstraints(
+      constraints,
+      this.textStyle.maxLines
+    );
     this.handleLevelRowsLineHeight(maxColumn);
     this.applyAlignText(maxColumn, constraints);
     this.applyPerformLayoutLinePoint();
 
-    this.size.setWidth(this.maxWidth);
-    this.size.setHeight(this.maxHeight);
+    this.size = new Size(this.maxWidth, this.maxHeight);
   }
   private applyPerformLayoutLinePoint() {
     let child = this.firstChild;
@@ -898,7 +918,8 @@ export class MulParagraph extends Paragraph {
     }
   }
   private applyPerformLayoutConstraints(
-    constraints: ParagraphConstraints
+    constraints: ParagraphConstraints,
+    maxLines: number = Infinity
   ): number {
     let child = this.firstChild;
     let lastedOffset: number = 0;
@@ -908,7 +929,8 @@ export class MulParagraph extends Paragraph {
       const { column, subDeltaX } = child.performConstraintsWidth(
         constraints,
         lastedOffset,
-        lastedColumn
+        lastedColumn,
+        maxLines
       );
       lastedColumn = column;
       lastedOffset = subDeltaX;
@@ -937,7 +959,6 @@ export class MulParagraph extends Paragraph {
     while (child != null) {
       const parentData = child.parentData;
       lastedOffset = child.paint(paint, offset, true);
-      console.log(child);
       child = parentData.nextNode;
     }
     return Vector.zero;
@@ -1028,7 +1049,7 @@ export class TextSpan extends InlineSpan {
   constructor(option: Partial<TextSpanOption>) {
     super();
     const { textStyle, children, text } = option;
-    this.style = textStyle;
+    this.style = textStyle ?? new TextStyle();
     this.children = children;
     this.text = text;
   }
@@ -1072,7 +1093,7 @@ export class TextPainter {
   get height(): number {
     return this.size.height;
   }
-  constructor(text: TextSpan, painter: Painter=new Painter()) {
+  constructor(text: TextSpan, painter: Painter = new Painter()) {
     this.text = text;
     this.painter = painter;
   }
@@ -1087,12 +1108,12 @@ export class TextPainter {
     if (!this.paragraph) {
       this.createParagraph();
     }
-    this.paragraph.layout(new ParagraphConstraints(minWidth), this.painter);
+    this.paragraph.layout(new ParagraphConstraints(maxWidth), this.painter);
     this.size.setWidth(this.paragraph.width);
     this.size.setHeight(this.paragraph.height);
   }
   paint(paint: Painter, offset: Vector = Vector.zero) {
-    this.paragraph.paint(paint, offset);
+    this.paragraph.paint(paint, offset,true);
   }
   static isSpace(codePoint: number): boolean {
     return codePoint === 32;

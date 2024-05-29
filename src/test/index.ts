@@ -190,6 +190,8 @@ interface ParagraphViewOption {
 class ParagraphView extends SingleChildRenderView {
   private textPainter: TextPainter;
   private text: TextSpan;
+  private needClip: boolean;
+
   constructor(option?: ParagraphViewOption) {
     super();
     const { text } = option;
@@ -200,39 +202,37 @@ class ParagraphView extends SingleChildRenderView {
     this.textPainter.layout(constraints.minWidth, constraints.maxWidth);
     const textSize = this.textPainter.size;
     this.size = constraints.constrain(textSize);
+
+    switch (this.text.style.getTextStyle().overflow) {
+      case TextOverflow.clip:
+        this.needClip =
+          textSize.height > this.size.height ||
+          textSize.width > this.size.width;
+        break;
+      case TextOverflow.ellipsis:
+      case TextOverflow.visible:
+    }
   }
   render(context: PaintingContext, offset?: Vector): void {
+    if (this.needClip) {
+      context.clipRectAndPaint(
+        Clip.antiAlias,
+        {
+          x: offset?.x ?? 0,
+          y: offset?.y ?? 0,
+          width: this.size.width,
+          height: this.size.height,
+        },
+        () => {
+          this.textPainter.paint(context.paint, offset);
+        }
+      );
+    }
+
     this.textPainter.paint(context.paint, offset);
   }
 }
 
-interface LimitedOption extends SingleChildRenderViewOption {
-  maxWidth: number;
-  maxHeight: number;
-}
-
-class LimitedRender extends SingleChildRenderView {
-  maxWidth: number = 0;
-  maxHeight: number = 0;
-  constructor(option: Partial<LimitedOption>) {
-    super(option?.child);
-    this.maxWidth = option?.maxWidth ?? 0;
-    this.maxHeight = option?.maxHeight ?? 0;
-  }
-  private limitedConstraint(constrain: BoxConstraints): BoxConstraints {
-    return new BoxConstraints({
-      minWidth: constrain.maxWidth,
-      minHeight: constrain.minHeight,
-      maxWidth: constrain.hasBoundedWidth
-        ? this.maxWidth
-        : constrain.constrainWidth(this.maxWidth),
-      maxHeight: constrain.hasBoundedHeight
-        ? this.maxHeight
-        : constrain.constrainHeight(this.maxHeight),
-    });
-  }
-  performLayout(constraints: BoxConstraints, parentUseSize?: boolean): void {}
-}
 class View {
   private renderer: RenderView;
 
@@ -240,10 +240,10 @@ class View {
     return new SizeRender(
       canvas.width,
       canvas.height,
-     new Align(
+      new Align(
         Alignment.center,
         new Flex({
-          crossAxisAlignment:CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           // mainAxisAlignment:MainAxisAlignment.spaceBetween,
           direction: Axis.vertical,
@@ -256,6 +256,29 @@ class View {
             //   flex: 2,
             //   child: new ColoredRender("red", new SizeRender(10, 10)),
             // }),
+            new SizeRender(
+              100,
+              null,
+              new ParagraphView({
+                text: new TextSpan({
+                  text: "根据,需…要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落😊",
+                  textStyle: new TextStyle({
+                    color: "black",
+                    fontSize: 20,
+                    maxLines:3,
+                    // overflow: TextOverflow.clip,
+                  }),
+                  // children:[
+                  //   new TextSpan({
+                  //     text:"根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落😊"
+                  //   }),
+                  //   new TextSpan({
+                  //     text:"根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落😊"
+                  //   })
+                  // ]
+                }),
+              })
+            ),
             new ColoredRender("green", new SizeRender(10, 10)),
             new ColoredRender("orange", new SizeRender(10, 20)),
             new ColoredRender("red", new SizeRender(10, 30)),
@@ -306,20 +329,20 @@ const textSpan = new TextSpan({
     overflow: TextOverflow.clip,
     // foreground: forge,
   }),
-  // children: [
-  //   new TextSpan({
-  //     text: "什么",
-  //   }),
-  //   new TextSpan({
-  //     text: "g.fillRect(paintX, paintY, constraints.width, Math.max(mul.height, fontSize));",
-  //     // textStyle: new TextStyle({
-  //     //   color: "red",
-  //     //   foreground:null,
-  //     //   fontSize:50,
-  //     //   // decoration:TextDecoration.lineThrough
-  //     // }),
-  //   }),
-  // ],
+  children: [
+    new TextSpan({
+      text: "什么",
+    }),
+    new TextSpan({
+      text: "g.fillRect(paintX, paintY, constraints.width, Math.max(mul.height, fontSize));",
+      // textStyle: new TextStyle({
+      //   color: "red",
+      //   foreground:null,
+      //   fontSize:50,
+      //   // decoration:TextDecoration.lineThrough
+      // }),
+    }),
+  ],
 });
 
 // const textPainter = new TextPainter(textSpan, new Painter(g));
