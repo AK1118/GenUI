@@ -198,6 +198,7 @@ class ParagraphView extends SingleChildRenderView {
     this.text = text;
   }
   performLayout(constraints: BoxConstraints, parentUseSize?: boolean): void {
+    console.log("创建TextPainter");
     this.textPainter = new TextPainter(this.text);
     this.textPainter.layout(constraints.minWidth, constraints.maxWidth);
     const textSize = this.textPainter.size;
@@ -227,8 +228,7 @@ class ParagraphView extends SingleChildRenderView {
           this.textPainter.paint(context.paint, offset);
         }
       );
-    }
-    this.textPainter.paint(context.paint, offset);
+    } else this.textPainter.paint(context.paint, offset);
   }
   debugRender(context: PaintingContext, offset?: Vector): void {
     if (this.needClip) {
@@ -244,14 +244,20 @@ class ParagraphView extends SingleChildRenderView {
           this.textPainter.paint(context.paint, offset, true);
         }
       );
-    }
-    this.textPainter.paint(context.paint, offset, true);
+    } else this.textPainter.paint(context.paint, offset, true);
   }
 }
+
 
 class View {
   private renderer: RenderView;
   private debug: boolean = true;
+  private context: PaintingContext = new PaintingContext(new Painter());
+  setState(callback: VoidFunction) {
+    callback?.();
+    this.renderer = this.build();
+    this.render();
+  }
   build(): RenderView {
     return new SizeRender(
       canvas.width,
@@ -272,29 +278,57 @@ class View {
             //   flex: 2,
             //   child: new ColoredRender("red", new SizeRender(10, 10)),
             // }),
-            new SizeRender(
-              null,
-              null,
-              new ParagraphView({
-                text: new TextSpan({
-                  text: "The @media CSS at-rule can be used to apply part of a style sheet based on the result of one or more media queries. With it, you specify a media query and a block of CSS to apply to the document if and only if the media query matches the device on which the content is being used.😊",
-                  textStyle: new TextStyle({
-                    color: "black",
-                    // fontSize: 14,
-                    maxLines: 1,
-                    textAlign: TextAlign.justify,
-
-                    // overflow: TextOverflow.clip,
-                  }),
-                  // children:[
-                  //   new TextSpan({
-                  //     text:"根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落😊"
-                  //   }),
-                  //   new TextSpan({
-                  //     text:"根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落😊"
-                  //   })
-                  // ]
-                }),
+            new ColoredRender(
+              "white",
+              new Padding({
+                padding: {
+                  top: 10,
+                  left: 10,
+                  right: 10,
+                  bottom: 10,
+                },
+                child: new SizeRender(
+                  null,
+                  null,
+                  new ParagraphView({
+                    text: new TextSpan({
+                      text: "The @media CSS at-rule can be used to apply part of a style sheet based on the result of one or more media queries. With it, you specify a media query and a block of CSS to apply to the document if and only if the media query matches the device on which the content is being used.",
+                      textStyle: new TextStyle({
+                        color: "black",
+                        fontSize: 14,
+                        maxLines: 14,
+                        textAlign: TextAlign.justify,
+                        overflow: TextOverflow.ellipsis,
+                        wordSpacing: 0,
+                        letterSpacing: 0,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                        decorationStyle: TextDecorationStyle.dashed,
+                        decorationColor: "orange",
+                      }),
+                      children: [
+                        new TextSpan({
+                          text: "你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落😊",
+                          textStyle: new TextStyle({
+                            // fontSize:14,
+                            // maxLines: 5,
+                            // textAlign: TextAlign.justify,
+                            // overflow: TextOverflow.e,
+                          }),
+                        }),
+                        new TextSpan({
+                          text: "你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落😊",
+                          textStyle: new TextStyle({
+                            // fontSize:14,
+                            // maxLines: 5,
+                            // textAlign: TextAlign.justify,
+                            // overflow: TextOverflow.e,
+                          }),
+                        }),
+                      ],
+                    }),
+                  })
+                ),
               })
             ),
             new ColoredRender("green", new SizeRender(10, 10)),
@@ -316,7 +350,7 @@ class View {
     this.renderer.layout(BoxConstraints.zero);
     console.log(this.renderer);
   }
-  render(context: PaintingContext) {
+  render(context: PaintingContext = this.context) {
     if (this.debug) {
       this.renderer.debugRender(context);
       context.clipRectAndPaint(

@@ -62,7 +62,14 @@ interface ParagraphStyleOption {
 export class ParagraphStyle implements ParagraphStyleOption {
   textAlign: TextAlign = TextAlign.unset;
   textDirection: TextDirection = TextDirection.ltr;
-  maxLines: number = 1;
+  /**
+   * 该属性接收一个正整数用于限制文字最大行数。当文字实际最大行数超过[maxLines]时将不再继续被布局渲染，详见函数  [Paragraph.performConstraintsWidth]
+   */
+  maxLines: number = Infinity;
+  /**
+   * 接收自定义ellipsis的字符串，用于自定义在文字超出后的ellipsis效果。
+   * 替换逻辑详见 [Paragraph.replaceEllipsis]
+   */
   ellipsis?: string;
   height?: number = 0;
   fontFamily: string = "serif"; // 默认值为 'serif'
@@ -135,6 +142,7 @@ interface TextStyleOption extends ParagraphStyleOption, TextDecorationOption {
   shadow: Shadow;
   overflow: TextOverflow;
 }
+
 export class TextStyle
   extends ParagraphStyle
   implements TextStyleOption, TextDecorationOption
@@ -150,6 +158,28 @@ export class TextStyle
   decorationColor: string;
   foreground: Painter;
   shadow: Shadow;
+  /**
+   * 当父节点设置了绝对的size时，超出安全返回的文字不会被进行裁剪和ellipsis,除非设置overflow属性为[TextOverflow.clip]或是[TextOverflow.ellipsis]，
+    需要注意的是[TextOverflow.ellipsis] 必须设置maxLines才会正常运行。
+    当父节点设置了绝对的size，且overflow是[TextOverflow.clip],文字将会被裁剪。仅保留安全区域内的文字内容
+    若当前textStyle设置了maxLines且overflow是[TextOverflow.ellipsis]，超出的文字内容将会被…替代。
+    例子，以下内容将会裁剪掉超出部分，但不会再在末尾渲染 …
+    将overflow: TextOverflow.clip, 替换为 overflow: TextOverflow.ellipsis, 超出部分将会被…替代。
+    new SizeRender(
+      290,
+      100,
+      new ParagraphView({
+        text: new TextSpan({
+          text: "The @media CSS at-rule can be used to apply part of a style sheet based on the result of one or more media queries. With it, you specify a media query and a block of CSS to apply to the document if and only if the media query matches the device on which the content is being used.😊",
+          textStyle: new TextStyle({
+            color: "black",
+            maxLines: 5,
+            overflow: TextOverflow.clip,
+          }),
+        }),
+      })
+    )
+   */
   overflow: TextOverflow;
   constructor(option?: Partial<TextStyleOption>) {
     super(option);
@@ -184,7 +214,7 @@ export class TextStyle
   public getTextStyle(style?: Partial<TextStyleOption>): TextStyle {
     return new TextStyle({
       color: style?.color ?? this.color,
-      fontSize: style?.fontSize ?? this.fontSize,
+      fontSize: style?.fontSize ?? this.fontSize ?? _kDefaultFontSize,
       fontWeight: style?.fontWeight ?? this.fontWeight,
       fontStyle: style?.fontStyle ?? this.fontStyle,
       letterSpacing: style?.letterSpacing ?? this.letterSpacing,
@@ -421,9 +451,9 @@ export class Paragraph {
     callback?: (paint: Painter) => void
   ) {
     if (callback) paint.save();
-    paint.font = `${this.textStyle.fontWeight} ${
-      this.textStyle.fontStyle
-    } ${~~(this.textStyle.fontSize??_kDefaultFontSize)}px ${this.textStyle.fontFamily}`;
+    paint.font = `${this.textStyle.fontWeight} ${this.textStyle.fontStyle} ${~~(
+      this.textStyle.fontSize ?? _kDefaultFontSize
+    )}px ${this.textStyle.fontFamily}`;
     if (this.textStyle.shadow) {
       paint.setShadow(this.textStyle.shadow);
     }
@@ -481,7 +511,7 @@ export class Paragraph {
     constraints: ParagraphConstraints,
     isLastRow: boolean = false
   ) {
-    if(!row)return;
+    if (!row) return;
     const maxWidth = constraints.width;
     let leadingSpace: number = 0;
     let betweenSpace: number = 0;
@@ -536,8 +566,8 @@ export class Paragraph {
    * 文本是否为单词判断逻辑为next不为null与next的code码小于256与next不为空格即判定为一个单词
    * 区别是否一个单词时，必须满足连续字母超过一个才满足为一个"单词"
    * 每个单词的broCount至少为1，空格以及兄弟字母该属性为null
-   *
-   * ----
+   * @param lastColumn 当前所在行数
+   * @param isLastParagraph 标记是否为 [MulParagraph] 中的最后一个 [Paragraph],当为最后一段时，当前行数到达最大行数时必须立即停止向下布局。
    */
   public performConstraintsWidth(
     constraints: ParagraphConstraints,
@@ -545,6 +575,11 @@ export class Paragraph {
     lastColumn: number = 1,
     maxLine: number = Infinity
   ) {
+    if (lastColumn > maxLine)
+      return {
+        column: lastColumn,
+        subDeltaX: lastSubDeltaX,
+      };
     let column = 1,
       subDeltaX = lastSubDeltaX;
     const constraintsWidth = constraints.width;
@@ -562,11 +597,17 @@ export class Paragraph {
       if (overflow < 0 || TextPainter.isNewline(codePoint)) {
         subDeltaX = offset.x * -1;
         column++;
-        lastColumn += 1;
-        if (lastColumn > maxLine) {
-          this.replaceEllipsis(textPoint.parentData.preNode);
-          break;
+        if (lastColumn >= maxLine) {
+          if (this.textStyle?.overflow === TextOverflow.ellipsis) {
+            this.replaceEllipsis(textPoint.parentData.preNode);
+          }
+          lastColumn += 1;
+          return {
+            column: lastColumn,
+            subDeltaX,
+          };
         }
+        lastColumn += 1;
       }
       const deltaY = 0;
       let deltaX = subDeltaX + offset.x;
@@ -587,21 +628,20 @@ export class Paragraph {
     if (!lastTextPoint) return;
     if (lastTextPoint) {
       //是否有自定义ellipsis字符传入
-      const hasCustomEllipsis:boolean=!!this.textStyle.ellipsis;
-      const ellipsis=this.textStyle.ellipsis??_kDefaultEllipsis;
+      const hasCustomEllipsis: boolean = !!this.textStyle.ellipsis;
+      const ellipsis = this.textStyle.ellipsis ?? _kDefaultEllipsis;
       lastTextPoint.text = ellipsis;
       const preBox = lastTextPoint.parentData.box;
       const currentBox = this.getTextBox(
         this.getMeasureText(new Painter(), ellipsis)
       );
       currentBox.lineHeight = preBox.lineHeight;
-      if(hasCustomEllipsis){
-
-      }else{
+      if (hasCustomEllipsis) {
+      } else {
         //使用默认字符时需要做对齐基线处理
-        currentBox.height=preBox.lineHeight;
+        currentBox.height = preBox.lineHeight;
       }
-      
+
       lastTextPoint.parentData.box = currentBox;
     }
   }
@@ -897,7 +937,8 @@ export class MulParagraph extends Paragraph {
           parentData.baseLineOffsetY = offsetBaseLineY * 0.5;
         }
         parentData.offset.setXY(parentData.offset.x, y);
-        maxWidth = Math.max(maxWidth, parentData.offset.x + box.width);
+        const deltaWidth = parentData.offset.x + box.width;
+        maxWidth = Math.max(maxWidth, isNaN(deltaWidth) ? 0 : deltaWidth);
       });
       preColumnHeight += row.maxLineHeight;
     });
@@ -964,12 +1005,16 @@ export class MulParagraph extends Paragraph {
       child = parentData.nextNode;
     }
   }
-  public paint(paint: Painter, offset: Vector = Vector.zero): Vector {
+  public paint(
+    paint: Painter,
+    offset: Vector = Vector.zero,
+    debug: boolean = false
+  ): Vector {
     let child = this.firstChild;
     let lastedOffset: Vector = Vector.zero;
     while (child != null) {
       const parentData = child.parentData;
-      lastedOffset = child.paint(paint, offset, true);
+      lastedOffset = child.paint(paint, offset, debug);
       child = parentData.nextNode;
     }
     return Vector.zero;
@@ -1123,8 +1168,8 @@ export class TextPainter {
     this.size.setWidth(this.paragraph.width);
     this.size.setHeight(this.paragraph.height);
   }
-  paint(paint: Painter, offset: Vector = Vector.zero,debug:boolean=false) {
-    this.paragraph.paint(paint, offset,debug);
+  paint(paint: Painter, offset: Vector = Vector.zero, debug: boolean = false) {
+    this.paragraph.paint(paint, offset, debug);
   }
   static isSpace(codePoint: number): boolean {
     return codePoint === 32;
