@@ -17,6 +17,7 @@ import {
   SingleChildRenderViewOption,
   StackOption,
 } from "@/types/widget";
+import { TextOverflow, TextPainter, TextSpan } from "./text-painter";
 
 export enum Clip {
   none,
@@ -94,7 +95,7 @@ export class FlexParentData extends ContainerRenderViewParentData<RenderView> {
   flex: number;
 }
 
-abstract class AbstractNode {
+export abstract class AbstractNode {
   private _parent: AbstractNode;
   get parent() {
     return this._parent;
@@ -116,7 +117,19 @@ abstract class AbstractNode {
 export abstract class RenderView extends AbstractNode {
   private _child?: RenderView;
   public parentData: ParentData = null;
-  public size: Size = Size.zero;
+  public _size: Size = Size.zero;
+  get size(): Size {
+    return this._size;
+  }
+  set size(size: Size) {
+    this._size = size;
+  }
+  get mounted(): boolean {
+    return true;
+  }
+  get view(): RenderView {
+    return this;
+  }
   abstract render(context: PaintingContext, offset?: Vector): void;
   abstract debugRender(context: PaintingContext, offset?: Vector): void;
   //默认大小等于子大小，被子撑开
@@ -151,6 +164,7 @@ export abstract class RenderView extends AbstractNode {
       child.parentData = new ParentData();
     }
   }
+  protected markNeedRepaint() {}
 }
 
 abstract class RenderBox extends RenderView {
@@ -232,7 +246,7 @@ export class ColoredRender extends SingleChildRenderView {
     }
   }
   debugRender(context: PaintingContext, offset?: Vector): void {
-      this.render(context,offset);
+    this.render(context, offset);
   }
   render(context: PaintingContext, offset?: Vector): void {
     const paint = context.paint;
@@ -274,24 +288,24 @@ export class SizeRender extends SingleChildRenderView {
   }
 }
 
-interface RectTLRB<T = number> {
+export interface RectTLRB<T = number> {
   left: T;
   right: T;
   top: T;
   bottom: T;
 }
 
-interface PaddingOption extends SingleChildRenderViewOption {
+export interface PaddingOption {
   padding: Partial<RectTLRB>;
 }
-export class Padding extends SingleChildRenderView {
+export class PaddingRenderView extends SingleChildRenderView {
   private padding: Partial<RectTLRB> = {
     left: 0,
     right: 0,
     top: 0,
     bottom: 0,
   };
-  constructor(option?: Partial<PaddingOption>) {
+  constructor(option?: Partial<PaddingOption & SingleChildRenderViewOption>) {
     super(option?.child);
     this.padding = option?.padding;
   }
@@ -507,7 +521,7 @@ export abstract class MultiChildRenderView extends RenderBox {
   render(context: PaintingContext, offset?: Vector): void {
     this.defaultRenderChild(context, offset);
   }
-  
+
   debugRender(context: PaintingContext, offset?: Vector): void {
     this.defaultRenderChildDebug(context, offset);
   }
@@ -1015,3 +1029,75 @@ export class Positioned extends ParentDataRenderView<StackParentData> {
     context.paintChild(this.child, offset);
   }
 }
+
+export interface ParagraphViewOption {
+  text: TextSpan;
+}
+
+export class ParagraphView extends SingleChildRenderView {
+  private textPainter: TextPainter;
+  private text: TextSpan;
+  private needClip: boolean;
+
+  constructor(option?: ParagraphViewOption) {
+    super();
+    const { text } = option;
+    this.text = text;
+  }
+  performLayout(constraints: BoxConstraints, parentUseSize?: boolean): void {
+    this.textPainter = new TextPainter(this.text);
+    this.textPainter.layout(constraints.minWidth, constraints.maxWidth);
+    const textSize = this.textPainter.size;
+    this.size = constraints.constrain(textSize);
+
+    switch (this.text.style.getTextStyle().overflow) {
+      case TextOverflow.clip:
+        this.needClip =
+          textSize.height > this.size.height ||
+          textSize.width > this.size.width;
+        break;
+      case TextOverflow.ellipsis:
+      case TextOverflow.visible:
+    }
+  }
+  render(context: PaintingContext, offset?: Vector): void {
+    if (!context.paint) return;
+    if (this.needClip) {
+      context.clipRectAndPaint(
+        Clip.antiAlias,
+        {
+          x: offset?.x ?? 0,
+          y: offset?.y ?? 0,
+          width: this.size.width,
+          height: this.size.height,
+        },
+        () => {
+          this.textPainter.paint(context?.paint, offset);
+        }
+      );
+    } else {
+      this.textPainter.paint(context?.paint, offset);
+    }
+  }
+  debugRender(context: PaintingContext, offset?: Vector): void {
+    if (this.needClip) {
+      context.clipRectAndPaint(
+        Clip.antiAlias,
+        {
+          x: offset?.x ?? 0,
+          y: offset?.y ?? 0,
+          width: this.size.width,
+          height: this.size.height,
+        },
+        () => {
+          this.textPainter.paint(context.paint, offset, true);
+        }
+      );
+    } else {
+      this.textPainter.paint(context.paint, offset, true);
+    }
+  }
+  mount(parent?: RenderView, newSlot?: Object): void {}
+}
+
+export class RootRenderView extends SingleChildRenderView {}

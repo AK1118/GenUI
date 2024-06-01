@@ -19,8 +19,8 @@ declare namespace Widget {
     child: RenderBox;
   }
 
-  interface SingleChildRenderViewOption {
-    child: RenderBox;
+  interface SingleChildRenderViewOption<ChildType=RenderView> {
+    child: ChildType;
   }
 
   interface MultiChildRenderViewOption {

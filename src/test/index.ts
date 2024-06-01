@@ -7,7 +7,6 @@ import Alignment from "@/core/lib/painting/alignment";
 import BoxFit from "@/core/lib/painting/box-fit";
 import Plugins from "@/core/lib/plugins";
 import OffScreenCanvasGenerator from "@/core/lib/plugins/offScreenCanvasGenerator";
-import { RenderViewElement } from "@/core/lib/rendering/element";
 import { RenderViewWidget } from "@/core/lib/rendering/widget";
 import Vector from "@/core/lib/vector";
 import CustomButton from "@/core/viewObject/buttons/eventButton";
@@ -67,7 +66,6 @@ import {
   FlexParentData,
   MainAxisAlignment,
   MultiChildRenderView,
-  Padding,
   PaintingContext,
   ParentDataRenderView,
   RenderView,
@@ -76,6 +74,11 @@ import {
   StackFit,
   Stack,
   Positioned,
+  ParagraphView,
+  RootRenderView,
+  PaddingRenderView,
+  RectTLRB,
+  PaddingOption,
 } from "./widgets/basic";
 import {
   MultiChildRenderViewOption,
@@ -98,6 +101,7 @@ import {
   TextSpan,
   TextStyle,
 } from "./widgets/text-painter";
+import { Binding } from "./widgets/binding";
 
 /**
  * 假如全屏 360，    分成750份
@@ -182,247 +186,407 @@ Gesti.installPlugin(
 // });
 
 //具有renderbox的对象，用来作为装载RenderObject的容器
+/**
+ *
+ * Element 需要可被用户自定义树
+ * 需要可被嵌套，所以每个Element都可选要child
+ * child
+ *
+ *
+ */
+export class BuildOwner {
+  private dirtyElementList: Array<Element> = [];
+  public scheduleBuildFor(dirtyElement: Element) {
+    this.dirtyElementList.push(dirtyElement);
+  }
+  public buildScope(context: BuildContext) {
+    this.dirtyElementList.sort(Element.sort);
 
-interface ParagraphViewOption {
-  text: TextSpan;
+    let index: number = 0;
+    const count = this.dirtyElementList.length;
+    while (index < count) {
+      const element: Element = this.dirtyElementList[index];
+      element.rebuild();
+    }
+  }
 }
 
-class ParagraphView extends SingleChildRenderView {
-  private textPainter: TextPainter;
-  private text: TextSpan;
-  private needClip: boolean;
+abstract class BuildContext {
+  abstract get mounted(): boolean;
+  abstract get view(): RenderView;
+  abstract get size(): Size;
+}
 
-  constructor(option?: ParagraphViewOption) {
+export abstract class Element extends BuildContext {
+  public dirty: boolean;
+  protected parent: Element;
+  protected child: Element;
+  public owner: BuildOwner;
+  protected renderView: RenderView;
+  protected depth: number = 1;
+  constructor(child?: Element) {
     super();
-    const { text } = option;
-    this.text = text;
+    this.child = child;
   }
-  performLayout(constraints: BoxConstraints, parentUseSize?: boolean): void {
-    console.log("创建TextPainter");
-    this.textPainter = new TextPainter(this.text);
-    this.textPainter.layout(constraints.minWidth, constraints.maxWidth);
-    const textSize = this.textPainter.size;
-    this.size = constraints.constrain(textSize);
-
-    switch (this.text.style.getTextStyle().overflow) {
-      case TextOverflow.clip:
-        this.needClip =
-          textSize.height > this.size.height ||
-          textSize.width > this.size.width;
-        break;
-      case TextOverflow.ellipsis:
-      case TextOverflow.visible:
-    }
+  get mounted(): boolean {
+    return false;
   }
-  render(context: PaintingContext, offset?: Vector): void {
-    if (this.needClip) {
-      context.clipRectAndPaint(
-        Clip.antiAlias,
-        {
-          x: offset?.x ?? 0,
-          y: offset?.y ?? 0,
-          width: this.size.width,
-          height: this.size.height,
-        },
-        () => {
-          this.textPainter.paint(context.paint, offset);
-        }
-      );
-    } else this.textPainter.paint(context.paint, offset);
+  get view(): RenderView {
+    return this.renderView;
   }
-  debugRender(context: PaintingContext, offset?: Vector): void {
-    if (this.needClip) {
-      context.clipRectAndPaint(
-        Clip.antiAlias,
-        {
-          x: offset?.x ?? 0,
-          y: offset?.y ?? 0,
-          width: this.size.width,
-          height: this.size.height,
-        },
-        () => {
-          this.textPainter.paint(context.paint, offset, true);
-        }
-      );
-    } else this.textPainter.paint(context.paint, offset, true);
+  get size(): Size {
+    return this.renderView.size;
+  }
+  public mount(parent?: Element, newSlot?: Object): void {
+    if (!parent) return;
+    this.parent = parent;
+    this.owner = parent?.owner;
+    this.depth = parent?.depth + 1;
+  }
+  abstract createRenderView(context: BuildContext): RenderView;
+  public static sort(a: Element, b: Element) {
+    return a.depth - b.depth;
+  }
+  public insertRenderViewChild(child?: RenderView) {
+    if (!this.renderView) return;
+    this.renderView.child = child;
+  }
+  public attachRenderObject(newSlot?: Object) {
+    this.insertRenderViewChild(this.child?.renderView);
+  }
+  protected updateChild(child: Element, newSlot?: Object) {
+    if (!child) return;
+    this.child = child;
+    this.child.mount(this, newSlot);
+    this.attachRenderObject(newSlot);
+  }
+  public performRenderViewLayout() {
+    this.renderView.layout(BoxConstraints.zero);
+  }
+  public paint(paint: Painter) {
+    this.renderView.render(new PaintingContext(paint));
+  }
+  public markNeedBuild() {
+    this.dirty = true;
+    this?.owner.scheduleBuildFor(this);
+  }
+  public rebuild() {
+    this.performRebuild();
+  }
+  protected performRebuild() {
+    this.dirty = false;
+  }
+  protected firstBuild() {
+    this.rebuild();
   }
 }
 
+abstract class View extends Element {}
 
-class View {
-  private renderer: RenderView;
-  private debug: boolean = true;
-  private context: PaintingContext = new PaintingContext(new Painter());
-  setState(callback: VoidFunction) {
-    callback?.();
-    this.renderer = this.build();
-    this.render();
+export abstract class RootElement extends Element {
+  public assignOwner(owner: BuildOwner) {
+    this.owner = owner;
   }
-  build(): RenderView {
-    return new SizeRender(
-      canvas.width,
-      canvas.height,
-      new Align(
-        Alignment.center,
-        new Flex({
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.start,
-          // mainAxisAlignment:MainAxisAlignment.spaceBetween,
-          direction: Axis.vertical,
-          children: [
-            // new Expanded({
-            //   flex: 1,
-            //   child: new ColoredRender("orange", new SizeRender(10, 10)),
-            // }),
-            // new Expanded({
-            //   flex: 2,
-            //   child: new ColoredRender("red", new SizeRender(10, 10)),
-            // }),
-            new ColoredRender(
-              "white",
-              new Padding({
-                padding: {
-                  top: 10,
-                  left: 10,
-                  right: 10,
-                  bottom: 10,
-                },
-                child: new SizeRender(
-                  null,
-                  null,
-                  new ParagraphView({
-                    text: new TextSpan({
-                      text: "The @media CSS at-rule can be used to apply part of a style sheet based on the result of one or more media queries. With it, you specify a media query and a block of CSS to apply to the document if and only if the media query matches the device on which the content is being used.",
-                      textStyle: new TextStyle({
-                        color: "black",
-                        fontSize: 14,
-                        maxLines: 14,
-                        textAlign: TextAlign.justify,
-                        overflow: TextOverflow.ellipsis,
-                        wordSpacing: 0,
-                        letterSpacing: 0,
-                        fontWeight: FontWeight.bold,
-                        decoration: TextDecoration.underline,
-                        decorationStyle: TextDecorationStyle.dashed,
-                        decorationColor: "orange",
-                      }),
-                      children: [
-                        new TextSpan({
-                          text: "你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落😊",
-                          textStyle: new TextStyle({
-                            // fontSize:14,
-                            // maxLines: 5,
-                            // textAlign: TextAlign.justify,
-                            // overflow: TextOverflow.e,
-                          }),
-                        }),
-                        new TextSpan({
-                          text: "你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落😊",
-                          textStyle: new TextStyle({
-                            // fontSize:14,
-                            // maxLines: 5,
-                            // textAlign: TextAlign.justify,
-                            // overflow: TextOverflow.e,
-                          }),
-                        }),
-                      ],
-                    }),
-                  })
-                ),
-              })
-            ),
-            new ColoredRender("green", new SizeRender(10, 10)),
-            new ColoredRender("orange", new SizeRender(10, 20)),
-            new ColoredRender("red", new SizeRender(10, 30)),
-            // new Expanded({
-            //   flex: 3,
-            //   child: new ColoredRender("green", new SizeRender(10, 10)),
-            // }),
-          ],
-        })
-      )
-    );
+  public mount(parent?: Element, newSlot?: Object): void {
+    this.renderView = this.createRenderView(this);
+    this.updateChild(this.child, newSlot);
   }
-  mount() {
-    this.renderer = this.build();
+}
+export class RootElementView extends RootElement {
+  createRenderView(context: BuildContext): RenderView {
+    return new RootRenderView();
   }
-  layout() {
-    this.renderer.layout(BoxConstraints.zero);
-    console.log(this.renderer);
-  }
-  render(context: PaintingContext = this.context) {
-    if (this.debug) {
-      this.renderer.debugRender(context);
-      context.clipRectAndPaint(
-        Clip.antiAlias,
-        {
-          x: 0,
-          y: 0,
-          width: 60,
-          height: 20,
-        },
-        () => {
-          context.paint.fillStyle = "rgba(255,0,0,.3)";
-          context.paint.fillRect(0, 0, 40, 16);
-          context.paint.fillStyle = "white";
-          context.paint.fillText("Debug", 2, 12);
-        }
-      );
+  attachToRenderTree(owner: BuildOwner) {
+    if (!this.owner) {
+      this.assignOwner(owner);
+      this.mount();
+      this.owner.buildScope(this);
+      this.performRenderViewLayout();
+      this.paint(new Painter());
     } else {
-      this.renderer.render(context);
+      this.markNeedBuild();
     }
-    // this.renderer.render(context);
-    //this.renderer.debugRender(context);
   }
 }
 
-const view = new View();
-console.log(view);
-view.mount();
-view.layout();
-view.render(new PaintingContext(new Painter(g)));
+abstract class RenderViewElement extends Element {
+  public mount(parent?: Element, newSlot?: Object): void {
+    super.mount(parent, newSlot);
+    this.renderView = this.createRenderView(this);
+    this.updateChild(this.child);
+  }
+}
 
-const forge = new Painter();
-forge.fillStyle = "black";
-forge.style = PaintingStyle.fill;
+abstract class SingleView extends RenderViewElement {}
 
-const textSpan = new TextSpan({
-  text: "你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落你可以根据需要在数组中继续添加新的段落😊",
-  textStyle: new TextStyle({
-    textAlign: TextAlign.unset,
-    wordSpacing: 10,
-    fontSize: 20,
-    letterSpacing: 0,
-    fontWeight: FontWeight.bold,
-    decoration: TextDecoration.underline,
-    decorationStyle: TextDecorationStyle.dashed,
-    decorationColor: "orange",
-    maxLines: 2,
-    color: "white",
-    overflow: TextOverflow.clip,
-    // foreground: forge,
-  }),
-  children: [
-    new TextSpan({
-      text: "什么",
-    }),
-    new TextSpan({
-      text: "g.fillRect(paintX, paintY, constraints.width, Math.max(mul.height, fontSize));",
-      // textStyle: new TextStyle({
-      //   color: "red",
-      //   foreground:null,
-      //   fontSize:50,
-      //   // decoration:TextDecoration.lineThrough
-      // }),
-    }),
-  ],
-});
+class SizedBox extends SingleView {
+  private width: number;
+  private height: number;
+  constructor(width: number, height: number, child?: Element) {
+    super(child);
+    this.width = width;
+    this.height = height;
+  }
+  createRenderView(context: BuildContext): RenderView {
+    return new SizeRender(this.width, this.height);
+  }
+}
 
-// const textPainter = new TextPainter(textSpan, new Painter(g));
+class ColoredBox extends SingleView {
+  private color: string;
+  constructor(color: string, child?: View) {
+    super(child);
+    this.color = color;
+  }
+  createRenderView(context: BuildContext): RenderView {
+    return new ColoredRender(this.color);
+  }
+}
 
-// const offset=new Vector(30,30);
-// textPainter.layout(200, 200);
-// console.log("最后大小",textPainter.size)
-// g.fillStyle="#ccc";
-// g.fillRect(offset.x,offset.y,textPainter.size.width,textPainter.size.height);
-// textPainter.paint(new Painter(g), offset);
+interface SingleViewOption {
+  child?: View;
+}
+
+class Padding extends SingleView {
+  private option: Partial<PaddingOption & SingleViewOption>;
+  constructor(option: Partial<PaddingOption & SingleViewOption>) {
+    super(option?.child);
+    this.option = option;
+  }
+  createRenderView(context: BuildContext): RenderView {
+    return new PaddingRenderView(this.option);
+  }
+}
+
+abstract class BuildElement extends SingleView {
+  constructor() {
+    super();
+  }
+  abstract build(context: BuildContext): Element;
+  createRenderView(context: BuildContext): RenderView {
+    return new RootRenderView();
+  }
+  public mount(parent?: Element, newSlot?: Object): void {
+    super.mount(parent, newSlot);
+    this.firstBuild();
+  }
+}
+
+abstract class BuildLessView extends BuildElement {
+  constructor() {
+    super();
+    this.child = this.build(this);
+  }
+}
+
+abstract class StatelessView extends BuildLessView {}
+
+abstract class StatefulView extends BuildElement {
+  private state: State;
+  constructor() {
+    super();
+    this.state = this.createState();
+  }
+  abstract createState(): State;
+  public mount(parent?: Element, newSlot?: Object): void {
+    this.state = this.createState();
+    this.state.element = this;
+    super.mount(parent, newSlot);
+  }
+  protected firstBuild() {
+    this.state.initState();
+    super.firstBuild();
+  }
+  protected performRebuild(): void {
+    super.performRebuild();
+    const built = this.build();
+    this.updateChild(built);
+  }
+  build(): Element {
+    return this.state.build(this);
+  }
+}
+
+abstract class State<T extends RenderViewElement = RenderViewElement> {
+  private _element: Element;
+  get element(): Element {
+    return this._element;
+  }
+  set element(element: Element) {
+    this._element = element;
+  }
+  abstract build(context: BuildContext): T;
+  initState() {}
+  protected setState(fn: VoidFunction): void {
+    fn();
+    this.element.markNeedBuild();
+  }
+}
+
+class TestView extends StatefulView {
+  createState(): State {
+    return new TestViewState();
+  }
+}
+
+class Less extends StatelessView {
+  constructor() {
+    super();
+  }
+  build(context: BuildContext): Element {
+    return new Padding({
+      padding: {
+        top: 10,
+        bottom: 10,
+        left: 10,
+        right: 10,
+      },
+      child: new ColoredBox("#ccc", new SizedBox(100, 100)),
+    });
+  }
+}
+
+class TestViewState extends State {
+  private color: string = "orange";
+  initState(): void {
+    this.color = "#999";
+    // setTimeout(() => {
+    //   console.log("刷新");
+    //   this.setState(() => {
+    //     this.color = "black";
+    //   });
+    // }, 100);
+  }
+  build(context: BuildContext): RenderViewElement {
+    return new ColoredBox(this.color, new SizedBox(300, 300, new Less()));
+  }
+}
+
+const view = new TestView();
+
+const runApp = (rootElement: Element) => {
+  const binding = Binding.getInstance();
+  binding.elementBinding.attachRootWidget(rootElement);
+};
+
+runApp(view);
+
+// abstract class StateFulRender extends Element {
+//   private renderer: RenderView;
+//   private paintingContext: PaintingContext;
+//   private state: State;
+//   constructor() {
+//     super();
+//     this.state = this.createState();
+//   }
+//   get mounted(): boolean {
+//     return this.renderer != null;
+//   }
+//   get buildContext(): BuildContext {
+//     return this;
+//   }
+//   render(context: PaintingContext, offset?: Vector): void {
+//     if (!this.paintingContext) {
+//       this.paintingContext = context;
+//     }
+//     this.renderer.render(context, offset);
+//   }
+//   debugRender(context: PaintingContext, offset?: Vector): void {
+//     if (!this.paintingContext) {
+//       this.paintingContext = context;
+//     }
+//     this.renderer.debugRender(context, offset);
+//   }
+//   performLayout(constraints: BoxConstraints, parentUseSize?: boolean): void {
+//     this.renderer.layout(constraints, parentUseSize);
+//   }
+//   applyInitState(state: State) {
+//     state.initState();
+//   }
+//   mount(parent?: Element, newSlot?: Object): void {
+//     this.state = this.createState();
+//     super.mount(parent, newSlot);
+//   }
+//   build(context: BuildContext): Element {
+//     return this.build(this);
+//   }
+//   createRenderView(): RenderView {
+//     throw new Error("Method not implemented.");
+//   }
+//   protected firstBuild() {
+//     this.applyInitState(this.state);
+//     super.firstBuild();
+//   }
+//   protected performReBuild() {
+//     this.renderer = this.state.build(this);
+//     super.performReBuild();
+//   }
+//   protected abstract createState(): State;
+// }
+
+// class TestView extends StateFulRender {
+//   constructor() {
+//     super();
+//   }
+//   protected createState(): State<StateFulRender> {
+//     return new TestViewState();
+//   }
+// }
+// class TestViewState extends State<StateFulRender> {
+//   private count: number = 0;
+
+//   build(context: BuildContext): RenderView {
+//     this.setState(() => {});
+
+//     return
+//   }
+// }
+
+// class View extends Element {
+//   private renderer: RenderView;
+//   private debug: boolean = true;
+//   private context: PaintingContext = new PaintingContext(new Painter());
+//   constructor() {
+//     super();
+//   }
+//   layout() {
+//     this.renderer.layout(BoxConstraints.zero);
+//   }
+//   createRenderView(): RenderView {
+//     throw new Error("Method not implemented.");
+//   }
+//   build(context: BuildContext): Element {
+//     throw new Error("Method not implemented.");
+//   }
+
+//   render(context: PaintingContext = this.context) {
+//     if (this.debug) {
+//       this.renderer.debugRender(context);
+//       context.clipRectAndPaint(
+//         Clip.antiAlias,
+//         {
+//           x: 0,
+//           y: 0,
+//           width: 60,
+//           height: 20,
+//         },
+//         () => {
+//           context.paint.fillStyle = "rgba(255,0,0,.3)";
+//           context.paint.fillRect(0, 0, 40, 16);
+//           context.paint.fillStyle = "white";
+//           context.paint.fillText("Debug", 2, 12);
+//         }
+//       );
+//     } else {
+//       this.renderer.render(context);
+//     }
+//     // this.renderer.render(context);
+//     //this.renderer.debugRender(context);
+//   }
+// }
+
+// // const view = new View();
+// // console.log(view);
+// // view.mount();
+// // view.layout();
+// // view.render(new PaintingContext(new Painter(g)));
