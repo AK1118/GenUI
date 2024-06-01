@@ -101,7 +101,7 @@ import {
   TextSpan,
   TextStyle,
 } from "./widgets/text-painter";
-import { Binding } from "./widgets/binding";
+import { Binding, PipelineOwner, RendererBinding } from "./widgets/binding";
 
 /**
  * 假如全屏 360，    分成750份
@@ -289,12 +289,13 @@ export abstract class RootElement extends Element {
   }
   public mount(parent?: Element, newSlot?: Object): void {
     this.renderView = this.createRenderView(this);
+    this.attachPipelineOwner(RendererBinding.instance.pipelineOwner);
     this.updateChild(this.child, newSlot);
   }
-}
-export class RootElementView extends RootElement {
-  createRenderView(context: BuildContext): RenderView {
-    return new RootRenderView();
+  attachPipelineOwner(owner: PipelineOwner) {
+    if (this.renderView) {
+      this.renderView.attach(owner);
+    }
   }
   attachToRenderTree(owner: BuildOwner) {
     if (!this.owner) {
@@ -306,6 +307,11 @@ export class RootElementView extends RootElement {
     } else {
       this.markNeedBuild();
     }
+  }
+}
+export class RootElementView extends RootElement {
+  createRenderView(context: BuildContext): RenderView {
+    return new RootRenderView();
   }
 }
 
@@ -458,7 +464,7 @@ class TestViewState extends State {
     // }, 100);
   }
   build(context: BuildContext): RenderViewElement {
-    return new ColoredBox(this.color, new SizedBox(300, 300, new Less()));
+    return new ColoredBox(this.color, new SizedBox(300, 300));
   }
 }
 
@@ -467,6 +473,8 @@ const view = new TestView();
 const runApp = (rootElement: Element) => {
   const binding = Binding.getInstance();
   binding.elementBinding.attachRootWidget(rootElement);
+  console.log(rootElement);
+  // RendererBinding.instance.drawFrame();
 };
 
 runApp(view);

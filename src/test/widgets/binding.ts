@@ -1,5 +1,7 @@
+import RenderBox from "@/core/lib/rendering/renderbox";
 import { BuildOwner, Element, RootElement, RootElementView } from "../index";
-import { AbstractNode, RenderView } from "./basic";
+import { AbstractNode, PaintingContext, RenderView } from "./basic";
+import Painter from "@/core/lib/painter";
 
 abstract class BindingBase {
   constructor() {
@@ -30,20 +32,44 @@ class SchedulerBinding extends BindingBase {
   }
 }
 
-class PipelineOwner {
+export class PipelineOwner {
   private rootNode: AbstractNode;
+  private needRepaintList: Array<RenderView> = new Array<RenderView>();
+  private needReLayoutList: Array<RenderView> = new Array<RenderView>();
   attachNode(rootNode: AbstractNode) {
     this.rootNode = rootNode;
   }
-  flushPaint() {}
-  flushLayout() {}
+  flushPaint() {
+    const nodes = this.needReLayoutList;
+    this.needReLayoutList = [];
+    nodes.forEach((_) => {
+      _?.render(new PaintingContext(new Painter()));
+    });
+  }
+  flushLayout() {
+    const nodes = this.needReLayoutList;
+    this.needReLayoutList = [];
+    nodes.forEach((_) => {
+      _?.performLayout();
+    });
+  }
+  pushNeedingPaint(node: RenderView) {
+    this.needRepaintList.push(node);
+  }
+  pushNeedingLayout(node: RenderView) {
+    this.needReLayoutList.push(node);
+  }
 }
 
-class RendererBinding extends BindingBase {
-  private pipelineOwner: PipelineOwner;
+export class RendererBinding extends BindingBase {
+  private _pipelineOwner: PipelineOwner;
   public static instance: RendererBinding;
   protected initInstance(): void {
     RendererBinding.instance = this;
+    this._pipelineOwner = new PipelineOwner();
+  }
+  get pipelineOwner(): PipelineOwner {
+    return this._pipelineOwner;
   }
   drawFrame() {
     this.pipelineOwner.flushLayout();
@@ -66,8 +92,8 @@ class ElementBinding extends BindingBase {
   attachRootWidget(rootElement: Element) {
     this.rootElement = rootElement;
     this.buildOwner = new BuildOwner();
-    const root = new RootElementView(rootElement);
-    root.attachToRenderTree(this.buildOwner);
+    const wrappedView = new RootElementView(rootElement);
+    wrappedView.attachToRenderTree(this.buildOwner);
   }
   scheduleAttachRootWidget(root: Element) {
     this.attachRootWidget(root);

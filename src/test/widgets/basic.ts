@@ -18,6 +18,7 @@ import {
   StackOption,
 } from "@/types/widget";
 import { TextOverflow, TextPainter, TextSpan } from "./text-painter";
+import { PipelineOwner } from "./binding";
 
 export enum Clip {
   none,
@@ -96,7 +97,11 @@ export class FlexParentData extends ContainerRenderViewParentData<RenderView> {
 }
 
 export abstract class AbstractNode {
+  private _owner: Object;
   private _parent: AbstractNode;
+  get owner() {
+    return this._owner;
+  }
   get parent() {
     return this._parent;
   }
@@ -106,10 +111,27 @@ export abstract class AbstractNode {
   protected dropChild(child: AbstractNode) {
     if (!child) return;
     child!.parent = null;
+    if (this.owner) {
+      child?.detach();
+    }
   }
   protected adoptChild(child: AbstractNode) {
     if (!child) return;
     child!.parent = this;
+    if (this.owner) {
+      child?.attach(this.owner);
+    }
+  }
+  get attached(): boolean {
+    return !!this.owner;
+  }
+  attach(owner: Object) {
+    if (this._owner) return;
+    this._owner = owner;
+  }
+  detach() {
+    if (!this.owner) return;
+    this._owner = null;
   }
 }
 
@@ -134,15 +156,13 @@ export abstract class RenderView extends AbstractNode {
   abstract debugRender(context: PaintingContext, offset?: Vector): void;
   //默认大小等于子大小，被子撑开
   abstract layout(constraints: BoxConstraints, parentUseSize?: boolean): void;
-  abstract performLayout(
-    constraints: BoxConstraints,
-    parentUseSize?: boolean
-  ): void;
+  abstract performLayout(): void;
   protected dropChild(child: AbstractNode): void {
     super.dropChild(child);
   }
   protected adoptChild(child: AbstractNode): void {
     if (!child) return;
+    console.log("插入",this,child)
     this.setupParentData(child as RenderView);
     super.adoptChild(child);
   }
@@ -164,10 +184,27 @@ export abstract class RenderView extends AbstractNode {
       child.parentData = new ParentData();
     }
   }
-  protected markNeedRepaint() {}
+  protected markNeedsPaint() {
+    if (!this.owner) return;
+    const owner: PipelineOwner = this.owner as PipelineOwner;
+    owner.pushNeedingPaint(this);
+  }
+  protected markNeedsLayout() {
+    if (!this.owner) return;
+    const owner: PipelineOwner = this.owner as PipelineOwner;
+    owner.pushNeedingLayout(this);
+  }
+  public layoutWithoutResize() {
+    this.performLayout();
+    this.markNeedsPaint();
+  }
 }
 
 abstract class RenderBox extends RenderView {
+  protected constraints: BoxConstraints = BoxConstraints.zero;
+  layout(constraints: BoxConstraints, parentUseSize?: boolean): void {
+    this.constraints = constraints;
+  }
   protected setupParentData(child: RenderView): void {
     child.parentData = new BoxParentData();
   }
@@ -176,7 +213,7 @@ abstract class RenderBox extends RenderView {
 //parentData设置
 export abstract class ParentDataRenderView<
   P extends ParentData
-> extends RenderView {
+> extends RenderBox {
   public parentData: P;
   constructor(child?: RenderBox) {
     super();
@@ -184,15 +221,16 @@ export abstract class ParentDataRenderView<
   }
   abstract applyParentData(renderObject: RenderView): void;
   layout(constraints: BoxConstraints, parentUseSize?: boolean): void {
+    super.layout(constraints, parentUseSize);
     if (this.child) {
       this.child.layout(constraints, parentUseSize);
       this.size = (this.child as unknown as SingleChildRenderView).size;
     } else {
       this.size = constraints.constrain(Size.zero);
     }
-    this.performLayout(constraints, parentUseSize);
+    this.performLayout();
   }
-  performLayout(constraints: BoxConstraints, parentUseSize?: boolean): void {}
+  performLayout(): void {}
   render(context: PaintingContext, offset?: Vector) {
     context.paintChild(this.child!, offset);
   }
@@ -202,7 +240,6 @@ export abstract class ParentDataRenderView<
 }
 
 export abstract class SingleChildRenderView extends RenderBox {
-  protected constrain: BoxConstraints = BoxConstraints.zero;
   constructor(child?: RenderBox) {
     super();
     this.child = child;
@@ -223,15 +260,16 @@ export abstract class SingleChildRenderView extends RenderBox {
   }
   //默认大小等于子大小，被子撑开
   layout(constraints: BoxConstraints, parentUseSize?: boolean): void {
+    super.layout(constraints, parentUseSize);
     if (this.child) {
       this.child.layout(constraints, parentUseSize);
       this.size = (this.child as unknown as SingleChildRenderView).size;
     } else {
       this.size = constraints.constrain(Size.zero);
     }
-    this.performLayout(constraints, parentUseSize);
+    this.performLayout();
   }
-  performLayout(constraints: BoxConstraints, parentUseSize?: boolean): void {}
+  performLayout(): void {}
 }
 
 export class ColoredRender extends SingleChildRenderView {
@@ -240,7 +278,7 @@ export class ColoredRender extends SingleChildRenderView {
     super(child);
     this.color = color;
   }
-  performLayout(constraints: BoxConstraints, parentUseSize?: boolean): void {
+  performLayout(): void {
     if (!this.child) {
       this.size = Size.zero;
     }
@@ -276,13 +314,16 @@ export class SizeRender extends SingleChildRenderView {
       minHeight: height,
     });
   }
-  performLayout(constraints: BoxConstraints, parentUseSize?: boolean): void {
+  performLayout(): void {
     if (this.child) {
-      this.child.layout(this.additionalConstraints.enforce(constraints), true);
+      this.child.layout(
+        this.additionalConstraints.enforce(this.constraints),
+        true
+      );
       this.size = this.child.size;
     } else {
       this.size = this.additionalConstraints
-        .enforce(constraints)
+        .enforce(this.constraints)
         .constrain(Size.zero);
     }
   }
@@ -309,26 +350,20 @@ export class PaddingRenderView extends SingleChildRenderView {
     super(option?.child);
     this.padding = option?.padding;
   }
-  performLayout(constraints: BoxConstraints, parentUseSize?: boolean): void {
+
+  performLayout(): void {
     const horizontal = (this.padding?.left || 0) + (this.padding?.right || 0);
     const vertical = (this.padding?.top || 0) + (this.padding?.bottom || 0);
-
     if (!this.child) {
-      if (parentUseSize) {
-        this.size = new Size(
-          Math.max(constraints.maxWidth, horizontal),
-          vertical
-        ); //constraints.constrain());
-      } else {
-        this.size = new Size(horizontal, vertical);
-      }
+      this.size = new Size(
+        Math.max(this.constraints.maxWidth, horizontal),
+        vertical
+      );
       return;
     }
-
-    const innerConstraint: BoxConstraints = constraints.deflate(
+    const innerConstraint: BoxConstraints = this.constraints.deflate(
       new Vector(horizontal, vertical)
     );
-
     const childParent: BoxParentData = this.child.parentData as BoxParentData;
     this.child.layout(innerConstraint, true);
 
@@ -337,14 +372,12 @@ export class PaddingRenderView extends SingleChildRenderView {
       this.padding?.top || 0
     );
 
-    this.size = constraints.constrain(
+    this.size = this.constraints.constrain(
       new Size(
         horizontal + this.child.size.width,
         vertical + this.child.size.height
       )
     );
-
-    console.log("约束传入", constraints, this.size, this.child);
   }
 }
 
@@ -355,8 +388,8 @@ export class Align extends SingleChildRenderView {
     super(child);
     this.alignment = alignment;
   }
-  performLayout(constraints: BoxConstraints): void {
-    const parentSize = constraints.constrain(Size.zero);
+  performLayout(): void {
+    const parentSize = this.constraints.constrain(Size.zero);
     this.offset = this.alignment.inscribe(this.size, parentSize);
     this.offset.clamp([this.offset.x, 0]);
   }
@@ -526,15 +559,16 @@ export abstract class MultiChildRenderView extends RenderBox {
     this.defaultRenderChildDebug(context, offset);
   }
   layout(constraints: BoxConstraints): void {
-    this.performLayout(constraints);
+    super.layout(constraints);
+    this.performLayout();
   }
-  performLayout(constraints: BoxConstraints): void {
-    this.size = constraints.constrain(Size.zero);
+  performLayout(): void {
+    this.size = this.constraints.constrain(Size.zero);
     let child = this.firstChild;
     while (child != null) {
       const parentData =
         child.parentData as ContainerRenderViewParentData<RenderView>;
-      this.performLayoutChild(child, constraints);
+      this.performLayoutChild(child, this.constraints);
       child = parentData?.nextSibling;
     }
   }
@@ -607,15 +641,15 @@ export class Flex extends MultiChildRenderView {
     this.mainAxisAlignment = mainAxisAlignment ?? this.mainAxisAlignment;
     this.crossAxisAlignment = crossAxisAlignment ?? this.crossAxisAlignment;
   }
-  performLayout(constraints: BoxConstraints): void {
-    const computeSize: LayoutSizes = this.computeSize(constraints);
+  performLayout(): void {
+    const computeSize: LayoutSizes = this.computeSize(this.constraints);
     console.log(computeSize);
     if (this.direction === Axis.horizontal) {
-      this.size = constraints.constrain(
+      this.size = this.constraints.constrain(
         new Size(computeSize.mainSize, computeSize.crossSize)
       );
     } else if (this.direction === Axis.vertical) {
-      this.size = constraints.constrain(
+      this.size = this.constraints.constrain(
         new Size(computeSize.crossSize, computeSize.mainSize)
       );
     }
@@ -907,8 +941,8 @@ export class Stack extends MultiChildRenderView {
    * 未定位的组件随align 对其布局
    *
    */
-  performLayout(constraints: BoxConstraints): void {
-    this.size = this.computeSize(constraints);
+  performLayout(): void {
+    this.size = this.computeSize(this.constraints);
     let child = this.firstChild;
     while (child != null) {
       const parentData = child.parentData as StackParentData;
@@ -1044,11 +1078,14 @@ export class ParagraphView extends SingleChildRenderView {
     const { text } = option;
     this.text = text;
   }
-  performLayout(constraints: BoxConstraints, parentUseSize?: boolean): void {
+  performLayout(): void {
     this.textPainter = new TextPainter(this.text);
-    this.textPainter.layout(constraints.minWidth, constraints.maxWidth);
+    this.textPainter.layout(
+      this.constraints.minWidth,
+      this.constraints.maxWidth
+    );
     const textSize = this.textPainter.size;
-    this.size = constraints.constrain(textSize);
+    this.size = this.constraints.constrain(textSize);
 
     switch (this.text.style.getTextStyle().overflow) {
       case TextOverflow.clip:
