@@ -95,7 +95,7 @@ export class BoxParentData extends ParentData {
 }
 
 export class ContainerRenderViewParentData<
-  ChildType extends RenderView
+  ChildType extends RenderView = RenderView
 > extends BoxParentData {
   previousSibling?: ChildType;
   nextSibling?: ChildType;
@@ -250,7 +250,7 @@ export abstract class RenderView extends AbstractNode {
   }
   paintWidthContext(context: PaintingContext, offset?: Vector): void {
     if (!this.needsRePaint) return;
-    this.render(context, offset);
+    context.paintChild(this, offset);
     this.needsRePaint = false;
   }
 }
@@ -311,7 +311,6 @@ export abstract class SingleChildRenderView extends RenderBox {
     const parentData: BoxParentData = this.child?.parentData as BoxParentData;
     let resultOffset: Vector = offset;
     if (offset && parentData) {
-      console.log("偏移",offset);
       // resultOffset.setXY(
       //   parentData.offset.x + offset.x,
       //   parentData.offset.y + offset.y
@@ -333,7 +332,17 @@ export abstract class SingleChildRenderView extends RenderBox {
     }
     const parentData = this
       .parentData as ContainerRenderViewParentData<RenderView>;
-    this.layerHandler.layer.offset = parentData?.offset || Vector.zero;
+    if (parentData) {
+      const offset = parentData.offset;
+      this.layerHandler.layer.offset = parentData?.offset || Vector.zero;
+      // if (this.child) {
+      //   const childOffset=Vector.zero;
+      //   const childParentData = this.child
+      //     ?.parentData as ContainerRenderViewParentData<RenderView>;
+      //   childParentData.offset.add(offset);
+      //   this.child.parentData = childParentData;
+      // }
+    }
   }
   layout(constraints: BoxConstraints, parentUseSize?: boolean): void {
     super.layout(constraints, parentUseSize);
@@ -607,9 +616,10 @@ export class PaintingContext extends ClipContext {
     child?.debugRender(this, offset);
   }
   paintChild(child: RenderView, offset: Vector = Vector.zero): void {
-    if (child?.needsRePaint) {
-      child?.render(this, offset);
-    }
+    // if (child?.needsRePaint) {
+    //   child?.render(this, offset);
+    // }
+    child?.render(this, offset);
   }
 }
 

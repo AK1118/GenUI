@@ -56,12 +56,12 @@ export class PipelineOwner {
     });
     nodes.forEach((_) => {
       const layer = _.layerHandler?.layer;
-      let lastOffset:Vector=Vector.zero;
-      if (_.needsRePaint)
+      if (_.needsRePaint) {
         _?.paintWidthContext(
           new PaintingContext(new Painter()),
           layer?.offset || Vector.zero
         );
+      }
     });
   }
   flushLayout() {

@@ -625,7 +625,7 @@ class TestViewState extends State {
                 right: 10,
               },
               child: new ColoredBox(
-                "#ccc",
+                "orange",
                 new ColoredBox(
                   this.color,
                   new Padding({
