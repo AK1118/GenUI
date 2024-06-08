@@ -205,8 +205,10 @@ let debugCount = 0;
 export class BuildOwner {
   private dirtyElementList: Array<Element> = [];
   public scheduleBuildFor(dirtyElement: Element) {
-    this.dirtyElementList.push(dirtyElement);
-    SchedulerBinding.instance.ensureVisualUpdate();
+    if (dirtyElement.lifecycle === ElementLifecycle.active) {
+      this.dirtyElementList.push(dirtyElement);
+      SchedulerBinding.instance.ensureVisualUpdate();
+    }
   }
   public buildScope(context: BuildContext) {
     this.dirtyElementList.sort(Element.sort);
@@ -229,9 +231,21 @@ abstract class BuildContext {
   abstract get view(): RenderView;
   abstract get size(): Size;
 }
+// ELEMENTS
 
+enum ElementLifecycle {
+  //元素的初始状态。此状态表示元素刚刚被创建，尚未激活或参与任何活动。
+  initial,
+  //元素处于活动状态，可以正常运行和响应各种事件或操作。
+  active,
+  //元素处于非活动状态，可能由于暂时不需要而被暂停。
+  inactive,
+  //元素已失效，不再使用。此状态表示元素已经完成了其生命周期，应该被清理或销毁。
+  defunct,
+}
 export abstract class Element extends BuildContext {
   public key: string = Math.random().toString(16).substring(3);
+  public lifecycle: ElementLifecycle = ElementLifecycle.initial;
   public dirty: boolean = true;
   protected parent: Element;
   protected child: Element = null;
@@ -260,6 +274,7 @@ export abstract class Element extends BuildContext {
     this.parent = parent;
     this.owner = parent?.owner;
     this.depth = parent?.depth + 1;
+    this.lifecycle = ElementLifecycle.active;
   }
   abstract createRenderView(context: BuildContext): RenderView;
   public static sort(a: Element, b: Element) {
@@ -359,8 +374,6 @@ export abstract class RootElement extends Element {
       this.mount();
       this.renderView.reassemble();
       this.owner.buildScope(this);
-      // this.performRenderViewLayout();
-      // this.paint(new Painter());
     } else {
       this.markNeedsBuild();
     }
@@ -530,7 +543,18 @@ class Less extends StatelessView {
     super();
   }
   build(context: BuildContext): Element {
-    return new ColoredBox("#ccc", new SizedBox(100, 100))
+    return new ColoredBox(
+      "white",
+      new Padding({
+        padding: {
+          top: 90,
+          left: 10,
+          bottom: 10,
+          right: 10,
+        },
+        child: new ColoredBox("#ccc", new SizedBox(30, 30)),
+      })
+    );
   }
 }
 
@@ -546,6 +570,7 @@ class TestViewState extends State {
   initState(): void {
     this.color = "white";
     // setInterval(() => {
+    //   g.clearRect(0, 0, 1000, 1000);
     //   this.setState(() => {
     //     this.color = this.getRandomColor();
     //     this.size.setWidth(this.size.width + this.delta);
@@ -566,13 +591,12 @@ class TestViewState extends State {
   }
 
   handleAnimate() {
-    if (this.size.width > 300 || this.size.width <= 0) {
+    if (this.size.width > window.innerWidth || this.size.width <= 0) {
       this.delta *= -1;
     }
     requestAnimationFrame(() => {
-      g.clearRect(0, 0, 300, 300);
+      g.clearRect(0, 0, 1000, 1000);
       this.setState(() => {
-        this.color = "orange";
         this.size.setWidth(this.size.width + this.delta);
         this.size.setHeight(this.size.height + this.delta);
       });
@@ -582,7 +606,46 @@ class TestViewState extends State {
   build(context: BuildContext): RenderViewElement {
     return new ColoredBox(
       this.color,
-      new SizedBox(this.size.width, this.size.height,new Less()),
+      new Padding({
+        padding: {
+          top: 10,
+          left: 10,
+          bottom: 10,
+          right: 10,
+        },
+        child: new ColoredBox(
+          "#ccc",
+          new ColoredBox(
+            this.color,
+            new Padding({
+              padding: {
+                top: 10,
+                left: 10,
+                bottom: 10,
+                right: 10,
+              },
+              child: new ColoredBox(
+                "#ccc",
+                new ColoredBox(
+                  this.color,
+                  new Padding({
+                    padding: {
+                      top: 10,
+                      left: 10,
+                      bottom: 10,
+                      right: 10,
+                    },
+                    child: new ColoredBox(
+                      "#ccc",
+                      new SizedBox(this.size.width, this.size.height)
+                    ),
+                  })
+                )
+              ),
+            })
+          )
+        ),
+      })
     );
   }
 }

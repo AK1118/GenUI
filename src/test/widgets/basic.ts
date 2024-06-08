@@ -166,6 +166,8 @@ export abstract class RenderView extends AbstractNode {
   private _firstChild?: RenderView;
   public parentData: ParentData = null;
   public _size: Size = Size.zero;
+  public needsRePaint: boolean = false;
+  public needsReLayout: boolean = false;
   get size(): Size {
     return this._size;
   }
@@ -213,16 +215,19 @@ export abstract class RenderView extends AbstractNode {
   protected markNeedsPaint() {
     if (!this.owner) return;
     const owner: PipelineOwner = this.owner as PipelineOwner;
+    this.needsRePaint = true;
     owner.pushNeedingPaint(this);
     owner.requestVisualUpdate();
   }
   protected markNeedsLayout() {
-    if (!this.owner) return;
+    if (!this.owner || this.needsReLayout) return;
     const owner: PipelineOwner = this.owner as PipelineOwner;
+    this.needsReLayout = true;
     owner.pushNeedingLayout(this);
   }
   public layoutWithoutResize() {
     this.performLayout();
+    this.needsReLayout = false;
     this.markNeedsLayout();
   }
   public reassemble() {
@@ -242,6 +247,11 @@ export abstract class RenderView extends AbstractNode {
       visitor(child);
       child = parentData?.nextSibling;
     }
+  }
+  paintWidthContext(context: PaintingContext, offset?: Vector): void {
+    if (!this.needsRePaint) return;
+    this.render(context, offset);
+    this.needsRePaint = false;
   }
 }
 
@@ -299,8 +309,14 @@ export abstract class SingleChildRenderView extends RenderBox {
   }
   render(context: PaintingContext, offset?: Vector) {
     const parentData: BoxParentData = this.child?.parentData as BoxParentData;
+    let resultOffset: Vector = offset;
     if (offset && parentData) {
-      offset.add(parentData.offset);
+      console.log("偏移",offset);
+      // resultOffset.setXY(
+      //   parentData.offset.x + offset.x,
+      //   parentData.offset.y + offset.y
+      // );
+      //  offset.add(parentData.offset);
     }
     context.paintChild(this.child!, offset);
   }
@@ -376,11 +392,13 @@ export class SizeRender extends SingleChildRenderView {
     this._width = width;
     this.performUpdateAdditional(width, this.height);
     this.markNeedsLayout();
+    this.markNeedsPaint();
   }
   set height(height: number) {
     this._height = height;
     this.performUpdateAdditional(this.width, height);
     this.markNeedsLayout();
+    this.markNeedsPaint();
   }
   get width(): number {
     return this._width;
@@ -589,7 +607,9 @@ export class PaintingContext extends ClipContext {
     child?.debugRender(this, offset);
   }
   paintChild(child: RenderView, offset: Vector = Vector.zero): void {
-    child?.render(this, offset);
+    if (child?.needsRePaint) {
+      child?.render(this, offset);
+    }
   }
 }
 
