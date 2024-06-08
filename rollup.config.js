@@ -35,7 +35,7 @@ const plugins = [
 
 const config = [
   {
-    input: "./src/index.ts",
+    input: "./src/test/index.ts",
     output: [
       {
         file: "./dist/index.amd.js",

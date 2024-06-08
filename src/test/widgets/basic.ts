@@ -75,6 +75,18 @@ export enum TextDirection {
   /// The text flows from left to right (e.g., English, French).
   ltr,
 }
+
+class Layer {}
+class OffsetLayer {
+  constructor(offset: Vector) {
+    this.offset = offset;
+  }
+  offset: Vector;
+}
+class LayerHandler<T extends Layer> {
+  layer: T;
+}
+
 // 存储父节点的某些数据
 class ParentData {}
 
@@ -97,8 +109,10 @@ export class FlexParentData extends ContainerRenderViewParentData<RenderView> {
 }
 
 export abstract class AbstractNode {
+  public key: string = Math.random().toString(16).substring(3);
   private _owner: Object;
   private _parent: AbstractNode;
+  private _depth: number = 0;
   get owner() {
     return this._owner;
   }
@@ -108,6 +122,15 @@ export abstract class AbstractNode {
   set parent(value: AbstractNode) {
     this._parent = value;
   }
+  get depth(): number {
+    return this._depth;
+  }
+  protected reDepthChild(child: AbstractNode) {
+    if (!child) return;
+    this._depth = child?.depth + 1;
+    child?.reDepthChildren?.();
+  }
+  protected reDepthChildren() {}
   protected dropChild(child: AbstractNode) {
     if (!child) return;
     child!.parent = null;
@@ -121,6 +144,7 @@ export abstract class AbstractNode {
     if (this.owner) {
       child?.attach(this.owner);
     }
+    this.reDepthChild(child);
   }
   get attached(): boolean {
     return !!this.owner;
@@ -134,10 +158,12 @@ export abstract class AbstractNode {
     this._owner = null;
   }
 }
-
+type ChildVisitorCallback = (child: RenderView) => void;
 //原子渲染对象，可以有层级渲染，没有renderbox，依赖于context传输的大小来渲染
 export abstract class RenderView extends AbstractNode {
+  public layerHandler: LayerHandler<OffsetLayer>;
   private _child?: RenderView;
+  private _firstChild?: RenderView;
   public parentData: ParentData = null;
   public _size: Size = Size.zero;
   get size(): Size {
@@ -162,7 +188,6 @@ export abstract class RenderView extends AbstractNode {
   }
   protected adoptChild(child: AbstractNode): void {
     if (!child) return;
-    console.log("插入",this,child)
     this.setupParentData(child as RenderView);
     super.adoptChild(child);
   }
@@ -173,6 +198,7 @@ export abstract class RenderView extends AbstractNode {
     this.dropChild(value);
     this._child = value;
     this.adoptChild(value);
+    this._firstChild = this._child;
   }
   /**
    * 为child设置parentData类型，子类可重写该方法便于自定义。
@@ -188,6 +214,7 @@ export abstract class RenderView extends AbstractNode {
     if (!this.owner) return;
     const owner: PipelineOwner = this.owner as PipelineOwner;
     owner.pushNeedingPaint(this);
+    owner.requestVisualUpdate();
   }
   protected markNeedsLayout() {
     if (!this.owner) return;
@@ -196,7 +223,25 @@ export abstract class RenderView extends AbstractNode {
   }
   public layoutWithoutResize() {
     this.performLayout();
+    this.markNeedsLayout();
+  }
+  public reassemble() {
+    this.markNeedsLayout();
     this.markNeedsPaint();
+    this.visitChildren((child) => {
+      if (child) {
+        child.reassemble();
+      }
+    });
+  }
+  visitChildren(visitor: ChildVisitorCallback) {
+    let child = this._firstChild;
+    while (child) {
+      const parentData =
+        child?.parentData as ContainerRenderViewParentData<RenderView>;
+      visitor(child);
+      child = parentData?.nextSibling;
+    }
   }
 }
 
@@ -204,6 +249,7 @@ abstract class RenderBox extends RenderView {
   protected constraints: BoxConstraints = BoxConstraints.zero;
   layout(constraints: BoxConstraints, parentUseSize?: boolean): void {
     this.constraints = constraints;
+    this.performLayout();
   }
   protected setupParentData(child: RenderView): void {
     child.parentData = new BoxParentData();
@@ -258,27 +304,41 @@ export abstract class SingleChildRenderView extends RenderBox {
     }
     context.paintChild(this.child!, offset);
   }
-  //默认大小等于子大小，被子撑开
-  layout(constraints: BoxConstraints, parentUseSize?: boolean): void {
-    super.layout(constraints, parentUseSize);
+  performLayout(): void {
     if (this.child) {
-      this.child.layout(constraints, parentUseSize);
+      this.child.layout(this.constraints, true);
       this.size = (this.child as unknown as SingleChildRenderView).size;
     } else {
-      this.size = constraints.constrain(Size.zero);
+      this.size = this.constraints.constrain(Size.zero);
     }
-    this.performLayout();
+    if (!this.layerHandler) {
+      this.layerHandler = new LayerHandler<OffsetLayer>();
+      this.layerHandler.layer = new OffsetLayer(Vector.zero);
+    }
+    const parentData = this
+      .parentData as ContainerRenderViewParentData<RenderView>;
+    this.layerHandler.layer.offset = parentData?.offset || Vector.zero;
   }
-  performLayout(): void {}
+  layout(constraints: BoxConstraints, parentUseSize?: boolean): void {
+    super.layout(constraints, parentUseSize);
+  }
 }
 
 export class ColoredRender extends SingleChildRenderView {
-  private color: string;
+  public _color: string;
   constructor(color?: string, child?: RenderBox) {
     super(child);
     this.color = color;
   }
+  set color(color: string) {
+    this._color = color;
+    this.markNeedsPaint();
+  }
+  get color(): string {
+    return this._color;
+  }
   performLayout(): void {
+    super.performLayout();
     if (!this.child) {
       this.size = Size.zero;
     }
@@ -288,7 +348,6 @@ export class ColoredRender extends SingleChildRenderView {
   }
   render(context: PaintingContext, offset?: Vector): void {
     const paint = context.paint;
-    const parentData: BoxParentData = this.parentData as BoxParentData;
     paint.beginPath();
     paint.fillStyle = this.color;
     paint.fillRect(
@@ -304,9 +363,35 @@ export class ColoredRender extends SingleChildRenderView {
 
 //尺寸约束 不负责渲染
 export class SizeRender extends SingleChildRenderView {
+  public _width: number;
+  public _height: number;
   private additionalConstraints: BoxConstraints;
   constructor(width: number, height: number, child?: RenderBox) {
     super(child);
+    this.width = width;
+    this.height = height;
+    this.performUpdateAdditional(width, height);
+  }
+  set width(width: number) {
+    this._width = width;
+    this.performUpdateAdditional(width, this.height);
+    this.markNeedsLayout();
+  }
+  set height(height: number) {
+    this._height = height;
+    this.performUpdateAdditional(this.width, height);
+    this.markNeedsLayout();
+  }
+  get width(): number {
+    return this._width;
+  }
+  get height(): number {
+    return this._height;
+  }
+  performUpdateAdditional(
+    width: number = this.width,
+    height: number = this.height
+  ): void {
     this.additionalConstraints = new BoxConstraints({
       maxWidth: width,
       maxHeight: height,
@@ -315,6 +400,7 @@ export class SizeRender extends SingleChildRenderView {
     });
   }
   performLayout(): void {
+    super.performLayout();
     if (this.child) {
       this.child.layout(
         this.additionalConstraints.enforce(this.constraints),
@@ -1138,3 +1224,4 @@ export class ParagraphView extends SingleChildRenderView {
 }
 
 export class RootRenderView extends SingleChildRenderView {}
+export class PlaceholderRenderView extends SingleChildRenderView {}

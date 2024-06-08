@@ -2,6 +2,8 @@ import RenderBox from "@/core/lib/rendering/renderbox";
 import { BuildOwner, Element, RootElement, RootElementView } from "../index";
 import { AbstractNode, PaintingContext, RenderView } from "./basic";
 import Painter from "@/core/lib/painter";
+import Vector from "@/core/lib/vector";
+import { BoxConstraints } from "@/core/lib/rendering/constraints";
 
 abstract class BindingBase {
   constructor() {
@@ -17,12 +19,19 @@ interface FrameCallbackEntity {
 class SchedulerBinding extends BindingBase {
   private frameCallbacks: Map<number, FrameCallbackEntity> = new Map();
   public static instance: SchedulerBinding;
-  public scheduleFrame() {}
   protected initInstance() {
     super.initInstance();
     SchedulerBinding.instance = this;
   }
-  handleDrawFrame() {}
+  public ensureVisualUpdate() {
+    this.scheduleFrame();
+  }
+  private scheduleFrame() {
+    this.handleDrawFrame();
+  }
+  handleDrawFrame() {
+    ElementBinding.instance.drawFrame();
+  }
   public handleBeginFrame() {
     const callbacks = this.frameCallbacks;
     this.frameCallbacks.clear();
@@ -40,17 +49,27 @@ export class PipelineOwner {
     this.rootNode = rootNode;
   }
   flushPaint() {
-    const nodes = this.needReLayoutList;
-    this.needReLayoutList = [];
+    const nodes = this.needRepaintList;
+    this.needRepaintList = [];
+    nodes.sort((a, b) => {
+      return a.depth - b.depth;
+    });
     nodes.forEach((_) => {
-      _?.render(new PaintingContext(new Painter()));
+      const layer = _.layerHandler?.layer;
+      _?.render(
+        new PaintingContext(new Painter()),
+        layer?.offset || Vector.zero
+      );
     });
   }
   flushLayout() {
     const nodes = this.needReLayoutList;
     this.needReLayoutList = [];
+    nodes.sort((a, b) => {
+      return a.depth - b.depth;
+    });
     nodes.forEach((_) => {
-      _?.performLayout();
+      _?.layoutWithoutResize();
     });
   }
   pushNeedingPaint(node: RenderView) {
@@ -59,8 +78,11 @@ export class PipelineOwner {
   pushNeedingLayout(node: RenderView) {
     this.needReLayoutList.push(node);
   }
+  requestVisualUpdate() {
+    Binding.getInstance().schedulerBinding.ensureVisualUpdate();
+  }
 }
-
+let debugCount = 0;
 export class RendererBinding extends BindingBase {
   private _pipelineOwner: PipelineOwner;
   public static instance: RendererBinding;
