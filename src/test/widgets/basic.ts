@@ -363,7 +363,18 @@ export class LimitedBoxRender extends SingleChildRenderView {
     this.maxHeight = maxHeight;
   }
   performLayout(): void {
-      super.performLayout();
+    if (this.child) {
+      const constrain = this.constraints.enforce(
+        BoxConstraints.tightFor(this.maxWidth, this.maxHeight)
+      );
+      this.child.layout(constrain);
+      this.size = this.child.size;
+    } else {
+      this.size = BoxConstraints.tightFor(
+        this.maxWidth,
+        this.maxHeight
+      ).constrain(Size.zero);
+    }
   }
 }
 
@@ -406,7 +417,7 @@ export class ColoredRender extends SingleChildRenderView {
 }
 
 //尺寸约束 不负责渲染
-export class SizeRender extends SingleChildRenderView {
+export class ConstrainedBoxRender extends SingleChildRenderView {
   public _width: number;
   public _height: number;
   private additionalConstraints: BoxConstraints;
@@ -446,7 +457,6 @@ export class SizeRender extends SingleChildRenderView {
     });
   }
   performLayout(): void {
-    super.performLayout();
     if (this.child) {
       this.child.layout(
         this.additionalConstraints.enforce(this.constraints),
@@ -514,18 +524,37 @@ export class PaddingRenderView extends SingleChildRenderView {
 }
 
 export class AlignRenderView extends SingleChildRenderView {
-  public alignment: Alignment;
+  private _alignment: Alignment=Alignment.center;
   constructor(alignment: Alignment, child?: RenderBox) {
     super(child);
     this.alignment = alignment;
   }
+  set alignment(alignment:Alignment){
+    this._alignment=alignment;
+    this.markNeedsLayout();
+  }
+  get alignment():Alignment{
+    return this._alignment;
+  }
   performLayout(): void {
-    super.performLayout();
+    const constrain = this.constraints;
+    if (this.child) {
+      this.child.layout(constrain.loosen(), true);
+      this.size = constrain.constrain(
+        new Size(this.child.size.width, this.child.size.height)
+      );
+      this.alignChild();
+    } else {
+      this.size = constrain.constrain(new Size(Infinity, Infinity));
+    }
+  }
+  private alignChild() {
     const parentSize = this.constraints.constrain(Size.zero);
-    const parentData = this.parentData as ContainerRenderViewParentData;
-    const offset = this.alignment.inscribe(this.size, parentSize);
+    const parentData = this.child?.parentData as ContainerRenderViewParentData;
+    const offset = this.alignment.inscribe(this.child.size, parentSize);
     offset.clamp([offset.x, 0]);
     parentData.offset = offset;
+    this.child.parentData=parentData;
   }
   render(context: PaintingContext, offset?: Vector): void {
     super.render(context, offset);

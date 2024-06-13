@@ -10,7 +10,7 @@ import {
   PlaceholderRenderView,
   RenderView,
   RootRenderView,
-  SizeRender,
+  ConstrainedBoxRender,
   StatefulRenderView,
 } from "./basic";
 import Painter from "@/core/lib/painter";
@@ -111,7 +111,7 @@ export abstract class Element extends BuildContext {
    * 如果新child不为空，老child为空，直接赋值新child
    * 如果新child和老child的类型相同，不赋值新的child，改参数重新传递
    * 判断新来的child和本次的是不是同类型
-   * 如果已经有了，old child是 ColoredBox->SizedBox，而new child也是ColoredBox->SizedBox ,就将new child的参数传递给 old child 的数据，
+   * 如果已经有了，old child是 ColoredBox->ConstrainedBox，而new child也是ColoredBox->ConstrainedBox ,就将new child的参数传递给 old child 的数据，
    * 那子呢？继续调用oldChild.updateChild,并将newChild传递下去
    *
    */
@@ -224,7 +224,7 @@ export abstract class SingleChildElement extends RenderViewElement {
   }
 }
 
-export class SizedBox extends SingleChildElement {
+export class ConstrainedBox extends SingleChildElement {
   public width: number;
   public height: number;
   constructor(width: number, height: number, child?: Element) {
@@ -233,17 +233,17 @@ export class SizedBox extends SingleChildElement {
     this.height = height;
   }
   createRenderView(context: BuildContext): RenderView {
-    return new SizeRender(this.width, this.height);
+    return new ConstrainedBoxRender(this.width, this.height);
   }
   protected updateRenderView(
     context: BuildContext,
     renderView: RenderView
   ): void {
-    const sizedRender = renderView as SizeRender;
+    const sizedRender = renderView as ConstrainedBoxRender;
     sizedRender.width = this.width;
     sizedRender.height = this.height;
   }
-  update(newElement: SizedBox): void {
+  update(newElement: ConstrainedBox): void {
     this.width = newElement.width;
     this.height = newElement.height;
     super.update(newElement);

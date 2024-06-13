@@ -158,6 +158,15 @@ class BoxConstraints extends Constraints {
       minWidth: width ?? 0,
     });
   }
+
+  public loosen():BoxConstraints{
+    return new BoxConstraints({
+      minWidth:0,
+      maxWidth:this.maxWidth,
+      minHeight:0,
+      maxHeight:this.maxHeight
+    });
+  }
 }
 
 export default Constraints;

@@ -69,7 +69,7 @@ import {
   ParentDataRenderView,
   RenderView,
   SingleChildRenderView,
-  SizeRender,
+  ConstrainedBoxRender,
   StackFit,
   Stack,
   Positioned,
@@ -117,7 +117,7 @@ import {
   LimitedBox,
   Padding,
   RenderViewElement,
-  SizedBox,
+  ConstrainedBox,
   State,
   StatefulView,
   StatelessView,
@@ -230,7 +230,7 @@ class Less extends StatelessView {
           bottom: 10,
           right: 10,
         },
-        child: new ColoredBox("#ccc", new SizedBox(30, 30)),
+        child: new ColoredBox("#ccc", new ConstrainedBox(30, 30)),
       })
     );
   }
@@ -255,7 +255,7 @@ class TestViewState extends State {
     //     this.size.setHeight(this.size.height + this.delta);
     //   });
     // }, 1000);
-    // this.handleAnimate();
+    this.handleAnimate();
   }
 
   getRandomColor(): string {
@@ -309,15 +309,23 @@ class TestViewState extends State {
               },
               child: new ColoredBox(
                 "white",
-                new SizedBox(
-                  this.size.width,
-                  this.size.height,
-                  // new ColoredBox("orange", new LimitedBox(20, 20))
-                  // new Align(
-                  //   new ColoredBox("orange", new LimitedBox(20, 20)),
-                  //   Alignment.center
-                  // )
-                )
+                new Padding({
+                  padding:{
+                    top:10,
+                    left:10,
+                    right:10,
+                    bottom:10,
+                  },
+                  child:new ConstrainedBox(
+                    this.size.width,
+                    this.size.height,
+                   new Align( new ColoredBox("orange", new ConstrainedBox(10,30)),Alignment.center)
+                    // new Align(
+                    //   new ColoredBox("orange", new LimitedBox(20, 20)),
+                    //   Alignment.center
+                    // )
+                  )
+                })
               ),
             })
           ),
