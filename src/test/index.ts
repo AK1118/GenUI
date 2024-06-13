@@ -80,6 +80,7 @@ import {
   RectTLRB,
   PaddingOption,
   PlaceholderRenderView,
+  StatefulRenderView,
 } from "./widgets/basic";
 import {
   MultiChildRenderViewOption,
@@ -502,6 +503,9 @@ abstract class StatefulView extends BuildElement {
     super();
     this.state = this.createState();
   }
+  createRenderView(context: BuildContext): RenderView {
+    return new StatefulRenderView();
+  }
   abstract createState(): State;
   public mount(parent?: Element, newSlot?: Object): void {
     this.state = this.createState();
@@ -577,7 +581,7 @@ class TestViewState extends State {
     //     this.size.setHeight(this.size.height + this.delta);
     //   });
     // }, 1000);
-    // this.handleAnimate();
+    this.handleAnimate();
   }
 
   getRandomColor(): string {
@@ -604,19 +608,24 @@ class TestViewState extends State {
     });
   }
   build(context: BuildContext): RenderViewElement {
-    return new ColoredBox(
-      this.color,
-      new Padding({
-        padding: {
-          top: 10,
-          left: 10,
-          bottom: 10,
-          right: 10,
-        },
-        child: new ColoredBox(
-          "#ccc",
-          new ColoredBox(
-            this.color,
+    return new Padding({
+      padding: {
+        top: 0,
+        left: 20,
+        bottom: 10,
+        right: 10,
+      },
+      child: new ColoredBox(
+        "white",
+        new Padding({
+          padding: {
+            top: 10,
+            left: 10,
+            bottom: 10,
+            right: 10,
+          },
+          child: new ColoredBox(
+            "#ccc",
             new Padding({
               padding: {
                 top: 10,
@@ -625,28 +634,14 @@ class TestViewState extends State {
                 right: 10,
               },
               child: new ColoredBox(
-                "orange",
-                new ColoredBox(
-                  this.color,
-                  new Padding({
-                    padding: {
-                      top: 10,
-                      left: 10,
-                      bottom: 10,
-                      right: 10,
-                    },
-                    child: new ColoredBox(
-                      "#ccc",
-                      new SizedBox(this.size.width, this.size.height)
-                    ),
-                  })
-                )
+                "white",
+                new SizedBox(this.size.width, this.size.height)
               ),
             })
-          )
-        ),
-      })
-    );
+          ),
+        })
+      ),
+    });
   }
 }
 
@@ -660,7 +655,9 @@ const runApp = (rootElement: Element) => {
 };
 
 runApp(view);
-
+// setTimeout(()=>{
+//   Binding.getInstance().schedulerBinding.ensureVisualUpdate();
+// },3000)
 // abstract class StateFulRender extends Element {
 //   private renderer: RenderView;
 //   private paintingContext: PaintingContext;

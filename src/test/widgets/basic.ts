@@ -180,6 +180,9 @@ export abstract class RenderView extends AbstractNode {
   get view(): RenderView {
     return this;
   }
+  get isRepaintBoundary(): boolean {
+    return false;
+  }
   abstract render(context: PaintingContext, offset?: Vector): void;
   abstract debugRender(context: PaintingContext, offset?: Vector): void;
   //默认大小等于子大小，被子撑开
@@ -214,10 +217,17 @@ export abstract class RenderView extends AbstractNode {
   }
   protected markNeedsPaint() {
     if (!this.owner) return;
+    if (this.needsRePaint) return;
     const owner: PipelineOwner = this.owner as PipelineOwner;
     this.needsRePaint = true;
-    owner.pushNeedingPaint(this);
-    owner.requestVisualUpdate();
+    if (this.isRepaintBoundary) {
+      owner.pushNeedingPaint(this);
+      owner.requestVisualUpdate();
+    } else if (this.parent instanceof RenderView) {
+      this.parent?.markNeedsPaint();
+    } else {
+      owner.requestVisualUpdate();
+    }
   }
   protected markNeedsLayout() {
     if (!this.owner || this.needsReLayout) return;
@@ -250,8 +260,9 @@ export abstract class RenderView extends AbstractNode {
   }
   paintWidthContext(context: PaintingContext, offset?: Vector): void {
     if (!this.needsRePaint) return;
-    context.paintChild(this, offset);
+    // if (this.needsReLayout) return;
     this.needsRePaint = false;
+    this.render(context, offset);
   }
 }
 
@@ -308,16 +319,14 @@ export abstract class SingleChildRenderView extends RenderBox {
     context.paintChildDebug(this.child!, offset);
   }
   render(context: PaintingContext, offset?: Vector) {
-    const parentData: BoxParentData = this.child?.parentData as BoxParentData;
-    let resultOffset: Vector = offset;
-    if (offset && parentData) {
-      // resultOffset.setXY(
-      //   parentData.offset.x + offset.x,
-      //   parentData.offset.y + offset.y
-      // );
-      //  offset.add(parentData.offset);
+    if (this.child) {
+      const parentData: BoxParentData = this.child?.parentData as BoxParentData;
+      let resultOffset = Vector.zero;
+      if (offset && parentData) {
+        resultOffset = Vector.add(offset, parentData.offset);
+      }
+      context.paintChild(this.child!, resultOffset);
     }
-    context.paintChild(this.child!, offset);
   }
   performLayout(): void {
     if (this.child) {
@@ -335,13 +344,6 @@ export abstract class SingleChildRenderView extends RenderBox {
     if (parentData) {
       const offset = parentData.offset;
       this.layerHandler.layer.offset = parentData?.offset || Vector.zero;
-      // if (this.child) {
-      //   const childOffset=Vector.zero;
-      //   const childParentData = this.child
-      //     ?.parentData as ContainerRenderViewParentData<RenderView>;
-      //   childParentData.offset.add(offset);
-      //   this.child.parentData = childParentData;
-      // }
     }
   }
   layout(constraints: BoxConstraints, parentUseSize?: boolean): void {
@@ -372,6 +374,7 @@ export class ColoredRender extends SingleChildRenderView {
     this.render(context, offset);
   }
   render(context: PaintingContext, offset?: Vector): void {
+    // console.log("是否需要渲染", this.needsRePaint, this.color, offset);
     const paint = context.paint;
     paint.beginPath();
     paint.fillStyle = this.color;
@@ -616,10 +619,7 @@ export class PaintingContext extends ClipContext {
     child?.debugRender(this, offset);
   }
   paintChild(child: RenderView, offset: Vector = Vector.zero): void {
-    // if (child?.needsRePaint) {
-    //   child?.render(this, offset);
-    // }
-    child?.render(this, offset);
+    child?.paintWidthContext(this, offset);
   }
 }
 
@@ -1253,5 +1253,15 @@ export class ParagraphView extends SingleChildRenderView {
   mount(parent?: RenderView, newSlot?: Object): void {}
 }
 
-export class RootRenderView extends SingleChildRenderView {}
+export class RootRenderView extends SingleChildRenderView {
+  get isRepaintBoundary(): boolean {
+    return true;
+  }
+}
+
+export class StatefulRenderView extends SingleChildRenderView {
+  get isRepaintBoundary(): boolean {
+    return true;
+  }
+}
 export class PlaceholderRenderView extends SingleChildRenderView {}

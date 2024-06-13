@@ -54,7 +54,7 @@ export class PipelineOwner {
     nodes.sort((a, b) => {
       return a.depth - b.depth;
     });
-    nodes.forEach((_) => {
+    nodes.forEach((_,ndx) => {
       const layer = _.layerHandler?.layer;
       if (_.needsRePaint) {
         _?.paintWidthContext(
