@@ -1,9 +1,9 @@
 import RenderBox from "@/core/lib/rendering/renderbox";
-import { BuildOwner, Element, RootElement, RootElementView } from "../index";
 import { AbstractNode, PaintingContext, RenderView } from "./basic";
 import Painter from "@/core/lib/painter";
 import Vector from "@/core/lib/vector";
 import { BoxConstraints } from "@/core/lib/rendering/constraints";
+import { BuildOwner, Element, RootElementView } from "./elements";
 
 abstract class BindingBase {
   constructor() {
@@ -54,7 +54,7 @@ export class PipelineOwner {
     nodes.sort((a, b) => {
       return a.depth - b.depth;
     });
-    nodes.forEach((_,ndx) => {
+    nodes.forEach((_, ndx) => {
       const layer = _.layerHandler?.layer;
       if (_.needsRePaint) {
         _?.paintWidthContext(
@@ -71,7 +71,9 @@ export class PipelineOwner {
       return a.depth - b.depth;
     });
     nodes.forEach((_) => {
-      _?.layoutWithoutResize();
+      if (_.needsReLayout) {
+        _?.layoutWithoutResize();
+      }
     });
   }
   pushNeedingPaint(node: RenderView) {

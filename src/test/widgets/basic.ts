@@ -297,6 +297,9 @@ export abstract class ParentDataRenderView<
     }
     this.performLayout();
   }
+  /**
+   * @mustCallSuper
+   */
   performLayout(): void {}
   render(context: PaintingContext, offset?: Vector) {
     context.paintChild(this.child!, offset);
@@ -342,12 +345,25 @@ export abstract class SingleChildRenderView extends RenderBox {
     const parentData = this
       .parentData as ContainerRenderViewParentData<RenderView>;
     if (parentData) {
-      const offset = parentData.offset;
-      this.layerHandler.layer.offset = parentData?.offset || Vector.zero;
+      const offset = parentData?.offset;
+      this.layerHandler.layer.offset = offset || Vector.zero;
     }
   }
   layout(constraints: BoxConstraints, parentUseSize?: boolean): void {
     super.layout(constraints, parentUseSize);
+  }
+}
+
+export class LimitedBoxRender extends SingleChildRenderView {
+  public maxWidth: number;
+  public maxHeight: number;
+  constructor(maxWidth?: number, maxHeight?: number, child?: RenderBox) {
+    super(child);
+    this.maxWidth = maxWidth;
+    this.maxHeight = maxHeight;
+  }
+  performLayout(): void {
+      super.performLayout();
   }
 }
 
@@ -497,23 +513,22 @@ export class PaddingRenderView extends SingleChildRenderView {
   }
 }
 
-export class Align extends SingleChildRenderView {
-  private alignment: Alignment;
-  private offset: Vector = Vector.zero;
+export class AlignRenderView extends SingleChildRenderView {
+  public alignment: Alignment;
   constructor(alignment: Alignment, child?: RenderBox) {
     super(child);
     this.alignment = alignment;
   }
   performLayout(): void {
+    super.performLayout();
     const parentSize = this.constraints.constrain(Size.zero);
-    this.offset = this.alignment.inscribe(this.size, parentSize);
-    this.offset.clamp([this.offset.x, 0]);
+    const parentData = this.parentData as ContainerRenderViewParentData;
+    const offset = this.alignment.inscribe(this.size, parentSize);
+    offset.clamp([offset.x, 0]);
+    parentData.offset = offset;
   }
   render(context: PaintingContext, offset?: Vector): void {
-    super.render(
-      context,
-      offset ? Vector.add(offset, this.offset) : this.offset
-    );
+    super.render(context, offset);
   }
 }
 
@@ -759,7 +774,6 @@ export class Flex extends MultiChildRenderView {
   }
   performLayout(): void {
     const computeSize: LayoutSizes = this.computeSize(this.constraints);
-    console.log(computeSize);
     if (this.direction === Axis.horizontal) {
       this.size = this.constraints.constrain(
         new Size(computeSize.mainSize, computeSize.crossSize)
