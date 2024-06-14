@@ -12,10 +12,12 @@ import {
   RootRenderView,
   ConstrainedBoxRender,
   StatefulRenderView,
+  ParagraphView,
 } from "./basic";
 import Painter from "@/core/lib/painter";
 import { PipelineOwner, RendererBinding, SchedulerBinding } from "./binding";
 import Alignment from "@/core/lib/painting/alignment";
+import { TextSpan } from "./text-painter";
 
 export class BuildOwner {
   private dirtyElementList: Array<Element> = [];
@@ -259,7 +261,7 @@ export class LimitedBox extends SingleChildElement {
     this.maxHeight = maxHeight;
   }
   createRenderView(context: BuildContext): RenderView {
-    return new LimitedBoxRender(this.maxWidth,this.maxHeight);
+    return new LimitedBoxRender(this.maxWidth, this.maxHeight);
   }
   protected updateRenderView(
     context: BuildContext,
@@ -401,6 +403,17 @@ export abstract class State<T extends RenderViewElement = RenderViewElement> {
   protected setState(fn: VoidFunction): void {
     fn();
     this.element.markNeedsBuild();
+  }
+}
+
+export class ParagraphElement extends SingleChildElement {
+  public text: TextSpan;
+  constructor(text: TextSpan) {
+    super();
+    this.text = text;
+  }
+  createRenderView(context: BuildContext): RenderView {
+    return new ParagraphView();
   }
 }
 

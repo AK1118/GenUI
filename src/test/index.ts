@@ -255,7 +255,7 @@ class TestViewState extends State {
     //     this.size.setHeight(this.size.height + this.delta);
     //   });
     // }, 1000);
-    this.handleAnimate();
+    // this.handleAnimate();
   }
 
   getRandomColor(): string {
