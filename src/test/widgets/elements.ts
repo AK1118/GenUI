@@ -13,11 +13,12 @@ import {
   ConstrainedBoxRender,
   StatefulRenderView,
   ParagraphView,
+  StatelessRenderView,
 } from "./basic";
 import Painter from "@/core/lib/painter";
 import { PipelineOwner, RendererBinding, SchedulerBinding } from "./binding";
 import Alignment from "@/core/lib/painting/alignment";
-import { TextSpan } from "./text-painter";
+import { TextSpan, TextStyle } from "./text-painter";
 
 export class BuildOwner {
   private dirtyElementList: Array<Element> = [];
@@ -106,7 +107,7 @@ export abstract class Element extends BuildContext {
     this.child?.attachRenderObject(newSlot);
   }
   private canUpdate(oldElement: Element, newElement: Element) {
-    return newElement.runtimeType === oldElement.runtimeType;
+    return newElement?.runtimeType === oldElement?.runtimeType;
   }
   // abstract updateRenderView():void;
   /**
@@ -223,6 +224,7 @@ export abstract class SingleChildElement extends RenderViewElement {
     super.update(newElement);
     this.updateRenderView(this, this.renderView);
     this.child = this.updateChild(this.child, newElement.built);
+    this.markNeedsBuild();
   }
 }
 
@@ -341,33 +343,58 @@ export class Padding extends SingleChildElement {
     paddingRenderView.padding = this.option?.padding;
   }
   update(newElement: Padding): void {
-    this.option=newElement.option;
+    this.option = newElement.option;
     super.update(newElement);
   }
 }
 
 export abstract class BuildElement extends SingleChildElement {
-  constructor() {
-    super();
-  }
   abstract build(context: BuildContext): Element;
-  createRenderView(context: BuildContext): RenderView {
-    return new PlaceholderRenderView();
-  }
+  abstract createRenderView(context: BuildContext): RenderView;
   public mount(parent?: Element, newSlot?: Object): void {
     super.mount(parent, newSlot);
     this.firstBuild();
   }
 }
 
-export abstract class BuildLessView extends BuildElement {
-  constructor() {
-    super();
-    this.built = this.build(this);
+export abstract class StatelessView extends BuildElement {
+  createRenderView(context: BuildContext): RenderView {
+    return new StatelessRenderView();
+  }
+  protected updateRenderView(
+    context: BuildContext,
+    renderView: RenderView
+  ): void {
+    const paragraphView = renderView as StatelessRenderView;
+    paragraphView.markRepaint();
+  }
+  update(newElement: Element): void {
+    super.update(newElement);
   }
 }
 
-export abstract class StatelessView extends BuildLessView {}
+export class Text extends StatelessView {
+  public textStr: string = "";
+  public textStyle: TextStyle=new TextStyle({
+    fontSize:14,
+  });
+  constructor(textStr: string, textStyle?: TextStyle) {
+    super();
+    this.textStr = textStr;
+    this.textStyle = textStyle??this.textStyle;
+    this.built = this.build(this);
+    //  this.built=new ColoredBox(textStr, new LimitedBox(100, 100));
+  }
+  build(context: BuildContext): Element {
+    return new TextRich(
+      new TextSpan({
+        text: this.textStr,
+        textStyle: this.textStyle,
+      })
+    );
+    // return new ColoredBox(this.color, new LimitedBox(100, 100));
+  }
+}
 
 export abstract class StatefulView extends BuildElement {
   private state: State;
@@ -415,7 +442,7 @@ export abstract class State<T extends RenderViewElement = RenderViewElement> {
   }
 }
 
-export class ParagraphElement extends SingleChildElement {
+export class TextRich extends SingleChildElement {
   public text: TextSpan;
   constructor(text: TextSpan) {
     super();
@@ -431,7 +458,7 @@ export class ParagraphElement extends SingleChildElement {
     const paragraphView = renderView as ParagraphView;
     paragraphView.text = this.text;
   }
-  update(newElement: ParagraphElement): void {
+  update(newElement: TextRich): void {
     this.text = newElement.text;
     super.update(newElement);
   }

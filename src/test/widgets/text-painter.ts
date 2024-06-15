@@ -321,12 +321,15 @@ class TextPoint {
   parentData: TextPointParentData = new TextPointParentData();
   text: string;
   private isSpace: boolean = false;
-  private _hidden: boolean = false;
+  private _hidden: boolean = true;
   public hiddenTextPoint(): void {
     this._hidden = true;
   }
   disable() {
     this._hidden = true;
+  }
+  enable() {
+    this._hidden = false;
   }
   get hidden(): boolean {
     return this._hidden;
@@ -395,6 +398,7 @@ export class Paragraph {
     paint: Painter,
     startOffset: Vector = Vector.zero
   ) {
+    // console.log("文字布局",startOffset)
     this.performLayoutTextOffset(paint, startOffset);
     this.handleCompileWord();
     this.performConstraintsWidth(constraints, 0, 1, this.textStyle.maxLines);
@@ -665,6 +669,9 @@ export class Paragraph {
    *  将文字处理为[TextBox]并计算每个文字的offset
    */
   public performLayoutTextOffset(paint: Painter, startOffset: Vector) {
+    // this.textPoints = [];
+    // this.firstTextPoint = null;
+    // this.lastTextPoint = null;
     this.applyTextStyle(paint);
     const texts: Array<string> = Array.from(this.text);
     let after: TextPoint;
@@ -695,6 +702,7 @@ export class Paragraph {
     const headTextPointParentData = textPoint.parentData;
     const lineHeight: number = this.textStyle.height;
     while (currentPoint != null) {
+      currentPoint.enable();
       if (maxRange && (range += 1) > maxRange) return;
       const parentData = currentPoint?.parentData;
       const offset = Vector.zero;
@@ -747,6 +755,7 @@ export class Paragraph {
       after.parentData.nextNode = textPoint;
     }
     textPoint.parentData = parentData;
+    textPoint.disable();
     this.textPoints.push(textPoint);
     return textPoint;
   }
@@ -1107,7 +1116,7 @@ export class TextSpan extends InlineSpan {
     const { textStyle, children, text } = option;
     this.style = textStyle ?? new TextStyle();
     this.children = children;
-    this.text = text;
+    this.text = text ?? "";
   }
 
   build(builder: ParagraphBuilder): void {

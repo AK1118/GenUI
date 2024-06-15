@@ -271,7 +271,7 @@ abstract class RenderBox extends RenderView {
   protected constraints: BoxConstraints = BoxConstraints.zero;
   layout(constraints: BoxConstraints, parentUseSize?: boolean): void {
     this.constraints = constraints;
-    if (this.needsReLayout||parentUseSize) {
+    if (this.needsReLayout || parentUseSize) {
       this.performLayout();
     }
     this.needsReLayout = false;
@@ -387,10 +387,9 @@ export class LimitedBoxRender extends SingleChildRenderView {
       this.child.layout(constrain);
       this.size = this.child.size;
     } else {
-      this.size = BoxConstraints.tightFor(
-        this.maxWidth,
-        this.maxHeight
-      ).enforce(this.constraints.loosen()).constrain(Size.zero);
+      this.size = BoxConstraints.tightFor(this.maxWidth, this.maxHeight)
+        .enforce(this.constraints.loosen())
+        .constrain(Size.zero);
     }
   }
 }
@@ -515,7 +514,7 @@ export class PaddingRenderView extends SingleChildRenderView {
   set padding(padding) {
     this._padding = padding;
     this.markNeedsLayout();
-    this.markNeedsPaint()
+    this.markNeedsPaint();
   }
   constructor(option?: Partial<PaddingOption & SingleChildRenderViewOption>) {
     super(option?.child);
@@ -559,7 +558,7 @@ export class AlignRenderView extends SingleChildRenderView {
     this.alignment = alignment;
   }
   set alignment(alignment: Alignment) {
-    this._alignment = alignment??this._alignment;
+    this._alignment = alignment ?? this._alignment;
     this.markNeedsLayout();
   }
   get alignment(): Alignment {
@@ -1269,6 +1268,7 @@ export class ParagraphView extends SingleChildRenderView {
   set text(text: TextSpan) {
     this._text = text;
     this.markNeedsLayout();
+    this.markNeedsPaint();
   }
   get text(): TextSpan {
     return this._text;
@@ -1342,4 +1342,14 @@ export class StatefulRenderView extends SingleChildRenderView {
     return true;
   }
 }
+
+export class StatelessRenderView extends SingleChildRenderView {
+  get isRepaintBoundary(): boolean {
+    return true;
+  }
+  public markRepaint(){
+    this.markNeedsPaint();
+  }
+}
+
 export class PlaceholderRenderView extends SingleChildRenderView {}

@@ -121,7 +121,8 @@ import {
   State,
   StatefulView,
   StatelessView,
-  ParagraphElement,
+  Text,
+  TextRich,
 } from "./widgets/elements";
 
 /**
@@ -248,19 +249,21 @@ class TestViewState extends State {
   private delta: number = 3;
   initState(): void {
     this.color = "white";
-    setTimeout(() => {
-      this.setState(() => {
-        g.clearRect(0, 0, 1000, 1000);
-        this.size.setWidth(60);
-        this.size.setHeight(60);
-      });
-    }, 2000);
+    //  setTimeout(() => {
+    //     this.setState(() => {
+    //       g.clearRect(0, 0, 1000, 1000);
+    //       // this.size.setWidth(60);
+    //       // this.size.setHeight(60);
+    //       console.log(this)
+    //       this.color="#ccc"
+    //     });
+    //   }, 3000);
     // setInterval(() => {
     //   g.clearRect(0, 0, 1000, 1000);
     //   this.setState(() => {
     //     this.color = this.getRandomColor();
-    //     this.size.setWidth(this.size.width + this.delta);
-    //     this.size.setHeight(this.size.height + this.delta);
+    //     // this.size.setWidth(this.size.width + this.delta);
+    //     // this.size.setHeight(this.size.height + this.delta);
     //   });
     // }, 1000);
     this.handleAnimate();
@@ -290,35 +293,33 @@ class TestViewState extends State {
     });
   }
   build(context: BuildContext): RenderViewElement {
+      // return  new Text(this.color);
     return new ColoredBox(
-      this.color,
-      new ConstrainedBox(
-        this.size.width,
-        this.size.height,
-        new Padding({
-          padding: {
-            left: 10,
-            right: 10,
-            top: 10,
-            bottom: 10,
-          },
-          child: new Align(
-            new ColoredBox(
-              "orange",
-              new LimitedBox(this.size.width, 10)
-              // new ParagraphElement(
-              //   new TextSpan({
-              //     text: `${this.size.width}`,
-              //     textStyle: new TextStyle({
-              //       fontSize: 15,
-              //     }),
-              //   })
-              // )
-            ),
-            // Alignment.center
-          ),
-        })
-      )
+      "white",
+      // new TextRich(
+      //         new TextSpan({
+      //           text: `${+new Date()}你好`,
+      //           textStyle: new TextStyle({ color: "orange" }),
+      //         })
+      //       ),
+      new Text(`${+new Date()}你好`, null)
+      // new Text(`${+new Date()}你好`)
+      // new ConstrainedBox(
+      //   this.size.width,
+      //   this.size.height,
+      //   new Padding({
+      //     padding: {
+      //       left: 10,
+      //       right: 10,
+      //       top: 10,
+      //       bottom: 10,
+      //     },
+      //     child: new Align(
+
+      //       // Alignment.center
+      //     ),
+      //   })
+      // )
     );
   }
 }
