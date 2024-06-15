@@ -242,8 +242,7 @@ export class ConstrainedBox extends SingleChildElement {
     renderView: RenderView
   ): void {
     const sizedRender = renderView as ConstrainedBoxRender;
-    sizedRender.width = this.width;
-    sizedRender.height = this.height;
+    sizedRender.setSize(this.width, this.height);
   }
   update(newElement: ConstrainedBox): void {
     this.width = newElement.width;
@@ -268,8 +267,7 @@ export class LimitedBox extends SingleChildElement {
     renderView: RenderView
   ): void {
     const sizedRender = renderView as LimitedBoxRender;
-    sizedRender.maxWidth = this.maxWidth;
-    sizedRender.maxHeight = this.maxHeight;
+    sizedRender.setMaxSize(this.maxWidth, this.maxHeight);
   }
   update(newElement: LimitedBox): void {
     this.maxWidth = newElement.maxWidth;
@@ -334,6 +332,17 @@ export class Padding extends SingleChildElement {
   }
   createRenderView(context: BuildContext): RenderView {
     return new PaddingRenderView(this.option);
+  }
+  protected updateRenderView(
+    context: BuildContext,
+    renderView: RenderView
+  ): void {
+    const paddingRenderView = renderView as PaddingRenderView;
+    paddingRenderView.padding = this.option?.padding;
+  }
+  update(newElement: Padding): void {
+    this.option=newElement.option;
+    super.update(newElement);
   }
 }
 
@@ -413,7 +422,18 @@ export class ParagraphElement extends SingleChildElement {
     this.text = text;
   }
   createRenderView(context: BuildContext): RenderView {
-    return new ParagraphView();
+    return new ParagraphView({ text: this.text });
+  }
+  protected updateRenderView(
+    context: BuildContext,
+    renderView: RenderView
+  ): void {
+    const paragraphView = renderView as ParagraphView;
+    paragraphView.text = this.text;
+  }
+  update(newElement: ParagraphElement): void {
+    this.text = newElement.text;
+    super.update(newElement);
   }
 }
 

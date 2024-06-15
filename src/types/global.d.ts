@@ -47,6 +47,8 @@ declare class Vector {
   mag(): number;
   dist(v: Vector): number;
   normalize(): this;
+  clampX(min:number,max:number):void;
+  clampY(min:number,max:number):void;
   clamp(c: [max: number, min: number]): void;
   copy(): Vector;
   set(v: Vector): void;

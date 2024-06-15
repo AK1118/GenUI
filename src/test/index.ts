@@ -121,6 +121,7 @@ import {
   State,
   StatefulView,
   StatelessView,
+  ParagraphElement,
 } from "./widgets/elements";
 
 /**
@@ -247,6 +248,13 @@ class TestViewState extends State {
   private delta: number = 3;
   initState(): void {
     this.color = "white";
+    setTimeout(() => {
+      this.setState(() => {
+        g.clearRect(0, 0, 1000, 1000);
+        this.size.setWidth(60);
+        this.size.setHeight(60);
+      });
+    }, 2000);
     // setInterval(() => {
     //   g.clearRect(0, 0, 1000, 1000);
     //   this.setState(() => {
@@ -255,7 +263,7 @@ class TestViewState extends State {
     //     this.size.setHeight(this.size.height + this.delta);
     //   });
     // }, 1000);
-    // this.handleAnimate();
+    this.handleAnimate();
   }
 
   getRandomColor(): string {
@@ -282,56 +290,36 @@ class TestViewState extends State {
     });
   }
   build(context: BuildContext): RenderViewElement {
-    return new Padding({
-      padding: {
-        top: 0,
-        left: 20,
-        bottom: 10,
-        right: 10,
-      },
-      child: new ColoredBox(
-        "white",
+    return new ColoredBox(
+      this.color,
+      new ConstrainedBox(
+        this.size.width,
+        this.size.height,
         new Padding({
           padding: {
-            top: 10,
             left: 10,
-            bottom: 10,
             right: 10,
+            top: 10,
+            bottom: 10,
           },
-          child: new ColoredBox(
-            "#ccc",
-            new Padding({
-              padding: {
-                top: 10,
-                left: 10,
-                bottom: 10,
-                right: 10,
-              },
-              child: new ColoredBox(
-                "white",
-                new Padding({
-                  padding:{
-                    top:10,
-                    left:10,
-                    right:10,
-                    bottom:10,
-                  },
-                  child:new ConstrainedBox(
-                    this.size.width,
-                    this.size.height,
-                   new Align( new ColoredBox("orange", new ConstrainedBox(10,30)),Alignment.center)
-                    // new Align(
-                    //   new ColoredBox("orange", new LimitedBox(20, 20)),
-                    //   Alignment.center
-                    // )
-                  )
-                })
-              ),
-            })
+          child: new Align(
+            new ColoredBox(
+              "orange",
+              new LimitedBox(this.size.width, 10)
+              // new ParagraphElement(
+              //   new TextSpan({
+              //     text: `${this.size.width}`,
+              //     textStyle: new TextStyle({
+              //       fontSize: 15,
+              //     }),
+              //   })
+              // )
+            ),
+            // Alignment.center
           ),
         })
-      ),
-    });
+      )
+    );
   }
 }
 

@@ -19,6 +19,7 @@ import {
 } from "@/types/widget";
 import { TextOverflow, TextPainter, TextSpan } from "./text-painter";
 import { PipelineOwner } from "./binding";
+import Widget from "@/core/lib/rendering/widget";
 
 export enum Clip {
   none,
@@ -230,7 +231,8 @@ export abstract class RenderView extends AbstractNode {
     }
   }
   protected markNeedsLayout() {
-    if (!this.owner || this.needsReLayout) return;
+    if (!this.owner) return;
+    if (this.needsReLayout) return;
     const owner: PipelineOwner = this.owner as PipelineOwner;
     this.needsReLayout = true;
     owner.pushNeedingLayout(this);
@@ -238,7 +240,7 @@ export abstract class RenderView extends AbstractNode {
   public layoutWithoutResize() {
     this.performLayout();
     this.needsReLayout = false;
-    this.markNeedsLayout();
+    this.markNeedsPaint();
   }
   public reassemble() {
     this.markNeedsLayout();
@@ -260,7 +262,6 @@ export abstract class RenderView extends AbstractNode {
   }
   paintWidthContext(context: PaintingContext, offset?: Vector): void {
     if (!this.needsRePaint) return;
-    // if (this.needsReLayout) return;
     this.needsRePaint = false;
     this.render(context, offset);
   }
@@ -270,7 +271,11 @@ abstract class RenderBox extends RenderView {
   protected constraints: BoxConstraints = BoxConstraints.zero;
   layout(constraints: BoxConstraints, parentUseSize?: boolean): void {
     this.constraints = constraints;
-    this.performLayout();
+    if (this.needsReLayout||parentUseSize) {
+      this.performLayout();
+    }
+    this.needsReLayout = false;
+    this.markNeedsPaint();
   }
   protected setupParentData(child: RenderView): void {
     child.parentData = new BoxParentData();
@@ -355,12 +360,24 @@ export abstract class SingleChildRenderView extends RenderBox {
 }
 
 export class LimitedBoxRender extends SingleChildRenderView {
-  public maxWidth: number;
-  public maxHeight: number;
+  private _maxWidth: number;
+  private _maxHeight: number;
   constructor(maxWidth?: number, maxHeight?: number, child?: RenderBox) {
     super(child);
-    this.maxWidth = maxWidth;
-    this.maxHeight = maxHeight;
+    this._maxWidth = maxWidth;
+    this._maxHeight = maxHeight;
+  }
+  get maxWidth(): number {
+    return this._maxWidth;
+  }
+  get maxHeight(): number {
+    return this._maxHeight;
+  }
+  setMaxSize(maxWidth: number, maxHeight: number) {
+    this._maxWidth = maxWidth;
+    this._maxHeight = maxHeight;
+    this.markNeedsLayout();
+    this.markNeedsPaint();
   }
   performLayout(): void {
     if (this.child) {
@@ -373,7 +390,7 @@ export class LimitedBoxRender extends SingleChildRenderView {
       this.size = BoxConstraints.tightFor(
         this.maxWidth,
         this.maxHeight
-      ).constrain(Size.zero);
+      ).enforce(this.constraints.loosen()).constrain(Size.zero);
     }
   }
 }
@@ -386,7 +403,8 @@ export class ColoredRender extends SingleChildRenderView {
   }
   set color(color: string) {
     this._color = color;
-    this.markNeedsPaint();
+    this.markNeedsLayout();
+    // this.markNeedsPaint()
   }
   get color(): string {
     return this._color;
@@ -401,7 +419,6 @@ export class ColoredRender extends SingleChildRenderView {
     this.render(context, offset);
   }
   render(context: PaintingContext, offset?: Vector): void {
-    // console.log("是否需要渲染", this.needsRePaint, this.color, offset);
     const paint = context.paint;
     paint.beginPath();
     paint.fillStyle = this.color;
@@ -427,17 +444,17 @@ export class ConstrainedBoxRender extends SingleChildRenderView {
     this.height = height;
     this.performUpdateAdditional(width, height);
   }
+  //宽高不能各自都拥有标记，由于单次标记限制会导致某一方失效
+  public setSize(width: number = this.width, height: number = this.height) {
+    this.width = width;
+    this.height = height;
+    this.performUpdateAdditional(width, height);
+  }
   set width(width: number) {
     this._width = width;
-    this.performUpdateAdditional(width, this.height);
-    this.markNeedsLayout();
-    this.markNeedsPaint();
   }
   set height(height: number) {
     this._height = height;
-    this.performUpdateAdditional(this.width, height);
-    this.markNeedsLayout();
-    this.markNeedsPaint();
   }
   get width(): number {
     return this._width;
@@ -455,6 +472,8 @@ export class ConstrainedBoxRender extends SingleChildRenderView {
       minWidth: width,
       minHeight: height,
     });
+    this.markNeedsLayout();
+    this.markNeedsPaint();
   }
   performLayout(): void {
     if (this.child) {
@@ -462,7 +481,9 @@ export class ConstrainedBoxRender extends SingleChildRenderView {
         this.additionalConstraints.enforce(this.constraints),
         true
       );
-      this.size = this.child.size;
+      this.size = this.additionalConstraints
+        .enforce(this.constraints)
+        .constrain(Size.zero);
     } else {
       this.size = this.additionalConstraints
         .enforce(this.constraints)
@@ -482,12 +503,20 @@ export interface PaddingOption {
   padding: Partial<RectTLRB>;
 }
 export class PaddingRenderView extends SingleChildRenderView {
-  private padding: Partial<RectTLRB> = {
+  private _padding: Partial<RectTLRB> = {
     left: 0,
     right: 0,
     top: 0,
     bottom: 0,
   };
+  get padding() {
+    return this._padding;
+  }
+  set padding(padding) {
+    this._padding = padding;
+    this.markNeedsLayout();
+    this.markNeedsPaint()
+  }
   constructor(option?: Partial<PaddingOption & SingleChildRenderViewOption>) {
     super(option?.child);
     this.padding = option?.padding;
@@ -524,16 +553,16 @@ export class PaddingRenderView extends SingleChildRenderView {
 }
 
 export class AlignRenderView extends SingleChildRenderView {
-  private _alignment: Alignment=Alignment.center;
+  private _alignment: Alignment = Alignment.center;
   constructor(alignment: Alignment, child?: RenderBox) {
     super(child);
     this.alignment = alignment;
   }
-  set alignment(alignment:Alignment){
-    this._alignment=alignment;
+  set alignment(alignment: Alignment) {
+    this._alignment = alignment??this._alignment;
     this.markNeedsLayout();
   }
-  get alignment():Alignment{
+  get alignment(): Alignment {
     return this._alignment;
   }
   performLayout(): void {
@@ -552,9 +581,10 @@ export class AlignRenderView extends SingleChildRenderView {
     const parentSize = this.constraints.constrain(Size.zero);
     const parentData = this.child?.parentData as ContainerRenderViewParentData;
     const offset = this.alignment.inscribe(this.child.size, parentSize);
-    offset.clamp([offset.x, 0]);
+    offset.clampX(0, parentSize.width);
+    offset.clampY(0, parentSize.height);
     parentData.offset = offset;
-    this.child.parentData=parentData;
+    this.child.parentData = parentData;
   }
   render(context: PaintingContext, offset?: Vector): void {
     super.render(context, offset);
@@ -1229,13 +1259,19 @@ export interface ParagraphViewOption {
 
 export class ParagraphView extends SingleChildRenderView {
   private textPainter: TextPainter;
-  private text: TextSpan;
+  private _text: TextSpan;
   private needClip: boolean;
-
   constructor(option?: ParagraphViewOption) {
     super();
     const { text } = option;
     this.text = text;
+  }
+  set text(text: TextSpan) {
+    this._text = text;
+    this.markNeedsLayout();
+  }
+  get text(): TextSpan {
+    return this._text;
   }
   performLayout(): void {
     this.textPainter = new TextPainter(this.text);
@@ -1293,7 +1329,6 @@ export class ParagraphView extends SingleChildRenderView {
       this.textPainter.paint(context.paint, offset, true);
     }
   }
-  mount(parent?: RenderView, newSlot?: Object): void {}
 }
 
 export class RootRenderView extends SingleChildRenderView {

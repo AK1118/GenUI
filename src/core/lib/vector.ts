@@ -38,6 +38,12 @@ class Vector{
 		this.y /= len;
 		return this;
 	}
+	clampX(min:number,max:number){
+		this.x = Math.min(Math.max(this.x, min), max)
+	}
+	clampY(min:number,max:number){
+		this.y = Math.min(Math.max(this.y, min), max)
+	}
 	clamp(c:[max:number,min:number]) {
 		let [max, min] = c;
 		this.x = Math.min(Math.max(this.x, min), max)
