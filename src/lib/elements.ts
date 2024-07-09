@@ -20,6 +20,7 @@ import { PipelineOwner, RendererBinding, SchedulerBinding } from "./binding";
 import Alignment from "@/lib/painting/alignment";
 import { TextSpan, TextStyle } from "./text-painter";
 import { Size } from "./basic/rect";
+import { Widget } from "@/test/index";
 
 export class BuildOwner {
   private dirtyElementList: Array<Element> = [];
@@ -68,13 +69,13 @@ export abstract class Element extends BuildContext {
   public dirty: boolean = true;
   protected parent: Element;
   protected child: Element = null;
-  public built: Element;
+  public widget: Widget;
   public owner: BuildOwner;
   protected renderView: RenderView;
   protected depth: number = 0;
-  constructor(child?: Element) {
+  constructor(widget?: Widget) {
     super();
-    this.built = child;
+    this.widget=widget;
   }
   get runtimeType(): unknown {
     return this.constructor;
@@ -121,19 +122,20 @@ export abstract class Element extends BuildContext {
    */
   protected updateChild(
     child?: Element,
-    newElement?: Element,
+    newWidget?: Widget,
     newSlot?: Object
   ): Element {
-    if (!child && !newElement) return null;
-    let newChild: Element;
-    if (!child && newElement) {
-      newChild = newElement;
+    if (!child && !newWidget) return null;
+    let newChild: Element = child;
+    if (!child && newWidget) {
+      const built = newWidget.build(this);
+      if (!built) return newChild;
+      newChild = built.createElement();
       newChild.mount(this, newSlot);
       return newChild;
     }
-
-    if (this.canUpdate(child, newElement)) {
-      child.update(newElement);
+    if (this.canUpdate(child, newChild)) {
+      child.update(newChild);
       return child;
     }
 
@@ -178,7 +180,7 @@ export abstract class RootElement extends Element {
     this.renderView = this.createRenderView(this);
     this.attachPipelineOwner(RendererBinding.instance.pipelineOwner);
 
-    this.child = this.updateChild(this.child, this.built, newSlot);
+    this.child = this.updateChild(this.child, this.widget, newSlot);
     super.mount(parent, newSlot);
     this.attachRenderObject(newSlot);
   }
@@ -219,12 +221,12 @@ export abstract class RenderViewElement extends Element {
 export abstract class SingleChildElement extends RenderViewElement {
   public mount(parent?: Element, newSlot?: Object): void {
     super.mount(parent, newSlot);
-    this.child = this.updateChild(this.child, this.built);
+    this.child = this.updateChild(this.child, this.widget);
   }
   update(newElement: Element): void {
     super.update(newElement);
     this.updateRenderView(this, this.renderView);
-    this.child = this.updateChild(this.child, newElement.built);
+    this.child = this.updateChild(this.child, newElement.widget);
     this.markNeedsBuild();
   }
 }
@@ -374,28 +376,28 @@ export abstract class StatelessView extends BuildElement {
   }
 }
 
-export class Text extends StatelessView {
-  public textStr: string = "";
-  public textStyle: TextStyle=new TextStyle({
-    fontSize:14,
-  });
-  constructor(textStr: string, textStyle?: TextStyle) {
-    super();
-    this.textStr = textStr;
-    this.textStyle = textStyle??this.textStyle;
-    this.built = this.build(this);
-    //  this.built=new ColoredBox(textStr, new LimitedBox(100, 100));
-  }
-  build(context: BuildContext): Element {
-    return new TextRich(
-      new TextSpan({
-        text: this.textStr,
-        textStyle: this.textStyle,
-      })
-    );
-    // return new ColoredBox(this.color, new LimitedBox(100, 100));
-  }
-}
+// export class Text extends StatelessView {
+//   public textStr: string = "";
+//   public textStyle: TextStyle = new TextStyle({
+//     fontSize: 14,
+//   });
+//   constructor(textStr: string, textStyle?: TextStyle) {
+//     super();
+//     this.textStr = textStr;
+//     this.textStyle = textStyle ?? this.textStyle;
+//     this.built = this.build(this);
+//     //  this.built=new ColoredBox(textStr, new LimitedBox(100, 100));
+//   }
+//   build(context: BuildContext): Element {
+//     return new TextRich(
+//       new TextSpan({
+//         text: this.textStr,
+//         textStyle: this.textStyle,
+//       })
+//     );
+//     // return new ColoredBox(this.color, new LimitedBox(100, 100));
+//   }
+// }
 
 export abstract class StatefulView extends BuildElement {
   private state: State;
@@ -419,8 +421,7 @@ export abstract class StatefulView extends BuildElement {
   }
   protected performRebuild(): void {
     super.performRebuild();
-    this.built = this.build();
-    this.child = this.updateChild(this.child, this.built);
+    this.child = this.updateChild(this.child, this.widget);
   }
   build(): Element {
     return this.state.build(this);

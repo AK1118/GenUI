@@ -10,7 +10,6 @@ import {
   State,
   StatefulView,
   StatelessView,
-  Text,
 } from "../lib/elements";
 import { Size } from "@/lib/basic/rect";
 
@@ -29,8 +28,39 @@ const g = canvas.getContext("2d", {
 // g.imageSmoothingEnabled = false;
 Painter.setPaint(g);
 
-abstract class Widget {
+export abstract class Widget {
   abstract build(context: BuildContext): Widget;
+  abstract createElement(): Element;
+}
+
+abstract class StatelessWidget extends Widget {
+  private child: Widget;
+  constructor(child?: Widget) {
+    super();
+    this.child = child;
+  }
+  build(context: BuildContext): Widget {
+    return this.child;
+  }
+}
+
+class ColoredWidget extends StatelessWidget {
+  createElement(): Element {
+    return new ColoredBox("white");
+  }
+}
+
+class SizeBox extends StatelessWidget {
+  private width: number;
+  private height: number;
+  constructor(width: number, height: number, child?: Widget) {
+    super();
+    this.width = width;
+    this.height = height;
+  }
+  createElement(): Element {
+    return new ConstrainedBox(this.width, this.height);
+  }
 }
 
 class TestView extends StatefulView {
@@ -72,11 +102,13 @@ class TestViewState extends State {
   }
   build(context: BuildContext): RenderViewElement {
     // return  new Text(this.color);
-    return new ColoredBox("white", new Text(`${+new Date()}你好`, null));
+    return new ColoredBox("white");
   }
 }
 
-const view = new TestView();
+const view = new ColoredWidget(
+  new SizeBox(100, 100)
+);
 
 const runApp = (rootElement: Element) => {
   const binding = Binding.getInstance();
@@ -84,4 +116,4 @@ const runApp = (rootElement: Element) => {
   console.log(rootElement);
 };
 
-runApp(view);
+runApp(view.createElement());
