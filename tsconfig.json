@@ -1,6 +1,6 @@
 {
   "ts-node": {
-    "esm": true,
+    "esm": true
   },
   "compilerOptions": {
     "target": "ES6",
@@ -8,15 +8,11 @@
     "strict": false,
     "outDir": "./dist",
     "declarationMap": false,
-    "declaration": false,// 不需要自动生成声明文件，自动生成的文件太过冗余
+    "declaration": false, // 不需要自动生成声明文件，自动生成的文件太过冗余
     "baseUrl": "src/",
     "paths": {
-      "@/core/*": ["core/*"],
-      "@/*": ["*"],
-      "Serialization": ["types/serialization.d.ts"],
-      "Graphics": ["types/graphics.d.ts"],
-      "Gesti": ["types/gesti.d.ts"],
-      "Hooks": ["types/hooks.d.ts"]
+      "@/lib/*": ["lib/*"],
+      "@/*": ["*"]
     }
   },
   "include": ["src/**/*", "webpack.config.ts"],

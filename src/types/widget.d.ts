@@ -1,4 +1,3 @@
-
 export = Widget;
 export as namespace Widget;
 
@@ -7,7 +6,7 @@ declare namespace Widget {
   type MainAxisAlignment = any;
   type CrossAxisAlignment = any;
   type StackFit = any;
-  type Alignment=any;
+  type Alignment = any;
   type Radius = number | Iterable<number>;
 
   class PaintingContext {
@@ -19,7 +18,7 @@ declare namespace Widget {
     child: RenderBox;
   }
 
-  interface SingleChildRenderViewOption<ChildType=RenderView> {
+  interface SingleChildRenderViewOption<ChildType = RenderView> {
     child: ChildType;
   }
 
@@ -42,7 +41,7 @@ declare namespace Widget {
     width: number;
     height: number;
   }
-  
+
   interface BoundsRRect extends BoundsRect {
     radii: number | Iterable<number>;
   }
