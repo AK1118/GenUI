@@ -17,8 +17,8 @@ import {
   SingleChildRenderViewOption,
   StackOption,
 } from "@/types/widget";
-import { TextOverflow, TextPainter, TextSpan } from "./text-painter";
-import { PipelineOwner } from "./binding";
+import { TextOverflow, TextPainter, TextSpan } from "../text-painter";
+import { PipelineOwner } from "../basic/binding";
 
 export enum Clip {
   none = "none",
@@ -242,7 +242,6 @@ export abstract class RenderView extends AbstractNode {
     this.visitChildren((child) => {
       if (child) {
         child.reassemble();
-        console.log("查找Child",child)
       }
     });
   }
@@ -415,7 +414,6 @@ export class ColoredRender extends SingleChildRenderView {
     this.render(context, offset);
   }
   render(context: PaintingContext, offset?: Vector): void {
-    console.log("渲染颜色")
     const paint = context.paint;
     paint.beginPath();
     paint.fillStyle = this.color;

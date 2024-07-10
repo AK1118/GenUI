@@ -3,13 +3,13 @@ import {
   ConstrainedBoxRender,
   RenderView,
   RootRenderView,
-} from "./basic";
-import { PipelineOwner, RendererBinding } from "./binding";
-import { BuildContext, ConstrainedBox, Element } from "./elements";
+} from "../render-object/basic";
+import { BuildContext, Element } from "./elements";
 
 abstract class Key {}
 
 export abstract class Widget {
+  public key: string = Math.random().toString(16).substring(3);
   abstract createElement(): Element;
 }
 
@@ -19,16 +19,22 @@ export abstract class Widget {
  * 返回的Widget组件，且build函数需要派生类自己实现，见StatelessElement例如用户自己构建UI一般就需要用到该类
  */
 abstract class ComponentElement extends Element {
-  constructor(widget: Widget) {
-    super(widget);
-  }
+  private aa: Widget;
   public mount(parent?: Element, newSlot?: Object): void {
     super.mount(parent, newSlot);
+    this.firstBuild();
   }
   protected performRebuild(): void {
-    super.performRebuild();
+    this._performRebuild();
+  }
+  update(newWidget: Widget): void {
+    super.update(newWidget);
+    this._performRebuild();
+  }
+  private _performRebuild(): void {
     const built = this.build();
     this.child = this.updateChild(this.child, built);
+    super.performRebuild();
   }
   abstract build(): Widget;
 }
@@ -42,9 +48,51 @@ class StatelessElement extends ComponentElement {
   }
 }
 
-abstract class StatelessWidget extends Widget {
+export abstract class StatelessWidget extends Widget {
   createElement(): Element {
     return new StatelessElement(this);
+  }
+  abstract build(context: BuildContext): Widget;
+}
+
+class StatefulElement extends ComponentElement {
+  constructor(widget: StatefulWidget) {
+    super(widget);
+    this.state = widget.createState();
+    this.state.element = this;
+  }
+  private state: State;
+  public mount(parent?: Element, newSlot?: Object): void {
+    super.mount(parent, newSlot);
+  }
+  protected firstBuild(): void {
+    this.state.initState();
+    super.firstBuild();
+  }
+  build(): Widget {
+    return this.state.build(this);
+  }
+}
+
+export abstract class StatefulWidget extends Widget {
+  abstract createState(): State;
+  createElement(): Element {
+    return new StatefulElement(this);
+  }
+}
+
+export abstract class State {
+  private _element: Element;
+  get element(): Element {
+    return this._element;
+  }
+  set element(element: Element) {
+    this._element = element;
+  }
+  public initState(): void {}
+  protected setState(fn: VoidFunction): void {
+    fn();
+    this.element.markNeedsBuild();
   }
   abstract build(context: BuildContext): Widget;
 }
@@ -67,7 +115,8 @@ export abstract class RenderObjectElement extends Element {
     this.attachRenderObject(newSlot);
     super.performRebuild();
   }
-  update(newElement: Element): void {
+  update(newWidget: Widget): void {
+    super.update(newWidget);
     this._performRebuild();
   }
   protected performRebuild(): void {
@@ -97,18 +146,26 @@ export abstract class RenderObjectElement extends Element {
       newSlot
     );
   }
+  visitChildren(visitor: (child: Element) => void): void {
+      visitor(this.child);
+  }
 }
 
 class SingleChildRenderObjectElement extends RenderObjectElement {
   public mount(parent?: Element, newSlot?: Object): void {
     super.mount(parent, newSlot);
+    this.firstBuild();
+  }
+
+  protected performRebuild(): void {
+    console.log("构建");
     this.child = this.updateChild(
       this.child,
       (this.widget as SingleChildRenderObjectWidget).child
     );
+    super.performRebuild();
   }
   insertRenderObjectChild(child: RenderView, slot?: Object): void {
-    console.log(this.renderView, "插入", child);
     this.renderView.child = child;
   }
 }
@@ -130,44 +187,4 @@ export abstract class SingleChildRenderObjectWidget extends RenderObjectWidget {
   createElement(): Element {
     return new SingleChildRenderObjectElement(this);
   }
-}
-
-export class ColoredBox extends SingleChildRenderObjectWidget {
-  private color: string;
-  constructor(color: string, child?: Widget) {
-    super(child);
-    this.color = color;
-  }
-  createRenderObject(): RenderView {
-    return new ColoredRender(this.color);
-  }
-  updateRenderObject(context: BuildContext, renderView: RenderView) {
-    (renderView as ColoredRender).color = this.color;
-  }
-}
-
-export class SizeBox extends SingleChildRenderObjectWidget {
-  private width: number;
-  private height: number;
-  constructor(width?: number, height?: number, child?: Widget) {
-    super(child);
-    this.width = width;
-    this.height = height;
-  }
-  createRenderObject(): RenderView {
-    return new ConstrainedBoxRender(this.width, this.height);
-  }
-  updateRenderObject(context: BuildContext, renderView: RenderView) {
-    (renderView as ConstrainedBoxRender).setSize(this.width, this.height);
-  }
-}
-
-export class RootWidget extends SingleChildRenderObjectWidget {
-  private owner: PipelineOwner = RendererBinding.instance.pipelineOwner;
-  createRenderObject(): RenderView {
-    const view = new RootRenderView();
-    view.attach(this.owner);
-    return view;
-  }
-  updateRenderObject(context: BuildContext, renderView: RenderView) {}
 }

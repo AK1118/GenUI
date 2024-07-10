@@ -1,9 +1,14 @@
-import { AbstractNode, PaintingContext, RenderView } from "./basic";
+import {
+  AbstractNode,
+  PaintingContext,
+  RenderView,
+} from "../render-object/basic";
 import { BoxConstraints } from "@/lib/rendering/constraints";
 import { BuildOwner, Element, RootElementView } from "./elements";
-import Painter from "./painting/painter";
-import Vector from "./math/vector";
-import { RootWidget, Widget } from "./framework";
+import Painter from "../painting/painter";
+import Vector from "../math/vector";
+import { Widget } from "@/lib/basic/framework";
+import { RootWidget } from "@/lib/widgets/basic";
 
 abstract class BindingBase {
   constructor() {
@@ -50,7 +55,6 @@ export class PipelineOwner {
   }
   flushPaint() {
     const nodes = this.needRepaintList;
-    console.log("重新Paint",nodes)
     this.needRepaintList = [];
     nodes.sort((a, b) => {
       return a.depth - b.depth;
@@ -78,7 +82,6 @@ export class PipelineOwner {
     });
   }
   pushNeedingPaint(node: RenderView) {
-    console.log("标记渲染",node)
     this.needRepaintList.push(node);
   }
   pushNeedingLayout(node: RenderView) {
