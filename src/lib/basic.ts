@@ -212,6 +212,7 @@ export abstract class RenderView extends AbstractNode {
   protected markNeedsPaint() {
     if (!this.owner) return;
     if (this.needsRePaint) return;
+   
     const owner: PipelineOwner = this.owner as PipelineOwner;
     this.needsRePaint = true;
     if (this.isRepaintBoundary) {
@@ -241,6 +242,7 @@ export abstract class RenderView extends AbstractNode {
     this.visitChildren((child) => {
       if (child) {
         child.reassemble();
+        console.log("查找Child",child)
       }
     });
   }
@@ -389,6 +391,7 @@ export class LimitedBoxRender extends SingleChildRenderView {
 
 export class ColoredRender extends SingleChildRenderView {
   public _color: string;
+  
   constructor(color?: string, child?: RenderBox) {
     super(child);
     this.color = color;
@@ -396,6 +399,7 @@ export class ColoredRender extends SingleChildRenderView {
   set color(color: string) {
     this._color = color;
     this.markNeedsLayout();
+   
     // this.markNeedsPaint()
   }
   get color(): string {
@@ -411,6 +415,7 @@ export class ColoredRender extends SingleChildRenderView {
     this.render(context, offset);
   }
   render(context: PaintingContext, offset?: Vector): void {
+    console.log("渲染颜色")
     const paint = context.paint;
     paint.beginPath();
     paint.fillStyle = this.color;
@@ -1328,6 +1333,7 @@ export class RootRenderView extends SingleChildRenderView {
   get isRepaintBoundary(): boolean {
     return true;
   }
+  
 }
 
 export class StatefulRenderView extends SingleChildRenderView {

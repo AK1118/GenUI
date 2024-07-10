@@ -3,6 +3,7 @@ import { BoxConstraints } from "@/lib/rendering/constraints";
 import { BuildOwner, Element, RootElementView } from "./elements";
 import Painter from "./painting/painter";
 import Vector from "./math/vector";
+import { RootWidget, Widget } from "./framework";
 
 abstract class BindingBase {
   constructor() {
@@ -49,6 +50,7 @@ export class PipelineOwner {
   }
   flushPaint() {
     const nodes = this.needRepaintList;
+    console.log("重新Paint",nodes)
     this.needRepaintList = [];
     nodes.sort((a, b) => {
       return a.depth - b.depth;
@@ -76,6 +78,7 @@ export class PipelineOwner {
     });
   }
   pushNeedingPaint(node: RenderView) {
+    console.log("标记渲染",node)
     this.needRepaintList.push(node);
   }
   pushNeedingLayout(node: RenderView) {
@@ -114,14 +117,12 @@ class ElementBinding extends BindingBase {
     this.buildOwner.buildScope(this.rootElement);
     RendererBinding.instance.drawFrame();
   }
-  attachRootWidget(rootElement: Element) {
-    this.rootElement = rootElement;
+  attachRootWidget(rootWidget: Widget) {
+    const wrappedWidget = new RootWidget(rootWidget);
+    this.rootElement = wrappedWidget.createElement();
     this.buildOwner = new BuildOwner();
-    const wrappedView = new RootElementView(rootElement);
+    const wrappedView = new RootElementView(wrappedWidget);
     wrappedView.attachToRenderTree(this.buildOwner);
-  }
-  scheduleAttachRootWidget(root: Element) {
-    this.attachRootWidget(root);
   }
 }
 
