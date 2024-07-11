@@ -214,7 +214,7 @@ export abstract class RenderView extends AbstractNode {
   protected markNeedsPaint() {
     if (!this.owner) return;
     if (this.needsRePaint) return;
-   
+
     const owner: PipelineOwner = this.owner as PipelineOwner;
     this.needsRePaint = true;
     if (this.isRepaintBoundary) {
@@ -392,7 +392,7 @@ export class LimitedBoxRender extends SingleChildRenderView {
 
 export class ColoredRender extends SingleChildRenderView {
   public _color: string;
-  
+
   constructor(color?: string, child?: RenderBox) {
     super(child);
     this.color = color;
@@ -400,7 +400,7 @@ export class ColoredRender extends SingleChildRenderView {
   set color(color: string) {
     this._color = color;
     this.markNeedsLayout();
-   
+
     // this.markNeedsPaint()
   }
   get color(): string {
@@ -690,12 +690,14 @@ export abstract class MultiChildRenderView extends RenderBox {
   protected childCount: number = 0;
   constructor(children?: RenderView[]) {
     super();
-    this.addAll(children);
+    if (children) {
+      this.addAll(children);
+    }
   }
   public addAll(value: RenderView[]) {
-    value.forEach((_) => this.insert(_, this.lastChild));
+    value?.forEach((_) => this.insert(_, this.lastChild));
   }
-  private insert(renderView: RenderView, after?: RenderView) {
+  public insert(renderView: RenderView, after?: RenderView) {
     //设置父节点
     this.adoptChild(renderView);
     //插入兄弟列表
@@ -712,7 +714,6 @@ export abstract class MultiChildRenderView extends RenderBox {
       ?.parentData as ContainerRenderViewParentData<RenderView>;
     let afterParentData =
       after?.parentData as ContainerRenderViewParentData<RenderView>;
-
     if (after == null) {
       this.firstChild = child;
       this.lastChild = child;
@@ -805,11 +806,11 @@ export class Expanded extends ParentDataRenderView<FlexParentData> {
     }
   }
 }
-export class Flex extends MultiChildRenderView {
+export class FlexRenderView extends MultiChildRenderView {
   private overflow: number = 0;
-  private direction: Axis = Axis.horizontal;
-  private mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.start;
-  private crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.start;
+  public direction: Axis = Axis.horizontal;
+  public mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.start;
+  public crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.start;
   constructor(option: Partial<FlexOption & MultiChildRenderViewOption>) {
     const { direction, children, mainAxisAlignment, crossAxisAlignment } =
       option;
@@ -1323,7 +1324,6 @@ export class RootRenderView extends SingleChildRenderView {
   get isRepaintBoundary(): boolean {
     return true;
   }
-  
 }
 
 export class StatefulRenderView extends SingleChildRenderView {

@@ -1,14 +1,24 @@
 import {
+  FlexOption,
+  MultiChildRenderObjectWidgetOption,
   PaddingOption,
   SingleChildRenderObjectWidgetOption,
 } from "@/types/widget-option";
 import { PipelineOwner, RendererBinding } from "../basic/binding";
 import { BuildContext } from "../basic/elements";
-import { SingleChildRenderObjectWidget, Widget } from "../basic/framework";
+import {
+  MultiChildRenderObjectWidget,
+  SingleChildRenderObjectWidget,
+  Widget,
+} from "../basic/framework";
 import {
   AlignRenderView,
+  Axis,
   ColoredRender,
   ConstrainedBoxRender,
+  CrossAxisAlignment,
+  FlexRenderView,
+  MainAxisAlignment,
   PaddingRenderView,
   RenderView,
   RootRenderView,
@@ -85,4 +95,32 @@ export class RootWidget extends SingleChildRenderObjectWidget {
     return view;
   }
   updateRenderObject(context: BuildContext, renderView: RenderView) {}
+}
+
+export class Flex extends MultiChildRenderObjectWidget {
+  public direction: Axis = Axis.horizontal;
+  public mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.start;
+  public crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.start;
+  constructor(
+    option: Partial<FlexOption & MultiChildRenderObjectWidgetOption>
+  ) {
+    const { direction, children, mainAxisAlignment, crossAxisAlignment } =
+      option;
+    super(children);
+    this.direction = direction ?? this.direction;
+    this.mainAxisAlignment = mainAxisAlignment ?? this.mainAxisAlignment;
+    this.crossAxisAlignment = crossAxisAlignment ?? this.crossAxisAlignment;
+  }
+  createRenderObject(): RenderView {
+    return new FlexRenderView({
+      direction: this.direction,
+      mainAxisAlignment: this.mainAxisAlignment,
+      crossAxisAlignment: this.crossAxisAlignment,
+    });
+  }
+  updateRenderObject(context: BuildContext, renderView: FlexRenderView): void {
+    renderView.direction = this.direction;
+    renderView.mainAxisAlignment = this.mainAxisAlignment;
+    renderView.crossAxisAlignment = this.crossAxisAlignment;
+  }
 }

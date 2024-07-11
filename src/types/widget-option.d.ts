@@ -82,6 +82,9 @@ declare namespace WidgetOption {
   interface SingleChildRenderObjectWidgetOption{
     child:Widget
   }
+  interface MultiChildRenderObjectWidgetOption{
+    children:Array<Widget>
+  }
   interface PaddingOption {
     padding: Partial<RectTLRB>;
   }

@@ -3,7 +3,7 @@ import { Binding } from "../lib/basic/binding";
 import { BuildContext, Element } from "../lib/basic/elements";
 import { Size } from "@/lib/basic/rect";
 import { PlaceholderRenderView, RenderView } from "@/lib/render-object/basic";
-import { Align, ColoredBox, Padding, SizeBox } from "@/lib/widgets/basic";
+import { Align, ColoredBox, Flex, Padding, SizeBox } from "@/lib/widgets/basic";
 import {
   State,
   StatefulWidget,
@@ -149,28 +149,26 @@ class V extends StatelessWidget {
     return new SizeBox(
       canvas.width,
       canvas.height,
-      new Align(
-        Alignment.center,
-        new ColoredBox(
-          "white", //this.getRandomColor(),
-          new SizeBox(
-            this.size.width,
-            this.size.height,
-            new Padding({
-              padding: {
-                top: 10,
-                left: 10,
-                right: 10,
-                bottom: 10,
-              },
-              child: new ColoredBox(
-                "#efefef", //this.getRandomColor(),
-                new SizeBox(this.size.width, this.size.height)
-              ),
-            })
-          )
-        )
-      )
+      new Flex({
+        children: [
+          ...new Array(~~(canvas.width / 10)).fill(null).map((_, ndx) => {
+            return new ColoredBox(
+              this.getRandomColor(),
+              new SizeBox(2, 2 * ndx)
+            );
+          }),
+          new ColoredBox(
+            this.getRandomColor(),
+            new SizeBox(10, this.size.height)
+          ),
+          ...new Array(~~(canvas.width / 10)).fill(null).map((_, ndx) => {
+            return new ColoredBox(
+              this.getRandomColor(),
+              new SizeBox(2, 2 * ndx)
+            );
+          }).reverse(),
+        ],
+      })
     );
   }
 }

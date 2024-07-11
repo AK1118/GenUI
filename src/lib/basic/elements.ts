@@ -1,13 +1,6 @@
-
-import {
-  PlaceholderRenderView,
-  RenderView,
-} from "@/lib/render-object/basic";
+import { PlaceholderRenderView, RenderView } from "@/lib/render-object/basic";
 import { Size } from "./rect";
-import {
-  RenderObjectElement,
-  Widget,
-} from "./framework";
+import { RenderObjectElement, Widget } from "./framework";
 import { SchedulerBinding } from "./binding";
 
 export class BuildOwner {
@@ -127,8 +120,8 @@ export abstract class Element extends BuildContext {
   /**
    * 根据dirty状态，决定是否需要重新构建
    * 也可通过force参数强制重新构建，默认情况下force为false
-   * @param force 
-   * @returns 
+   * @param force
+   * @returns
    */
   public rebuild(force: boolean = false) {
     if (!this.dirty && !force) return;
@@ -153,6 +146,11 @@ export abstract class Element extends BuildContext {
       if (child) {
         child.reassemble();
       }
+    });
+  }
+  protected attachRenderObject(newSlot?: Object): void {
+    this.visitChildren((child) => {
+      child.attachRenderObject(newSlot);
     });
   }
   visitChildren(visitor: ChildVisitorCallback) {}

@@ -1,10 +1,11 @@
 import {
   ColoredRender,
   ConstrainedBoxRender,
+  MultiChildRenderView,
   RenderView,
   RootRenderView,
 } from "../render-object/basic";
-import { BuildContext, Element } from "./elements";
+import { BuildContext, Element, RenderViewElement } from "./elements";
 
 abstract class Key {}
 
@@ -104,7 +105,7 @@ export abstract class State {
  */
 export abstract class RenderObjectElement extends Element {
   private ancestorRenderObjectElement: RenderObjectElement;
-  protected renderView: RenderView;
+  public renderView: RenderView;
   public findRenderObject(): RenderView {
     return this.renderView;
   }
@@ -132,7 +133,7 @@ export abstract class RenderObjectElement extends Element {
     (built as RenderObjectWidget).updateRenderObject(this, this.renderView);
     super.performRebuild();
   }
-  
+
   protected findAncestorRenderObjectElement(): RenderObjectElement {
     let ancestor: Element = this.parent;
     while (ancestor != null) {
@@ -203,5 +204,52 @@ export abstract class RenderObjectWidget extends Widget {
 export abstract class SingleChildRenderObjectWidget extends RenderObjectWidget {
   createElement(): Element {
     return new SingleChildRenderObjectElement(this);
+  }
+}
+
+export class MultiChildRenderObjectElement extends RenderObjectElement {
+  private children: Array<Element>;
+  public mount(parent?: Element, newSlot?: Object): void {
+    super.mount(parent, newSlot);
+    const widgetChildren: Array<Widget> = (
+      this.widget as MultiChildRenderObjectWidget
+    ).children;
+    if (!widgetChildren) return;
+    let previousChild: Element;
+    const children: Array<Element> = new Array<Element>();
+    widgetChildren.forEach((child, ndx) => {
+      const newChild = this.updateChild(null, child, previousChild);
+      if (newChild != null) {
+        children.push(newChild);
+      }
+      previousChild = newChild;
+    });
+    this.children = children;
+  }
+  update(newWidget: Widget): void {
+    super.update(newWidget);
+    const widget: MultiChildRenderObjectWidget = this
+      .widget as MultiChildRenderObjectWidget;
+      
+  }
+  visitChildren(visitor: (child: Element) => void): void {
+    this.children.forEach(visitor);
+  }
+  insertRenderObjectChild(child: MultiChildRenderView, slot?: Object): void {
+    (this.renderView as MultiChildRenderView).insert(
+      child,
+      (slot as RenderObjectElement)?.renderView
+    );
+  }
+}
+
+export abstract class MultiChildRenderObjectWidget extends RenderObjectWidget {
+  public children: Array<Widget>;
+  constructor(children: Array<Widget>) {
+    super();
+    this.children = children;
+  }
+  createElement(): Element {
+    return new MultiChildRenderObjectElement(this);
   }
 }
