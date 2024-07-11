@@ -1,7 +1,9 @@
-export = Widget;
-export as namespace Widget;
+import { Widget } from "@/lib/basic/framework";
 
-declare namespace Widget {
+export = WidgetOption;
+export as namespace WidgetOption;
+
+declare namespace WidgetOption {
   type Axis = any;
   type MainAxisAlignment = any;
   type CrossAxisAlignment = any;
@@ -70,5 +72,17 @@ declare namespace Widget {
   interface StackOption {
     fit: StackFit;
     alignment: Alignment;
+  }
+  interface RectTLRB<T = number> {
+    left: T;
+    right: T;
+    top: T;
+    bottom: T;
+  }
+  interface SingleChildRenderObjectWidgetOption{
+    child:Widget
+  }
+  interface PaddingOption {
+    padding: Partial<RectTLRB>;
   }
 }

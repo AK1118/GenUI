@@ -11,12 +11,14 @@ import {
   FlexOption,
   LayoutSizes,
   MultiChildRenderViewOption,
+  PaddingOption,
   PositionedOption,
   Radius,
+  RectTLRB,
   RenderViewOption,
   SingleChildRenderViewOption,
   StackOption,
-} from "@/types/widget";
+} from "@/types/widget-option";
 import { TextOverflow, TextPainter, TextSpan } from "../text-painter";
 import { PipelineOwner } from "../basic/binding";
 
@@ -487,16 +489,6 @@ export class ConstrainedBoxRender extends SingleChildRenderView {
   }
 }
 
-export interface RectTLRB<T = number> {
-  left: T;
-  right: T;
-  top: T;
-  bottom: T;
-}
-
-export interface PaddingOption {
-  padding: Partial<RectTLRB>;
-}
 export class PaddingRenderView extends SingleChildRenderView {
   private _padding: Partial<RectTLRB> = {
     left: 0,

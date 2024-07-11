@@ -3,13 +3,14 @@ import { Binding } from "../lib/basic/binding";
 import { BuildContext, Element } from "../lib/basic/elements";
 import { Size } from "@/lib/basic/rect";
 import { PlaceholderRenderView, RenderView } from "@/lib/render-object/basic";
-import { ColoredBox, SizeBox } from "@/lib/widgets/basic";
+import { Align, ColoredBox, Padding, SizeBox } from "@/lib/widgets/basic";
 import {
   State,
   StatefulWidget,
   StatelessWidget,
   Widget,
 } from "@/lib/basic/framework";
+import Alignment from "@/lib/painting/alignment";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
@@ -145,9 +146,31 @@ class V extends StatelessWidget {
     return color;
   }
   build(context: BuildContext): Widget {
-    return new ColoredBox(
-      this.getRandomColor(),
-      new SizeBox(this.size.width, this.size.height)
+    return new SizeBox(
+      canvas.width,
+      canvas.height,
+      new Align(
+        Alignment.center,
+        new ColoredBox(
+          "white", //this.getRandomColor(),
+          new SizeBox(
+            this.size.width,
+            this.size.height,
+            new Padding({
+              padding: {
+                top: 10,
+                left: 10,
+                right: 10,
+                bottom: 10,
+              },
+              child: new ColoredBox(
+                "#efefef", //this.getRandomColor(),
+                new SizeBox(this.size.width, this.size.height)
+              ),
+            })
+          )
+        )
+      )
     );
   }
 }
@@ -162,15 +185,15 @@ class StateTest extends State {
   private size: Size = new Size(100, 100);
   private delta: number = 3;
   public initState(): void {
-    // this.handleAnimate();
-    setInterval(() => {
-      g.clearRect(0, 0, 1000, 1000);
-      this.setState(() => {
-        this.size.setWidth(this.size.width + this.delta);
-        this.size.setHeight(this.size.height + this.delta);
-      });
-      
-    },1000);
+    this.handleAnimate();
+    // setInterval(() => {
+    //   g.clearRect(0, 0, 1000, 1000);
+    //   this.setState(() => {
+    //     this.size.setWidth(this.size.width + this.delta);
+    //     this.size.setHeight(this.size.height + this.delta);
+    //   });
+
+    // },1000);
   }
   handleAnimate() {
     if (this.size.width > 200 || this.size.width <= 0) {
@@ -190,8 +213,8 @@ class StateTest extends State {
   }
 }
 
-const view =//new V(new Size(100,100))//new ColoredBox("white",new SizeBox(200,200))//
-new Ful();
+const view = //new V(new Size(100,100))//new ColoredBox("white",new SizeBox(200,200))//
+  new Ful();
 
 const runApp = (rootWidget: Widget) => {
   const binding = Binding.getInstance();

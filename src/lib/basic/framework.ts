@@ -175,6 +175,13 @@ class SingleChildRenderObjectElement extends RenderObjectElement {
     );
     super.performRebuild();
   }
+  update(newWidget: Widget): void {
+    super.update(newWidget);
+    this.child = this.updateChild(
+      this.child,
+      (this.widget as SingleChildRenderObjectWidget).child
+    );
+  }
   insertRenderObjectChild(child: RenderView, slot?: Object): void {
     this.renderView.child = child;
   }
