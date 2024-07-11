@@ -104,7 +104,7 @@ export abstract class Element extends BuildContext {
   public static sort(a: Element, b: Element) {
     return a.depth - b.depth;
   }
-  private canUpdate(oldElement: Element, newElement: Element) {
+  protected canUpdate(oldElement: Element, newElement: Element) {
     return newElement?.runtimeType === oldElement?.runtimeType;
   }
   // abstract updateRenderView():void;
@@ -141,8 +141,14 @@ export abstract class Element extends BuildContext {
     this.dirty = true;
     this?.owner.scheduleBuildFor(this);
   }
-  public rebuild() {
-    if (!this.dirty) return;
+  /**
+   * 根据dirty状态，决定是否需要重新构建
+   * 也可通过force参数强制重新构建，默认情况下force为false
+   * @param force 
+   * @returns 
+   */
+  public rebuild(force: boolean = false) {
+    if (!this.dirty && !force) return;
     this.performRebuild();
   }
   protected performRebuild() {
@@ -157,20 +163,16 @@ export abstract class Element extends BuildContext {
   }
   update(newWidget: Widget) {
     this._widget = newWidget;
-    this.rebuild();
   }
   reassemble() {
     this.markNeedsBuild();
     this.visitChildren((child) => {
-      console.log("访问子",child)
       if (child) {
         child.reassemble();
       }
     });
   }
-  visitChildren(visitor: ChildVisitorCallback) {
-    
-  }
+  visitChildren(visitor: ChildVisitorCallback) {}
 }
 
 abstract class View extends Element {}

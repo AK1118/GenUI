@@ -190,7 +190,8 @@ class StateTest extends State {
   }
 }
 
-const view = new Ful();
+const view =//new V(new Size(100,100))//new ColoredBox("white",new SizeBox(200,200))//
+new Ful();
 
 const runApp = (rootWidget: Widget) => {
   const binding = Binding.getInstance();
