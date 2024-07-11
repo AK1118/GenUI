@@ -12,6 +12,9 @@ abstract class Key {}
 export abstract class Widget {
   public key: string = Math.random().toString(16).substring(3);
   abstract createElement(): Element;
+  get runtimeType(): unknown {
+    return this.constructor;
+  }
 }
 
 /**
@@ -161,6 +164,72 @@ export abstract class RenderObjectElement extends Element {
   visitChildren(visitor: (child: Element) => void): void {
     visitor(this.child);
   }
+  updateChildren(
+    oldChildren: Array<Element>,
+    newWidgets: Array<Widget>
+  ): Array<Element> {
+    let oldChildrenTop = 0;
+    let oldChildrenBottom = oldChildren.length - 1;
+    let newChildrenTop = 0;
+    let newChildrenBottom = newWidgets.length - 1;
+    const newChildren: Array<Element> = new Array(newWidgets.length).fill(null);
+
+    let previousChild: Element | null = null;
+
+    // Update the top of the list
+    while (
+      oldChildrenTop <= oldChildrenBottom &&
+      newChildrenTop <= newChildrenBottom
+    ) {
+      let oldChild = oldChildren[oldChildrenTop];
+      const newWidget = newWidgets[newChildrenTop];
+
+      if (
+        oldChild == null ||
+        !this.canUpdate(oldChild.widget, newWidget)
+      ) {
+        break;
+      }
+
+      const newChild = this.updateChild(oldChild, newWidget, previousChild);
+      newChildren[newChildrenTop] = newChild;
+      previousChild = newChild;
+      newChildrenTop += 1;
+      oldChildrenTop += 1;
+    }
+
+    // Update the bottom of the list
+    while (
+      oldChildrenTop <= oldChildrenBottom &&
+      newChildrenTop <= newChildrenBottom
+    ) {
+      let oldChild = oldChildren[oldChildrenBottom];
+      const newWidget = newWidgets[newChildrenBottom];
+
+      if (
+        oldChild == null ||
+        !this.canUpdate(oldChild.widget, newWidget)
+      ) {
+        break;
+      }
+
+      const newChild = this.updateChild(oldChild, newWidget, previousChild);
+      newChildren[newChildrenBottom] = newChild;
+      previousChild = newChild;
+      newChildrenBottom -= 1;
+      oldChildrenBottom -= 1;
+    }
+
+    // Handle the remaining middle part
+    while (newChildrenTop <= newChildrenBottom) {
+      const newWidget = newWidgets[newChildrenTop];
+      const newChild = this.updateChild(null, newWidget, previousChild);
+      newChildren[newChildrenTop] = newChild;
+      previousChild = newChild;
+      newChildrenTop += 1;
+    }
+    return newChildren;
+  }
 }
 
 class SingleChildRenderObjectElement extends RenderObjectElement {
@@ -230,7 +299,7 @@ export class MultiChildRenderObjectElement extends RenderObjectElement {
     super.update(newWidget);
     const widget: MultiChildRenderObjectWidget = this
       .widget as MultiChildRenderObjectWidget;
-      
+    this.children = this.updateChildren(this.children, widget.children);
   }
   visitChildren(visitor: (child: Element) => void): void {
     this.children.forEach(visitor);

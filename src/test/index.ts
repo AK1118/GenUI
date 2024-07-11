@@ -2,7 +2,11 @@ import Painter from "@/lib/painting/painter";
 import { Binding } from "../lib/basic/binding";
 import { BuildContext, Element } from "../lib/basic/elements";
 import { Size } from "@/lib/basic/rect";
-import { PlaceholderRenderView, RenderView } from "@/lib/render-object/basic";
+import {
+  Axis,
+  PlaceholderRenderView,
+  RenderView,
+} from "@/lib/render-object/basic";
 import { Align, ColoredBox, Flex, Padding, SizeBox } from "@/lib/widgets/basic";
 import {
   State,
@@ -161,12 +165,15 @@ class V extends StatelessWidget {
             this.getRandomColor(),
             new SizeBox(10, this.size.height)
           ),
-          ...new Array(~~(canvas.width / 10)).fill(null).map((_, ndx) => {
-            return new ColoredBox(
-              this.getRandomColor(),
-              new SizeBox(2, 2 * ndx)
-            );
-          }).reverse(),
+          ...new Array(~~(canvas.width / 10))
+            .fill(null)
+            .map((_, ndx) => {
+              return new ColoredBox(
+                this.getRandomColor(),
+                new SizeBox(2, 2 * ndx)
+              );
+            })
+            .reverse(),
         ],
       })
     );
@@ -182,16 +189,22 @@ class Ful extends StatefulWidget {
 class StateTest extends State {
   private size: Size = new Size(100, 100);
   private delta: number = 3;
+  private a: boolean = true;
   public initState(): void {
-    this.handleAnimate();
+    // this.handleAnimate();
     // setInterval(() => {
     //   g.clearRect(0, 0, 1000, 1000);
     //   this.setState(() => {
     //     this.size.setWidth(this.size.width + this.delta);
     //     this.size.setHeight(this.size.height + this.delta);
     //   });
-
     // },1000);
+    setTimeout(() => {
+      this.setState(() => {
+        g.clearRect(0, 0, 1000, 1000);
+        this.a = false;
+      });
+    }, 3000);
   }
   handleAnimate() {
     if (this.size.width > 200 || this.size.width <= 0) {
@@ -207,7 +220,21 @@ class StateTest extends State {
     });
   }
   build(context: BuildContext): Widget {
-    return new V(this.size);
+    return new SizeBox(
+      canvas.width,
+      canvas.height,
+      new Align(
+        Alignment.center,
+        new Flex({
+          direction: this.a ? Axis.vertical : Axis.horizontal,
+          children: [
+            new ColoredBox("white", new SizeBox(20, 20)),
+            new ColoredBox("orange", new SizeBox(20, 20)),
+            new ColoredBox("#8a8a8a", new SizeBox(20, 20)),
+          ].filter((_) => !!_),
+        })
+      )
+    ); //new V(this.size);
   }
 }
 

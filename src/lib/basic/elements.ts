@@ -80,8 +80,8 @@ export abstract class Element extends BuildContext {
   public static sort(a: Element, b: Element) {
     return a.depth - b.depth;
   }
-  protected canUpdate(oldElement: Element, newElement: Element) {
-    return newElement?.runtimeType === oldElement?.runtimeType;
+  protected canUpdate(oldWidget: Widget, newWidget: Widget) {
+    return newWidget?.runtimeType === oldWidget?.runtimeType;
   }
   // abstract updateRenderView():void;
   /**
@@ -106,7 +106,7 @@ export abstract class Element extends BuildContext {
       newChild.mount(this, newSlot);
       return newChild;
     }
-    if (this.canUpdate(child, newChild)) {
+    if (this.canUpdate(child.widget, newWidget)) {
       child.update(newWidget);
       return child;
     }
