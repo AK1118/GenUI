@@ -121,9 +121,12 @@ export abstract class AbstractNode {
   get depth(): number {
     return this._depth;
   }
+  set depth(value: number) {
+    this._depth = value;
+  }
   protected reDepthChild(child: AbstractNode) {
     if (!child) return;
-    this._depth = child?.depth + 1;
+    child.depth = this.depth + 1;
     child?.reDepthChildren?.();
   }
   protected reDepthChildren() {}
@@ -221,16 +224,16 @@ export abstract class RenderView extends AbstractNode {
     if (this.isRepaintBoundary) {
       owner.pushNeedingPaint(this);
       owner.requestVisualUpdate();
-      // //console.log("边界", this);
+      //console.log("边界", this);
     } else if (this.parent instanceof RenderView) {
-      // console.log("标记父", this);
+      //console.log("标记父", this);
       this.parent?.markNeedsPaint();
     }
   }
   protected markNeedsLayout() {
     if (!this.owner) return;
     if (this.needsReLayout) return;
-    // //console.log("标记布局", this);
+    //console.log("标记布局", this);
     const owner: PipelineOwner = this.owner as PipelineOwner;
     this.needsReLayout = true;
     owner.pushNeedingLayout(this);
@@ -278,6 +281,12 @@ abstract class RenderBox extends RenderView {
     }
     this.needsReLayout = false;
     this.markNeedsPaint();
+  }
+  attach(owner: Object): void {
+    super.attach(owner);
+    if (!owner) return;
+    this.needsReLayout = false;
+    this.markNeedsLayout();
   }
   protected setupParentData(child: RenderView): void {
     child.parentData = new BoxParentData();
@@ -406,8 +415,7 @@ export class ColoredRender extends SingleChildRenderView {
   set color(color: string) {
     if (!color) return;
     this._color = color;
-    this.markNeedsLayout();
-    // this.markNeedsPaint()
+    this.markNeedsPaint();
   }
   get color(): string {
     return this._color;
@@ -860,7 +868,7 @@ export class FlexRenderView extends MultiChildRenderView {
     // offset.y += this.testdy;
     // this.testdy += 40;
     super.render(context, offset);
-    console.log("---Flex渲染---", this.size);
+    //console.log("---Flex渲染---", this.size);
   }
   performLayout(): void {
     //console.log("---Flex构建---");
@@ -1368,7 +1376,7 @@ export class RootRenderView extends SingleChildRenderView {
   get isRepaintBoundary(): boolean {
     return true;
   }
-  scheduleFirstFrame(){
+  scheduleFirstFrame() {
     this.markNeedsLayout();
     this.markNeedsPaint();
   }
