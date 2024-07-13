@@ -4,6 +4,8 @@ import { BuildContext, Element } from "../lib/basic/elements";
 import { Size } from "@/lib/basic/rect";
 import {
   Axis,
+  CrossAxisAlignment,
+  MainAxisAlignment,
   PlaceholderRenderView,
   RenderView,
 } from "@/lib/render-object/basic";
@@ -191,7 +193,7 @@ class StateTest extends State {
   private delta: number = 3;
   private a: boolean = true;
   public initState(): void {
-    // this.handleAnimate();
+    //  this.handleAnimate();
     // setInterval(() => {
     //   g.clearRect(0, 0, 1000, 1000);
     //   this.setState(() => {
@@ -200,18 +202,21 @@ class StateTest extends State {
     //   });
     // },1000);
     setTimeout(() => {
+      // g.clearRect(0, 0, 1000, 1000);
       this.setState(() => {
-        g.clearRect(0, 0, 1000, 1000);
+       
         this.a = false;
       });
     }, 3000);
+    // this.setState(()=>{});
+   
   }
   handleAnimate() {
     if (this.size.width > 200 || this.size.width <= 0) {
       this.delta *= -1;
     }
     requestAnimationFrame(() => {
-      g.clearRect(0, 0, 1000, 1000);
+      // g.clearRect(0, 0, 1000, 1000);
       this.setState(() => {
         this.size.setWidth(this.size.width + this.delta);
         this.size.setHeight(this.size.height + this.delta);
@@ -223,17 +228,25 @@ class StateTest extends State {
     return new SizeBox(
       canvas.width,
       canvas.height,
-      new Align(
-        Alignment.center,
-        new Flex({
-          direction: this.a ? Axis.vertical : Axis.horizontal,
-          children: [
-            new ColoredBox("white", new SizeBox(20, 20)),
-            new ColoredBox("orange", new SizeBox(20, 20)),
-            new ColoredBox("#8a8a8a", new SizeBox(20, 20)),
-          ].filter((_) => !!_),
-        })
-      )
+     //new Align(Alignment.center, new ColoredBox("#8a8a8a", new SizeBox(30, this.size.height)),)
+      new Flex({
+        direction: this.a?Axis.horizontal:Axis.vertical,
+        mainAxisAlignment:MainAxisAlignment.center,
+        crossAxisAlignment:CrossAxisAlignment.center,
+        children: [
+           new ColoredBox("#22c382", new SizeBox(10, 10)),
+           new ColoredBox("orange", new SizeBox(20, 20)),
+           new ColoredBox("#8a8a8a", new SizeBox(30, 30)),
+           new ColoredBox("orange", new SizeBox(20, 20)),
+           new ColoredBox("#22c382", new SizeBox(10, 10)),
+           new ColoredBox("#22c382", new SizeBox(10, 10)),
+           new ColoredBox("orange", new SizeBox(20, 20)),
+           new ColoredBox("#8a8a8a", new SizeBox(30, 30)),
+           new ColoredBox("orange", new SizeBox(20, 20)),
+           new ColoredBox("#22c382", new SizeBox(10, 10)),
+          // new ColoredBox("#428955", new SizeBox(40, 40)),
+        ].filter((_) => !!_),
+      })
     ); //new V(this.size);
   }
 }

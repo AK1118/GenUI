@@ -196,6 +196,7 @@ export abstract class RenderView extends AbstractNode {
     return this._child;
   }
   set child(value: RenderView) {
+    if (!value) return;
     this.dropChild(value);
     this._child = value;
     this.adoptChild(value);
@@ -212,26 +213,31 @@ export abstract class RenderView extends AbstractNode {
     }
   }
   protected markNeedsPaint() {
+    //console.log("被调用标记渲染", this);
     if (!this.owner) return;
     if (this.needsRePaint) return;
-
     const owner: PipelineOwner = this.owner as PipelineOwner;
     this.needsRePaint = true;
     if (this.isRepaintBoundary) {
       owner.pushNeedingPaint(this);
       owner.requestVisualUpdate();
+      // //console.log("边界", this);
     } else if (this.parent instanceof RenderView) {
+      // console.log("标记父", this);
       this.parent?.markNeedsPaint();
-    } else {
-      owner.requestVisualUpdate();
     }
   }
   protected markNeedsLayout() {
     if (!this.owner) return;
     if (this.needsReLayout) return;
+    // //console.log("标记布局", this);
     const owner: PipelineOwner = this.owner as PipelineOwner;
     this.needsReLayout = true;
     owner.pushNeedingLayout(this);
+    // if (this.isRepaintBoundary) {
+    //   owner.pushNeedingLayout(this);
+    //   owner?.requestVisualUpdate();
+    // } else owner.pushNeedingLayout(this);
   }
   public layoutWithoutResize() {
     this.performLayout();
@@ -398,9 +404,9 @@ export class ColoredRender extends SingleChildRenderView {
     this.color = color;
   }
   set color(color: string) {
+    if (!color) return;
     this._color = color;
     this.markNeedsLayout();
-
     // this.markNeedsPaint()
   }
   get color(): string {
@@ -419,7 +425,8 @@ export class ColoredRender extends SingleChildRenderView {
     const paint = context.paint;
     paint.beginPath();
     paint.fillStyle = this.color;
-    paint.fillRect(
+    paint.strokeStyle = this.color;
+    paint.strokeRect(
       offset?.x ?? 0,
       offset?.y ?? 0,
       this.size.width,
@@ -439,7 +446,12 @@ export class ConstrainedBoxRender extends SingleChildRenderView {
     super(child);
     this.width = width;
     this.height = height;
-    this.performUpdateAdditional(width, height);
+    this.additionalConstraints = new BoxConstraints({
+      maxWidth: width,
+      maxHeight: height,
+      minWidth: width,
+      minHeight: height,
+    });
   }
   //宽高不能各自都拥有标记，由于单次标记限制会导致某一方失效
   public setSize(width: number = this.width, height: number = this.height) {
@@ -470,7 +482,7 @@ export class ConstrainedBoxRender extends SingleChildRenderView {
       minHeight: height,
     });
     this.markNeedsLayout();
-    this.markNeedsPaint();
+    // this.markNeedsPaint();
   }
   performLayout(): void {
     if (this.child) {
@@ -808,18 +820,50 @@ export class Expanded extends ParentDataRenderView<FlexParentData> {
 }
 export class FlexRenderView extends MultiChildRenderView {
   private overflow: number = 0;
-  public direction: Axis = Axis.horizontal;
-  public mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.start;
-  public crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.start;
+  public _direction: Axis = Axis.horizontal;
+  public _mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.start;
+  public _crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.start;
   constructor(option: Partial<FlexOption & MultiChildRenderViewOption>) {
     const { direction, children, mainAxisAlignment, crossAxisAlignment } =
       option;
     super(children);
-    this.direction = direction ?? this.direction;
-    this.mainAxisAlignment = mainAxisAlignment ?? this.mainAxisAlignment;
-    this.crossAxisAlignment = crossAxisAlignment ?? this.crossAxisAlignment;
+    this.direction = direction;
+    this.mainAxisAlignment = mainAxisAlignment;
+    this.crossAxisAlignment = crossAxisAlignment;
+  }
+  set direction(value: Axis) {
+    if (!value) return;
+    this._direction = value;
+    this.markNeedsLayout();
+  }
+  set mainAxisAlignment(value: MainAxisAlignment) {
+    if (!value) return;
+    this._mainAxisAlignment = value;
+    this.markNeedsLayout();
+  }
+  set crossAxisAlignment(value: CrossAxisAlignment) {
+    if (!value) return;
+    this._crossAxisAlignment = value;
+    this.markNeedsLayout();
+  }
+  get direction(): Axis {
+    return this._direction;
+  }
+  get mainAxisAlignment(): MainAxisAlignment {
+    return this._mainAxisAlignment;
+  }
+  get crossAxisAlignment(): CrossAxisAlignment {
+    return this._crossAxisAlignment;
+  }
+  private testdy: number = 0;
+  render(context: PaintingContext, offset?: Vector): void {
+    // offset.y += this.testdy;
+    // this.testdy += 40;
+    super.render(context, offset);
+    console.log("---Flex渲染---", this.size);
   }
   performLayout(): void {
+    //console.log("---Flex构建---");
     const computeSize: LayoutSizes = this.computeSize(this.constraints);
     if (this.direction === Axis.horizontal) {
       this.size = this.constraints.constrain(
@@ -1323,6 +1367,10 @@ export class ParagraphView extends SingleChildRenderView {
 export class RootRenderView extends SingleChildRenderView {
   get isRepaintBoundary(): boolean {
     return true;
+  }
+  scheduleFirstFrame(){
+    this.markNeedsLayout();
+    this.markNeedsPaint();
   }
 }
 

@@ -5,9 +5,10 @@ import {
   SingleChildRenderObjectWidgetOption,
 } from "@/types/widget-option";
 import { PipelineOwner, RendererBinding } from "../basic/binding";
-import { BuildContext } from "../basic/elements";
+import { BuildContext, Element } from "../basic/elements";
 import {
   MultiChildRenderObjectWidget,
+  RootRenderObjectElement,
   SingleChildRenderObjectWidget,
   Widget,
 } from "../basic/framework";
@@ -90,9 +91,10 @@ export class Align extends SingleChildRenderObjectWidget {
 export class RootWidget extends SingleChildRenderObjectWidget {
   private owner: PipelineOwner = RendererBinding.instance.pipelineOwner;
   createRenderObject(): RenderView {
-    const view = new RootRenderView();
-    view.attach(this.owner);
-    return view;
+    return new RootRenderView();
+  }
+  createElement(): Element {
+    return new RootRenderObjectElement(this);
   }
   updateRenderObject(context: BuildContext, renderView: RenderView) {}
 }

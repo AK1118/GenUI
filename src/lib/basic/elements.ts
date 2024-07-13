@@ -183,8 +183,9 @@ export abstract class RootElement extends Element {
     if (!this.owner) {
       this.assignOwner(owner);
       this.mount();
-      this.root.reassemble();
-      this.renderView.reassemble();
+      this.renderView.layout(null,false);
+      // this.root.reassemble();
+      // this.renderView.reassemble();
       this.owner.buildScope(this);
     } else {
       this.markNeedsBuild();

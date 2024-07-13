@@ -5,7 +5,13 @@ import {
   RenderView,
   RootRenderView,
 } from "../render-object/basic";
-import { BuildContext, Element, RenderViewElement } from "./elements";
+import { PipelineOwner, RendererBinding } from "./binding";
+import {
+  BuildContext,
+  BuildOwner,
+  Element,
+  RenderViewElement,
+} from "./elements";
 
 abstract class Key {}
 
@@ -184,10 +190,7 @@ export abstract class RenderObjectElement extends Element {
       let oldChild = oldChildren[oldChildrenTop];
       const newWidget = newWidgets[newChildrenTop];
 
-      if (
-        oldChild == null ||
-        !this.canUpdate(oldChild.widget, newWidget)
-      ) {
+      if (oldChild == null || !this.canUpdate(oldChild.widget, newWidget)) {
         break;
       }
 
@@ -206,10 +209,7 @@ export abstract class RenderObjectElement extends Element {
       let oldChild = oldChildren[oldChildrenBottom];
       const newWidget = newWidgets[newChildrenBottom];
 
-      if (
-        oldChild == null ||
-        !this.canUpdate(oldChild.widget, newWidget)
-      ) {
+      if (oldChild == null || !this.canUpdate(oldChild.widget, newWidget)) {
         break;
       }
 
@@ -297,9 +297,11 @@ export class MultiChildRenderObjectElement extends RenderObjectElement {
   }
   update(newWidget: Widget): void {
     super.update(newWidget);
-    const widget: MultiChildRenderObjectWidget = this
-      .widget as MultiChildRenderObjectWidget;
-    this.children = this.updateChildren(this.children, widget.children);
+
+    // const widget: MultiChildRenderObjectWidget = this
+    //   .widget as MultiChildRenderObjectWidget;
+    // this.children = this.updateChildren(this.children, widget.children);
+    // console.log("刷新",this)
   }
   visitChildren(visitor: (child: Element) => void): void {
     this.children.forEach(visitor);
@@ -320,5 +322,31 @@ export abstract class MultiChildRenderObjectWidget extends RenderObjectWidget {
   }
   createElement(): Element {
     return new MultiChildRenderObjectElement(this);
+  }
+}
+
+export class RootRenderObjectElement extends SingleChildRenderObjectElement {
+  public assignOwner(owner: BuildOwner) {
+    this.owner = owner;
+  }
+  public mount(parent?: Element, newSlot?: Object): void {
+    const built = this.widget;
+    this.renderView = (built as RenderObjectWidget).createRenderObject();
+    const pipOwner: PipelineOwner = RendererBinding.instance.pipelineOwner;
+    this.renderView.attach(pipOwner);
+    this.attachRenderObject(newSlot);
+    this.firstBuild();
+  }
+  attachToRenderTree(owner: BuildOwner) {
+    if (!this.owner) {
+      this.assignOwner(owner);
+      this.mount();
+      // this.renderView.layout(null, false);
+      // this.root.reassemble();
+      (this.renderView as RootRenderView).scheduleFirstFrame();
+      this.owner.buildScope(this);
+    } else {
+      this.markNeedsBuild();
+    }
   }
 }

@@ -7,7 +7,7 @@ import { BoxConstraints } from "@/lib/rendering/constraints";
 import { BuildOwner, Element, RootElementView } from "./elements";
 import Painter from "../painting/painter";
 import Vector from "../math/vector";
-import { Widget } from "@/lib/basic/framework";
+import { RootRenderObjectElement, Widget } from "@/lib/basic/framework";
 import { RootWidget } from "@/lib/widgets/basic";
 
 abstract class BindingBase {
@@ -35,7 +35,9 @@ class SchedulerBinding extends BindingBase {
     this.handleDrawFrame();
   }
   handleDrawFrame() {
+   
     ElementBinding.instance.drawFrame();
+    
   }
   public handleBeginFrame() {
     const callbacks = this.frameCallbacks;
@@ -62,6 +64,7 @@ export class PipelineOwner {
     nodes.forEach((_, ndx) => {
       const layer = _.layerHandler?.layer;
       if (_.needsRePaint) {
+        //console..log("-----执行渲染-----",_)
         _?.paintWidthContext(
           new PaintingContext(new Painter()),
           layer?.offset || Vector.zero
@@ -71,20 +74,24 @@ export class PipelineOwner {
   }
   flushLayout() {
     const nodes = this.needReLayoutList;
+    
     this.needReLayoutList = [];
     nodes.sort((a, b) => {
       return a.depth - b.depth;
     });
     nodes.forEach((_) => {
+      //console..log("-----执行构建-----",_)
       if (_.needsReLayout) {
         _?.layoutWithoutResize();
       }
     });
   }
   pushNeedingPaint(node: RenderView) {
+    // //console..log("标记渲染",node)
     this.needRepaintList.push(node);
   }
   pushNeedingLayout(node: RenderView) {
+    // //console..log("构建",node)
     this.needReLayoutList.push(node);
   }
   requestVisualUpdate() {
@@ -111,7 +118,7 @@ export class RendererBinding extends BindingBase {
 class ElementBinding extends BindingBase {
   public static instance: ElementBinding;
   private buildOwner: BuildOwner;
-  private rootElement: Element;
+  private rootElement:RootRenderObjectElement;
   protected initInstance(): void {
     super.initInstance();
     ElementBinding.instance = this;
@@ -122,10 +129,9 @@ class ElementBinding extends BindingBase {
   }
   attachRootWidget(rootWidget: Widget) {
     const wrappedWidget = new RootWidget(rootWidget);
-    this.rootElement = wrappedWidget.createElement();
+    this.rootElement = wrappedWidget.createElement() as RootRenderObjectElement;
     this.buildOwner = new BuildOwner();
-    const wrappedView = new RootElementView(wrappedWidget);
-    wrappedView.attachToRenderTree(this.buildOwner);
+    this.rootElement.attachToRenderTree(this.buildOwner);
   }
 }
 
