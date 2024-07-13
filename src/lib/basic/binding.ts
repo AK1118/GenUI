@@ -113,10 +113,45 @@ export class PipelineOwner {
     }
   }
 }
-let debugCount = 0;
+
+class FrameUpdater {
+  private lastFrameTime: number;
+  private frameCount: number;
+  private fps: number;
+  private painter: Painter = new Painter();
+  constructor() {
+    this.lastFrameTime = performance.now();
+    this.frameCount = 0;
+    this.fps = 0;
+  }
+  private render(frame: number) {
+    this.painter.save();
+    this.painter.fillStyle="#429aba";
+    this.painter.fillRect(0, 0, 40, 20);
+    this.painter.fillStyle="white";
+    this.painter.fillText(`${frame}fps`, 5, 15);
+    this.painter.restore();
+  }
+  public update(): number {
+    const now = performance.now();
+    const delta = now - this.lastFrameTime;
+    this.frameCount++;
+
+    if (delta >= 1000) {
+      this.fps = this.frameCount;
+      this.frameCount = 0;
+      this.lastFrameTime = now;
+    }
+    this.render(this.fps);
+    return this.fps;
+  }
+}
+
 export class RendererBinding extends BindingBase {
   private _pipelineOwner: PipelineOwner;
   public static instance: RendererBinding;
+  private frameUpdater: FrameUpdater = new FrameUpdater();
+
   protected initInstance(): void {
     RendererBinding.instance = this;
     this._pipelineOwner = new PipelineOwner();
@@ -127,6 +162,7 @@ export class RendererBinding extends BindingBase {
   drawFrame() {
     this.pipelineOwner.flushLayout();
     this.pipelineOwner.flushPaint();
+    this.frameUpdater.update();
   }
 }
 

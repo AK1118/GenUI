@@ -297,10 +297,9 @@ export class MultiChildRenderObjectElement extends RenderObjectElement {
   }
   update(newWidget: Widget): void {
     super.update(newWidget);
-
-    // const widget: MultiChildRenderObjectWidget = this
-    //   .widget as MultiChildRenderObjectWidget;
-    // this.children = this.updateChildren(this.children, widget.children);
+    const widget: MultiChildRenderObjectWidget = this
+      .widget as MultiChildRenderObjectWidget;
+    this.children = this.updateChildren(this.children, widget.children);
     // console.log("刷新",this)
   }
   visitChildren(visitor: (child: Element) => void): void {

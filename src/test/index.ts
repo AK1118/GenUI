@@ -138,9 +138,8 @@ Painter.setPaint(g);
 // , new SizeBox(100, 100)
 class V extends StatelessWidget {
   private size: Size = Size.zero;
-  constructor(size: Size) {
+  constructor() {
     super();
-    this.size = size;
   }
   getRandomColor(): string {
     // 生成一个随机的颜色值
@@ -152,33 +151,25 @@ class V extends StatelessWidget {
     return color;
   }
   build(context: BuildContext): Widget {
-    return new SizeBox(
-      canvas.width,
-      canvas.height,
-      new Flex({
-        children: [
-          ...new Array(~~(canvas.width / 10)).fill(null).map((_, ndx) => {
-            return new ColoredBox(
-              this.getRandomColor(),
-              new SizeBox(2, 2 * ndx)
-            );
-          }),
-          new ColoredBox(
-            this.getRandomColor(),
-            new SizeBox(10, this.size.height)
-          ),
-          ...new Array(~~(canvas.width / 10))
-            .fill(null)
-            .map((_, ndx) => {
-              return new ColoredBox(
-                this.getRandomColor(),
-                new SizeBox(2, 2 * ndx)
-              );
-            })
-            .reverse(),
-        ],
-      })
-    );
+    return  new Flex({
+      direction:Axis.vertical,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        new ColoredBox("#22c382", new SizeBox(10, 10)),
+        new Flex({
+          direction:Axis.horizontal,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            new ColoredBox("#22c382", new SizeBox(10, 10)),
+            new ColoredBox("orange", new SizeBox(10, 10)),
+            new ColoredBox("#22c382", new SizeBox(10, 10)),
+          ],
+        }),
+        new ColoredBox("#22c382", new SizeBox(10, 10)),
+      ],
+    });
   }
 }
 
@@ -189,18 +180,18 @@ class Ful extends StatefulWidget {
 }
 
 class StateTest extends State {
-  private size: Size = new Size(100, 100);
+  private size: Size = new Size(10, 10);
   private delta: number = 3;
   private a: boolean = true;
   public initState(): void {
-      // this.handleAnimate();
-    setInterval(() => {
-      g.clearRect(0, 0, 1000, 1000);
-      this.setState(() => {
-        this.size.setWidth(this.size.width + this.delta);
-        this.size.setHeight(this.size.height + this.delta);
-      });
-    },1000);
+      //  this.handleAnimate();
+    // setInterval(() => {
+    //   g.clearRect(0, 0, 1000, 1000);
+    //   this.setState(() => {
+    //     this.size.setWidth(this.size.width + this.delta);
+    //     this.size.setHeight(this.size.height + this.delta);
+    //   });
+    // },1000);
     // setTimeout(() => {
     //   g.clearRect(0, 0, 1000, 1000);
     //   this.setState(() => {
@@ -226,19 +217,13 @@ class StateTest extends State {
     return new SizeBox(
       canvas.width,
       canvas.height,
-       //new Align(Alignment.center, new ColoredBox("#8a8a8a", new SizeBox(30, this.size.height)),)
       new Flex({
-        direction: this.a ? Axis.horizontal : Axis.vertical,
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          new ColoredBox("#22c382", new SizeBox(10, 10)),
-          new ColoredBox("orange", new SizeBox(20, this.size.width)),
-          // new ColoredBox("#428955", new SizeBox(40, 40)),
-        ].filter((_) => !!_),
+        direction: Axis.vertical,
+        children:[
+          new V(),new V(),new V()
+        ]
       })
     );
-    new V(this.size);
   }
 }
 

@@ -233,17 +233,21 @@ export abstract class RenderView extends AbstractNode {
   protected markNeedsLayout() {
     if (!this.owner) return;
     if (this.needsReLayout) return;
-    //console.log("标记布局", this);
     const owner: PipelineOwner = this.owner as PipelineOwner;
     this.needsReLayout = true;
-    owner.pushNeedingLayout(this);
-    // if (this.isRepaintBoundary) {
-    //   owner.pushNeedingLayout(this);
-    //   owner?.requestVisualUpdate();
-    // } else owner.pushNeedingLayout(this);
+    // owner.pushNeedingLayout(this);
+    if (this.isRepaintBoundary) {
+      owner.pushNeedingLayout(this);
+      owner?.requestVisualUpdate();
+    } else if (this.parent instanceof RenderView) {
+      this.parent.markNeedsLayout();
+    } else {
+      owner.pushNeedingLayout(this);
+    }
   }
   public layoutWithoutResize() {
-    this.performLayout();
+    this.performResize();
+    // this.performResize();
     this.needsReLayout = false;
     this.markNeedsPaint();
   }
@@ -270,6 +274,9 @@ export abstract class RenderView extends AbstractNode {
     this.needsRePaint = false;
     this.render(context, offset);
   }
+  abstract performResize(): void;
+  abstract computeDryLayout(constrains: BoxConstraints): Size;
+  abstract getDryLayout(constrains: BoxConstraints): Size;
 }
 
 abstract class RenderBox extends RenderView {
@@ -290,6 +297,15 @@ abstract class RenderBox extends RenderView {
   }
   protected setupParentData(child: RenderView): void {
     child.parentData = new BoxParentData();
+  }
+  performResize(): void {
+    this.performLayout();
+  }
+  computeDryLayout(constrains: BoxConstraints): Size {
+    return Size.zero;
+  }
+  getDryLayout(constrains: BoxConstraints): Size {
+    return this.computeDryLayout(constrains);
   }
 }
 
@@ -426,6 +442,9 @@ export class ColoredRender extends SingleChildRenderView {
       this.size = Size.zero;
     }
   }
+  performResize(): void {
+    this.size = this.child?.getDryLayout(this.constraints);
+  }
   debugRender(context: PaintingContext, offset?: Vector): void {
     this.render(context, offset);
   }
@@ -433,8 +452,7 @@ export class ColoredRender extends SingleChildRenderView {
     const paint = context.paint;
     paint.beginPath();
     paint.fillStyle = this.color;
-    paint.strokeStyle = this.color;
-    paint.strokeRect(
+    paint.fillRect(
       offset?.x ?? 0,
       offset?.y ?? 0,
       this.size.width,
@@ -467,6 +485,18 @@ export class ConstrainedBoxRender extends SingleChildRenderView {
     this.height = height;
     this.performUpdateAdditional(width, height);
   }
+  computeDryLayout(constrains: BoxConstraints): Size {
+    if (this.child) {
+      this.child.layout(this.additionalConstraints.enforce(constrains), true);
+      return this.additionalConstraints
+        .enforce(this.constraints)
+        .constrain(Size.zero);
+    } else {
+      return this.additionalConstraints
+        .enforce(this.constraints)
+        .constrain(Size.zero);
+    }
+  }
   set width(width: number) {
     this._width = width;
   }
@@ -492,20 +522,9 @@ export class ConstrainedBoxRender extends SingleChildRenderView {
     this.markNeedsLayout();
     // this.markNeedsPaint();
   }
+
   performLayout(): void {
-    if (this.child) {
-      this.child.layout(
-        this.additionalConstraints.enforce(this.constraints),
-        true
-      );
-      this.size = this.additionalConstraints
-        .enforce(this.constraints)
-        .constrain(Size.zero);
-    } else {
-      this.size = this.additionalConstraints
-        .enforce(this.constraints)
-        .constrain(Size.zero);
-    }
+    this.size = this.computeDryLayout(this.constraints);
   }
 }
 
