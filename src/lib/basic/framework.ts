@@ -39,7 +39,7 @@ abstract class ComponentElement extends Element {
   private _performRebuild(): void {
     const built = this.build();
     super.performRebuild();
-    this.child = this.updateChild(this.child, built);
+    this.child = this.updateChild(this.child, built,this.slot);
   }
   abstract build(): Widget;
 }
@@ -114,7 +114,12 @@ export abstract class State {
  */
 export abstract class RenderObjectElement extends Element {
   private ancestorRenderObjectElement: RenderObjectElement;
-  public renderView: RenderView;
+  set renderView(value: RenderView) {
+    this._renderView = value;
+  }
+  get renderView(): RenderView {
+    return this._renderView;
+  }
   public findRenderObject(): RenderView {
     return this.renderView;
   }
@@ -276,16 +281,23 @@ export abstract class SingleChildRenderObjectWidget extends RenderObjectWidget {
   }
 }
 
+/**
+ * SinleChildRenderObjectElement 的insert为undefined，为什么
+ */
 export class MultiChildRenderObjectElement extends RenderObjectElement {
   private children: Array<Element>;
   public mount(parent?: Element, newSlot?: Object): void {
     super.mount(parent, newSlot);
+
     const widgetChildren: Array<Widget> = (
       this.widget as MultiChildRenderObjectWidget
     ).children;
     if (!widgetChildren) return;
     let previousChild: Element;
     const children: Array<Element> = new Array<Element>();
+    if (widgetChildren.length === 4) {
+      this.depth = 2;
+    }
     widgetChildren.forEach((child, ndx) => {
       const newChild = this.updateChild(null, child, previousChild);
       if (newChild != null) {
@@ -300,7 +312,6 @@ export class MultiChildRenderObjectElement extends RenderObjectElement {
     const widget: MultiChildRenderObjectWidget = this
       .widget as MultiChildRenderObjectWidget;
     this.children = this.updateChildren(this.children, widget.children);
-    // console.log("刷新",this)
   }
   visitChildren(visitor: (child: Element) => void): void {
     this.children.forEach(visitor);

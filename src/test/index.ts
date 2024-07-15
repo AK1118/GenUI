@@ -22,11 +22,13 @@ const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
 
 const dev = window.devicePixelRatio;
+const width=300;
+const height=300;
 console.log("DPR：", dev);
-canvas.width = 300 * dev;
-canvas.height = 300 * dev;
-canvas.style.width = 300 + "px";
-canvas.style.height = 300 + "px";
+canvas.width = width * dev;
+canvas.height = height * dev;
+canvas.style.width = width + "px";
+canvas.style.height = height + "px";
 const g = canvas.getContext("2d", {
   // willReadFrequently: true,
 });
@@ -137,9 +139,10 @@ Painter.setPaint(g);
 // console.log(view.createElement().widget);
 // , new SizeBox(100, 100)
 class V extends StatelessWidget {
-  private size: Size = Size.zero;
-  constructor() {
+  private color: string = "orange";
+  constructor(color: string) {
     super();
+    this.color = color;
   }
   getRandomColor(): string {
     // 生成一个随机的颜色值
@@ -151,24 +154,32 @@ class V extends StatelessWidget {
     return color;
   }
   build(context: BuildContext): Widget {
-    return  new Flex({
-      direction:Axis.vertical,
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        new ColoredBox("#22c382", new SizeBox(10, 10)),
-        new Flex({
-          direction:Axis.horizontal,
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            new ColoredBox("#22c382", new SizeBox(10, 10)),
-            new ColoredBox("orange", new SizeBox(10, 10)),
-            new ColoredBox("#22c382", new SizeBox(10, 10)),
-          ],
-        }),
-        new ColoredBox("#22c382", new SizeBox(10, 10)),
-      ],
+    return new Padding({
+      padding: {
+        left: 10,
+        right: 10,
+        top: 10,
+        bottom: 10,
+      },
+      child: new Flex({
+        direction: Axis.vertical,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          new ColoredBox("#22c382", new SizeBox(10, 10)),
+          new Flex({
+            direction: Axis.horizontal,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              new ColoredBox("#22c382", new SizeBox(10, 10)),
+              new ColoredBox(this.color, new SizeBox(10, 10)),
+              new ColoredBox("#22c382", new SizeBox(10, 10)),
+            ],
+          }),
+          new ColoredBox("#22c382", new SizeBox(10, 10)),
+        ],
+      }),
     });
   }
 }
@@ -182,46 +193,89 @@ class Ful extends StatefulWidget {
 class StateTest extends State {
   private size: Size = new Size(10, 10);
   private delta: number = 3;
-  private a: boolean = true;
+  private force: number = 0.01;
+  private time: number = 0;
+  private waveSpeed: number = 0.01;
+  private waveFrequency: number = 0.01;
+
   public initState(): void {
-      //  this.handleAnimate();
-    // setInterval(() => {
-    //   g.clearRect(0, 0, 1000, 1000);
-    //   this.setState(() => {
-    //     this.size.setWidth(this.size.width + this.delta);
-    //     this.size.setHeight(this.size.height + this.delta);
-    //   });
-    // },1000);
-    // setTimeout(() => {
-    //   g.clearRect(0, 0, 1000, 1000);
-    //   this.setState(() => {
-    //     this.a = false;
-    //   });
-    // }, 1000);
-    // this.setState(()=>{});
+    this.handleAnimate();
   }
+
   handleAnimate() {
-    if (this.size.width > 200 || this.size.width <= 0) {
-      this.delta *= -1;
-    }
+    this.time += this.waveSpeed;
     requestAnimationFrame(() => {
-      g.clearRect(0, 0, 1000, 1000);
+      g.clearRect(0, 0, canvas.width, canvas.height);
+      this.force += 0.01;
       this.setState(() => {
-        this.size.setWidth(this.size.width + this.delta);
-        this.size.setHeight(this.size.height + this.delta);
+        if (this.force > 1) {
+          this.force = 0.9;
+        }
       });
       this.handleAnimate();
     });
   }
+
+  private buildV(color: string, opacity: number): Flex {
+    return new Flex({
+      direction: Axis.vertical,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        new ColoredBox(`rgba(239, 239, 239, ${opacity})`, new SizeBox(10, 10)),
+        new Flex({
+          direction: Axis.horizontal,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            new ColoredBox(
+              `rgba(239, 239, 239, ${opacity})`,
+              new SizeBox(10, 10)
+            ),
+            new ColoredBox(color, new SizeBox(10, 10)),
+            new ColoredBox(
+              `rgba(239, 239, 239, ${opacity})`,
+              new SizeBox(10, 10)
+            ),
+          ],
+        }),
+        new ColoredBox(`rgba(239, 239, 239, ${opacity})`, new SizeBox(10, 10)),
+      ],
+    });
+  }
+
+  buildRow(rowIndex: number): Widget {
+    const rows = Math.ceil(canvas.height / 30);
+    // console.log("行",rows);
+    const children = [];
+    for (let j = 0; j < rows; j++) {
+      const opacity =
+        (Math.sin((this.time + rowIndex * this.waveFrequency) * 2 * Math.PI) +
+          1) /
+        2;
+      children.push(this.buildV(`rgba(135, 238, 44, ${opacity})`, opacity));
+    }
+    return new Flex({
+      children,
+    });
+  }
+
   build(context: BuildContext): Widget {
+    const columns = Math.ceil(canvas.width / 30);
+    // console.log("列",columns);
+    const children: Widget[] = [];
+    for (let i = 0; i < columns; i++) {
+      children.push(this.buildRow(i));
+    }
+
     return new SizeBox(
       canvas.width,
       canvas.height,
       new Flex({
         direction: Axis.vertical,
-        children:[
-          new V(),new V(),new V()
-        ]
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
       })
     );
   }
@@ -229,7 +283,6 @@ class StateTest extends State {
 
 const view = //new V(new Size(100,100))//new ColoredBox("white",new SizeBox(200,200))//
   new Ful();
-
 const runApp = (rootWidget: Widget) => {
   const binding = Binding.getInstance();
   binding.elementBinding.attachRootWidget(rootWidget);

@@ -56,9 +56,37 @@ export abstract class Element extends BuildContext {
   private _widget: Widget;
   public owner: BuildOwner;
   protected depth: number = 0;
+  private _slot: Object;
+  public _renderView: RenderView;
+  set renderView(value: RenderView) {
+    this._renderView = value;
+  }
+  /**
+   * 当组件生成 @RenderView 时,可能会出现子级为@ComponentElement ,此时需要
+   * 向下查找将最近的 @RenderViewElement 作为@renderView
+   */
+  get renderView(): RenderView {
+    let current: Element = this;
+    while (current) {
+      if (current?._renderView) {
+        return current._renderView;
+      } else {
+        current.visitChildren((child) => {
+          current = child;
+        });
+      }
+    }
+    return null;
+  }
   constructor(widget?: Widget) {
     super();
     this._widget = widget;
+  }
+  set slot(value: Object) {
+    this._slot = value;
+  }
+  get slot(): Object {
+    return this._slot;
   }
   get widget(): Widget {
     return this._widget;
@@ -74,6 +102,7 @@ export abstract class Element extends BuildContext {
     this.parent = parent;
     this.owner = parent?.owner;
     this.depth = parent?.depth + 1;
+    this.slot = newSlot;
     this.lifecycle = ElementLifecycle.active;
     this.markNeedsBuild();
   }
@@ -153,13 +182,15 @@ export abstract class Element extends BuildContext {
       child.attachRenderObject(newSlot);
     });
   }
-  visitChildren(visitor: ChildVisitorCallback) {}
+  visitChildren(visitor: ChildVisitorCallback) {
+    visitor(this.child);
+  }
 }
 
 abstract class View extends Element {}
 
 export abstract class RootElement extends Element {
-  private renderView: RenderView;
+  // private renderView: RenderView;
   private root: Element;
   public assignOwner(owner: BuildOwner) {
     this.owner = owner;
@@ -183,7 +214,7 @@ export abstract class RootElement extends Element {
     if (!this.owner) {
       this.assignOwner(owner);
       this.mount();
-      this.renderView.layout(null,false);
+      this.renderView.layout(null, false);
       // this.root.reassemble();
       // this.renderView.reassemble();
       this.owner.buildScope(this);
