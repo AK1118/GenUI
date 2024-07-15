@@ -429,7 +429,7 @@ export class ColoredRender extends SingleChildRenderView {
     this.color = color;
   }
   set color(color: string) {
-    if (!color) return;
+    if (!color || this._color === color) return;
     this._color = color;
     this.markNeedsPaint();
   }
@@ -513,6 +513,7 @@ export class ConstrainedBoxRender extends SingleChildRenderView {
     width: number = this.width,
     height: number = this.height
   ): void {
+    if (this.width === width && this.height === height) return;
     this.additionalConstraints = new BoxConstraints({
       maxWidth: width,
       maxHeight: height,
@@ -859,17 +860,17 @@ export class FlexRenderView extends MultiChildRenderView {
     this.crossAxisAlignment = crossAxisAlignment;
   }
   set direction(value: Axis) {
-    if (!value) return;
+    if (!value || this._direction === value) return;
     this._direction = value;
     this.markNeedsLayout();
   }
   set mainAxisAlignment(value: MainAxisAlignment) {
-    if (!value) return;
+    if (!value || this._mainAxisAlignment === value) return;
     this._mainAxisAlignment = value;
     this.markNeedsLayout();
   }
   set crossAxisAlignment(value: CrossAxisAlignment) {
-    if (!value) return;
+    if (!value || this._crossAxisAlignment === value) return;
     this._crossAxisAlignment = value;
     this.markNeedsLayout();
   }

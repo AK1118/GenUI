@@ -22,8 +22,8 @@ const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
 
 const dev = window.devicePixelRatio;
-const width=300;
-const height=300;
+const width = 300;
+const height = 300;
 console.log("DPR：", dev);
 canvas.width = width * dev;
 canvas.height = height * dev;
@@ -245,7 +245,7 @@ class StateTest extends State {
   }
 
   buildRow(rowIndex: number): Widget {
-    const rows = Math.ceil(canvas.height / 30);
+    const rows = Math.ceil(canvas.height /40);
     // console.log("行",rows);
     const children = [];
     for (let j = 0; j < rows; j++) {
@@ -271,11 +271,19 @@ class StateTest extends State {
     return new SizeBox(
       canvas.width,
       canvas.height,
-      new Flex({
-        direction: Axis.vertical,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
+      new Padding({
+        child: new Flex({
+          direction: Axis.vertical,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: children,
+        }),
+        padding: {
+          top: 10,
+          left: 10,
+          right: 10,
+          bottom: 10,
+        },
       })
     );
   }
