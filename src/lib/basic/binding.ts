@@ -127,9 +127,9 @@ class FrameUpdater {
   private render(frame: number) {
     this.painter.save();
     this.painter.fillStyle="#429aba";
-    this.painter.fillRect(0, 0, 40, 20);
+    this.painter.fillRect(this.painter.canvas.width-40, 0, 40, 20);
     this.painter.fillStyle="white";
-    this.painter.fillText(`${frame}fps`, 5, 15);
+    this.painter.fillText(`${frame}fps`,this.painter.canvas.width-35, 15);
     this.painter.restore();
   }
   public update(): number {

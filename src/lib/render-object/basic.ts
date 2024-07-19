@@ -450,6 +450,7 @@ export class ColoredRender extends SingleChildRenderView {
   }
   render(context: PaintingContext, offset?: Vector): void {
     const paint = context.paint;
+    paint.save();
     paint.beginPath();
     paint.fillStyle = this.color;
     paint.fillRect(
@@ -459,6 +460,7 @@ export class ColoredRender extends SingleChildRenderView {
       this.size.height
     );
     paint.closePath();
+    paint.restore();
     super.render(context, offset);
   }
 }
