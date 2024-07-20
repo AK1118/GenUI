@@ -6,3 +6,4 @@ public
 *.zip
 *.7z
 *.rar
+*/node_modules

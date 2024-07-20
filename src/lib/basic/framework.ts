@@ -14,7 +14,12 @@ import {
 } from "./elements";
 
 abstract class Key {}
-
+export interface SingleChildRenderObjectWidgetOption {
+  child: Widget;
+}
+export interface MultiChildRenderObjectWidgetOption {
+  children: Array<Widget>;
+}
 export abstract class Widget {
   public key: string = Math.random().toString(16).substring(3);
   abstract createElement(): Element;
@@ -28,7 +33,7 @@ export abstract class Widget {
  * 属于组件节点类，其派生类有StatelessElement 和 State、StatefulElement等，它的widget主要通过ComponentWidget类的build函数来获得
  * 返回的Widget组件，且build函数需要派生类自己实现，见StatelessElement例如用户自己构建UI一般就需要用到该类
  */
-abstract class ComponentElement extends Element {
+export abstract class ComponentElement extends Element {
   public mount(parent?: Element, newSlot?: Object): void {
     super.mount(parent, newSlot);
     this.firstBuild();
@@ -237,7 +242,7 @@ export abstract class RenderObjectElement extends Element {
   }
 }
 
-class SingleChildRenderObjectElement extends RenderObjectElement {
+export class SingleChildRenderObjectElement extends RenderObjectElement {
   public mount(parent?: Element, newSlot?: Object): void {
     super.mount(parent, newSlot);
     this.firstBuild();

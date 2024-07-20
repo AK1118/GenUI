@@ -1,15 +1,11 @@
-import {
-  FlexOption,
-  MultiChildRenderObjectWidgetOption,
-  PaddingOption,
-  SingleChildRenderObjectWidgetOption,
-} from "@/types/widget-option";
 import { PipelineOwner, RendererBinding } from "../basic/binding";
 import { BuildContext, Element } from "../basic/elements";
 import {
   MultiChildRenderObjectWidget,
+  MultiChildRenderObjectWidgetOption,
   RootRenderObjectElement,
   SingleChildRenderObjectWidget,
+  SingleChildRenderObjectWidgetOption,
   Widget,
 } from "../basic/framework";
 import {
@@ -18,19 +14,28 @@ import {
   ColoredRender,
   ConstrainedBoxRender,
   CrossAxisAlignment,
+  FlexOption,
   FlexRenderView,
   MainAxisAlignment,
+  PaddingOption,
   PaddingRenderView,
   RenderView,
   RootRenderView,
+  SizedBoxOption,
+  WrapAlignment,
+  WrapCrossAlignment,
+  WrapOption,
+  WrapRenderView,
 } from "../render-object/basic";
 import Alignment from "../painting/alignment";
-
+export interface ColoredBoxOption{
+  color:string,
+}
 export class ColoredBox extends SingleChildRenderObjectWidget {
   private color: string;
-  constructor(color: string, child?: Widget) {
-    super(child);
-    this.color = color;
+  constructor(option:Partial<ColoredBoxOption&SingleChildRenderObjectWidgetOption>) {
+    super(option?.child);
+    this.color = option?.color;
   }
   createRenderObject(): RenderView {
     return new ColoredRender(this.color);
@@ -43,13 +48,17 @@ export class ColoredBox extends SingleChildRenderObjectWidget {
 export class SizeBox extends SingleChildRenderObjectWidget {
   private width: number;
   private height: number;
-  constructor(width?: number, height?: number, child?: Widget) {
-    super(child);
-    this.width = width;
-    this.height = height;
+  constructor(option: Partial<SizedBoxOption & SingleChildRenderObjectWidget>) {
+    super(option?.child);
+    const { width, height } = option;
+    this.width = width ?? 0;
+    this.height = height ?? 0;
   }
   createRenderObject(): RenderView {
-    return new ConstrainedBoxRender(this.width, this.height);
+    return new ConstrainedBoxRender({
+      width: this.width,
+      height: this.height,
+    });
   }
   updateRenderObject(context: BuildContext, renderView: RenderView) {
     (renderView as ConstrainedBoxRender).setSize(this.width, this.height);
@@ -123,6 +132,45 @@ export class Flex extends MultiChildRenderObjectWidget {
   updateRenderObject(context: BuildContext, renderView: FlexRenderView): void {
     renderView.direction = this.direction;
     renderView.mainAxisAlignment = this.mainAxisAlignment;
+    renderView.crossAxisAlignment = this.crossAxisAlignment;
+  }
+}
+
+export class Wrap extends MultiChildRenderObjectWidget {
+  direction: Axis = Axis.horizontal;
+  spacing: number = 0;
+  runSpacing: number = 0;
+  alignment: WrapAlignment = WrapAlignment.start;
+  runAlignment: WrapAlignment = WrapAlignment.start;
+  crossAxisAlignment: WrapCrossAlignment = WrapCrossAlignment.start;
+  constructor(
+    option: Partial<WrapOption & MultiChildRenderObjectWidgetOption>
+  ) {
+    super(option?.children);
+    this.direction = option?.direction ?? Axis.horizontal;
+    this.spacing = option?.spacing ?? 0;
+    this.runSpacing = option?.runSpacing ?? 0;
+    this.alignment = option?.alignment ?? WrapAlignment.start;
+    this.runAlignment = option?.runAlignment ?? WrapAlignment.start;
+    this.crossAxisAlignment =
+      option?.crossAxisAlignment ?? WrapCrossAlignment.start;
+  }
+  createRenderObject(): RenderView {
+    return new WrapRenderView({
+      direction: this.direction,
+      spacing: this.spacing,
+      runSpacing: this.runSpacing,
+      alignment: this.alignment,
+      runAlignment: this.runAlignment,
+      crossAxisAlignment: this.crossAxisAlignment,
+    });
+  }
+  updateRenderObject(context: BuildContext, renderView: WrapRenderView): void {
+    renderView.direction = this.direction;
+    renderView.spacing = this.spacing;
+    renderView.runSpacing = this.runSpacing;
+    renderView.alignment = this.alignment;
+    renderView.runAlignment = this.runAlignment;
     renderView.crossAxisAlignment = this.crossAxisAlignment;
   }
 }

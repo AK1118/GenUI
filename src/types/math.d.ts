@@ -1,4 +1,4 @@
-declare class Vector {
+export declare class Vector {
     x: number;
     y: number;
   
