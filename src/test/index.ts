@@ -22,6 +22,7 @@ import {
 import Alignment from "@/lib/painting/alignment";
 import { BoxConstraints } from "@/lib/rendering/constraints";
 import Vector from "@/lib/math/vector";
+import { MultiChildRenderObjectWidgetOption } from "@/types/widget-option";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
@@ -119,12 +120,85 @@ class RunMetrics {
 }
 
 class WrapRenderView extends MultiChildRenderView {
-  direction: Axis = Axis.horizontal;
-  spacing: number = 0;
-  runSpacing: number = 0;
-  alignment: WrapAlignment = WrapAlignment.start;
-  runAlignment: WrapAlignment = WrapAlignment.start;
-  crossAxisAlignment: WrapCrossAlignment = WrapCrossAlignment.start;
+  private _direction: Axis = Axis.horizontal;
+  private _spacing: number = 0;
+  private _runSpacing: number = 0;
+  private _alignment: WrapAlignment = WrapAlignment.start;
+  private _runAlignment: WrapAlignment = WrapAlignment.start;
+  private _crossAxisAlignment: WrapCrossAlignment = WrapCrossAlignment.start;
+
+  constructor(option: Partial<WrapOption>) {
+    super();
+    this.direction = option?.direction ?? Axis.horizontal;
+    this.spacing = option?.spacing ?? 0;
+    this.runSpacing = option?.runSpacing ?? 0;
+    this.alignment = option?.alignment ?? WrapAlignment.start;
+    this.runAlignment = option?.runAlignment ?? WrapAlignment.start;
+    this.crossAxisAlignment =
+      option?.crossAxisAlignment ?? WrapCrossAlignment.start;
+  }
+
+  get direction(): Axis {
+    return this._direction;
+  }
+  set direction(value: Axis) {
+    if (this._direction === value) {
+      return;
+    }
+    this._direction = value;
+    this.markNeedsLayout();
+  }
+  get spacing(): number {
+    return this._spacing;
+  }
+  set spacing(value: number) {
+    if (this._spacing === value) {
+      return;
+    }
+    this._spacing = value;
+    this.markNeedsLayout();
+  }
+  get runSpacing(): number {
+    return this._runSpacing;
+  }
+  set runSpacing(value: number) {
+    if (this._runSpacing === value) {
+      return;
+    }
+    this._runSpacing = value;
+    this.markNeedsLayout();
+  }
+  get alignment(): WrapAlignment {
+    return this._alignment;
+  }
+  set alignment(value: WrapAlignment) {
+    if (this._alignment === value) {
+      return;
+    }
+    this._alignment = value;
+    this.markNeedsLayout();
+  }
+  get runAlignment(): WrapAlignment {
+    return this._runAlignment;
+  }
+  set runAlignment(value: WrapAlignment) {
+    if (this._runAlignment === value) {
+      return;
+    }
+    this._runAlignment = value;
+    this.markNeedsLayout();
+  }
+  get crossAxisAlignment(): WrapCrossAlignment {
+    return this._crossAxisAlignment;
+  }
+  set crossAxisAlignment(value: WrapCrossAlignment) {
+    if (this._crossAxisAlignment === value) {
+      return;
+    }
+    this._crossAxisAlignment = value;
+    this.markNeedsLayout();
+  }
+
   private getMainAxisExtent(size: Size): number {
     if (this.direction === Axis.horizontal) {
       return size.width;
@@ -181,12 +255,25 @@ class WrapRenderView extends MultiChildRenderView {
     }
 
     let child: RenderView = this.firstChild;
+    /**
+     * 存储children的大小，用于计算axis=horizontal时，@mainAxisExtent 记录的是children的宽度之和，
+     * 用于计算axis=vertical时，@mainAxisExtent 记录的是children的高度之和。
+     * @crossAxisExtent 是 @mainAxisExtent 的交叉方向轴和，即axis=horizontal时，@crossAxisExtent 记录的是children的高度之和。
+     */
     let mainAxisExtent: number = 0;
     let crossAxisExtent: number = 0;
-    //运行时宽度，用于判断是否超出宽度，超出则换行
+    /**
+     * 运行时宽度，用于判断是否超出宽度，超出则换行
+     * 用于计算axis=horizontal时，@runMainAxisExtent 记录的是当前行的宽度之和，与 @mainAxisExtent 不同的是，@runMainAxisExtent 记录的是当前行宽度之和，在换行
+     * 后会被归零，
+     */
     let runMainAxisExtent: number = 0;
     let runCrossAxisExtent: number = 0;
+    //当前处理main
     let currentChildNdx: number = 0;
+    /**
+     * 对于处理的一个单位（即不同方向时的不同列|行），记录其大小，用于计算每个单元的偏移量，并需要记录每个单元的个数，用于计算每行|列的宽度
+     */
     const runMetrics: Array<RunMetrics> = [];
     while (child) {
       child.layout(childConstraints, true);
@@ -197,14 +284,17 @@ class WrapRenderView extends MultiChildRenderView {
         currentChildNdx > 0 &&
         runMainAxisExtent + childMainAxisExtent + this.spacing > mainAxisLimit
       ) {
-        mainAxisExtent = Math.max(mainAxisExtent, runMainAxisExtent);
-        crossAxisExtent = Math.max(runCrossAxisExtent, crossAxisExtent);
-        crossAxisExtent += this.runSpacing;
+        mainAxisExtent += runMainAxisExtent;
+        crossAxisExtent += runCrossAxisExtent + this.runSpacing;
+        runMetrics.push(
+          new RunMetrics(
+            runMainAxisExtent,
+            runCrossAxisExtent + this.runSpacing,
+            currentChildNdx
+          )
+        );
         runMainAxisExtent = 0;
         runCrossAxisExtent = 0;
-        runMetrics.push(
-          new RunMetrics(mainAxisExtent, crossAxisExtent, currentChildNdx)
-        );
         currentChildNdx = 0;
       }
       runMainAxisExtent += childMainAxisExtent;
@@ -219,10 +309,14 @@ class WrapRenderView extends MultiChildRenderView {
     }
     //最后一行,如果currentChildNdx不为0，说明最新的一行
     if (currentChildNdx > 0) {
-      mainAxisExtent = runMainAxisExtent;
-      crossAxisExtent = runCrossAxisExtent + this.runSpacing;
+      mainAxisExtent += runMainAxisExtent;
+      crossAxisExtent += runCrossAxisExtent + this.runSpacing;
       runMetrics.push(
-        new RunMetrics(mainAxisExtent, crossAxisExtent, currentChildNdx)
+        new RunMetrics(
+          runMainAxisExtent,
+          runCrossAxisExtent + this.runSpacing,
+          currentChildNdx
+        )
       );
     }
 
@@ -273,17 +367,16 @@ class WrapRenderView extends MultiChildRenderView {
     }
     runBetween += this.runSpacing;
     let crossAxisOffset: number = runLeading;
+    child = this.firstChild;
     for (let i = 0; i < runLen; i++) {
       const run: RunMetrics = runMetrics[i];
       const runMainAxisExtent = run.mainAxisExtent;
       const runCrossAxisExtent = run.crossAxisExtent;
       const runChildCount = run.childCount;
-
       const mainAxisFreeSpace = Math.max(
         0,
         containerMainAxisExtent - runMainAxisExtent
       );
-
       let runMainLeading: number = 0;
       let runMainBetween: number = 0;
       switch (this.alignment) {
@@ -309,7 +402,6 @@ class WrapRenderView extends MultiChildRenderView {
       }
       runMainBetween += this.spacing;
 
-      let child = this.firstChild;
       let childMainPosition: number = runMainLeading;
 
       while (child) {
@@ -320,7 +412,10 @@ class WrapRenderView extends MultiChildRenderView {
         const childSize = child.size;
         const childMainAxisExtent = this.getMainAxisExtent(childSize);
         const childCrossAxisExtent = this.getCrossAxisExtent(childSize);
-        const crossOffset=this.getChildCrossAxisOffset(crossAxisExtent,childCrossAxisExtent);
+        const crossOffset = this.getChildCrossAxisOffset(
+          runCrossAxisExtent,
+          childCrossAxisExtent
+        );
         const offset = this.getOffset(
           childMainPosition,
           crossAxisOffset + crossOffset
@@ -340,18 +435,51 @@ class WrapRenderView extends MultiChildRenderView {
     child.parentData = new WrapParentData();
   }
 }
-
+interface WrapOption {
+  direction: Axis;
+  spacing: number;
+  runSpacing: number;
+  alignment: WrapAlignment;
+  runAlignment: WrapAlignment;
+  crossAxisAlignment: WrapCrossAlignment;
+}
 class Wrap extends MultiChildRenderObjectWidget {
-  direction: Axis = Axis.vertical;
+  direction: Axis = Axis.horizontal;
   spacing: number = 0;
   runSpacing: number = 0;
-  constructor(children: Array<Widget>) {
-    super(children);
+  alignment: WrapAlignment = WrapAlignment.start;
+  runAlignment: WrapAlignment = WrapAlignment.start;
+  crossAxisAlignment: WrapCrossAlignment = WrapCrossAlignment.start;
+  constructor(
+    option: Partial<WrapOption & MultiChildRenderObjectWidgetOption>
+  ) {
+    super(option?.children);
+    this.direction = option?.direction ?? Axis.horizontal;
+    this.spacing = option?.spacing ?? 0;
+    this.runSpacing = option?.runSpacing ?? 0;
+    this.alignment = option?.alignment ?? WrapAlignment.start;
+    this.runAlignment = option?.runAlignment ?? WrapAlignment.start;
+    this.crossAxisAlignment =
+      option?.crossAxisAlignment ?? WrapCrossAlignment.start;
   }
   createRenderObject(): RenderView {
-    return new WrapRenderView();
+    return new WrapRenderView({
+      direction: this.direction,
+      spacing: this.spacing,
+      runSpacing: this.runSpacing,
+      alignment: this.alignment,
+      runAlignment: this.runAlignment,
+      crossAxisAlignment: this.crossAxisAlignment,
+    });
   }
-  updateRenderObject(context: BuildContext, renderView: RenderView): void {}
+  updateRenderObject(context: BuildContext, renderView: WrapRenderView): void {
+    renderView.direction = this.direction;
+    renderView.spacing = this.spacing;
+    renderView.runSpacing = this.runSpacing;
+    renderView.alignment = this.alignment;
+    renderView.runAlignment = this.runAlignment;
+    renderView.crossAxisAlignment = this.crossAxisAlignment;
+  }
 }
 
 class V extends StatelessWidget {
@@ -415,7 +543,7 @@ class StateTest extends State {
   private waveFrequency: number = 0.01;
 
   public initState(): void {
-    //this.handleAnimate();
+    this.handleAnimate();
   }
 
   handleAnimate() {
@@ -432,32 +560,42 @@ class StateTest extends State {
     });
   }
 
-  private buildV(color: string, opacity: number): Flex {
-    return new Flex({
-      direction: Axis.vertical,
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        new ColoredBox(`rgba(239, 239, 239, ${opacity})`, new SizeBox(10, 10)),
-        new Flex({
-          direction: Axis.horizontal,
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            new ColoredBox(
-              `rgba(239, 239, 239, ${opacity})`,
-              new SizeBox(10, 10)
-            ),
-            new ColoredBox(color, new SizeBox(10, 10)),
-            new ColoredBox(
-              `rgba(239, 239, 239, ${opacity})`,
-              new SizeBox(10, 10)
-            ),
-          ],
-        }),
-        new ColoredBox(`rgba(239, 239, 239, ${opacity})`, new SizeBox(10, 10)),
-      ],
-    });
+  private buildV(color: string, opacity: number): SizeBox {
+    return new SizeBox(
+      30,
+      30,
+      new Flex({
+        direction: Axis.vertical,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          new ColoredBox(
+            `rgba(239, 239, 239, ${opacity})`,
+            new SizeBox(10, 10)
+          ),
+          new Flex({
+            direction: Axis.horizontal,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              new ColoredBox(
+                `rgba(239, 239, 239, ${opacity})`,
+                new SizeBox(10, 10)
+              ),
+              new ColoredBox(color, new SizeBox(10, 10)),
+              new ColoredBox(
+                `rgba(239, 239, 239, ${opacity})`,
+                new SizeBox(10, 10)
+              ),
+            ],
+          }),
+          new ColoredBox(
+            `rgba(239, 239, 239, ${opacity})`,
+            new SizeBox(10, 10)
+          ),
+        ],
+      })
+    );
   }
 
   buildRow(rowIndex: number): Widget {
@@ -485,23 +623,20 @@ class StateTest extends State {
     return color;
   }
   build(context: BuildContext): Widget {
-    const columns = Math.ceil(canvas.width / 30);
-    // console.log("列",columns);
-    const children: Widget[] = [];
-    for (let i = 0; i < columns; i++) {
-      children.push(this.buildRow(i));
-    }
-
     return new SizeBox(
       canvas.width,
       canvas.height,
-      new Wrap([
-        // new ColoredBox(this.getRandomColor(), new SizeBox(200, 20)),
-        new ColoredBox(this.getRandomColor(), new SizeBox(100, 20)),
-        new ColoredBox(this.getRandomColor(), new SizeBox(20, 20)),
-        new ColoredBox(this.getRandomColor(), new SizeBox(30, 30)),
-        new ColoredBox(this.getRandomColor(), new SizeBox(40, 40)),
-      ])
+      new Wrap({
+        direction: Axis.vertical,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing:Math.sin(this.time)*20,
+        runSpacing:Math.sin(this.time)*20,
+        alignment: WrapAlignment.center,
+        runAlignment: WrapAlignment.center,
+        children: new Array(200)
+          .fill(0)
+          .map((_, index) => this.buildV("orange", 1)),
+      })
     );
   }
 }

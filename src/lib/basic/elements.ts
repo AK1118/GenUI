@@ -1,7 +1,7 @@
 import { PlaceholderRenderView, RenderView } from "@/lib/render-object/basic";
 import { Size } from "./rect";
 import { RenderObjectElement, Widget } from "./framework";
-import { SchedulerBinding } from "./binding";
+import { ElementBinding, SchedulerBinding } from "./binding";
 
 export class BuildOwner {
   private dirtyElementList: Array<Element> = [];
@@ -81,6 +81,7 @@ export abstract class Element extends BuildContext {
   constructor(widget?: Widget) {
     super();
     this._widget = widget;
+    ElementBinding.incrementElementCount();
   }
   set slot(value: Object) {
     this._slot = value;

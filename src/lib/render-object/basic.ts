@@ -885,7 +885,6 @@ export class FlexRenderView extends MultiChildRenderView {
   get crossAxisAlignment(): CrossAxisAlignment {
     return this._crossAxisAlignment;
   }
-  private testdy: number = 0;
   render(context: PaintingContext, offset?: Vector): void {
     // offset.y += this.testdy;
     // this.testdy += 40;
