@@ -159,7 +159,7 @@ class LayerHandler<T extends Layer> {
 }
 
 // 存储父节点的某些数据
-class ParentData {}
+export class ParentData {}
 
 export class BoxParentData extends ParentData {
   offset: Vector = Vector.zero;
@@ -290,7 +290,7 @@ export abstract class RenderView extends AbstractNode {
       child.parentData = new ParentData();
     }
   }
-  protected markNeedsPaint() {
+  public markNeedsPaint() {
     //console.log("被调用标记渲染", this);
     if (!this.owner) return;
     if (this.needsRePaint) return;
@@ -305,7 +305,7 @@ export abstract class RenderView extends AbstractNode {
       this.parent?.markNeedsPaint();
     }
   }
-  protected markNeedsLayout() {
+  public markNeedsLayout() {
     if (!this.owner) return;
     if (this.needsReLayout) return;
     const owner: PipelineOwner = this.owner as PipelineOwner;
@@ -386,7 +386,7 @@ export abstract class RenderBox extends RenderView {
 
 //parentData设置
 export abstract class ParentDataRenderView<
-  P extends ParentData
+  P extends ParentData = ParentData
 > extends RenderBox {
   public parentData: P;
   constructor(child?: RenderBox) {
@@ -601,7 +601,6 @@ export class ConstrainedBoxRender extends SingleChildRenderView {
     width: number = this.width,
     height: number = this.height
   ): void {
-    if (this.width === width && this.height === height) return;
     this.additionalConstraints = new BoxConstraints({
       maxWidth: width,
       maxHeight: height,
@@ -710,7 +709,7 @@ export class AlignRenderView extends SingleChildRenderView {
 
 export class ClipRectRenderView extends ConstrainedBoxRender {
   performLayout(): void {
-    if (this.width===undefined  && this.height===undefined) {
+    if (this.width === undefined && this.height === undefined) {
       this.child.layout(this.constraints);
       this.size = this.child.size;
     } else {
@@ -856,9 +855,9 @@ export abstract class MultiChildRenderView extends RenderBox {
     //插入兄弟列表
     this.insertIntoList(renderView, after);
     this.childCount += 1;
-    if (renderView instanceof ParentDataRenderView) {
-      renderView?.applyParentData(renderView);
-    }
+    // if (renderView instanceof ParentDataRenderView) {
+    //   renderView?.applyParentData(renderView);
+    // }
   }
   private insertIntoList(child: RenderView, after?: RenderView) {
     let currentParentData =
@@ -942,28 +941,6 @@ export abstract class MultiChildRenderView extends RenderBox {
     }
   }
 }
-
-export class ExpandedRenderView extends ParentDataRenderView<FlexParentData> {
-  private _flex: number;
-  constructor(option?: Partial<ExpandedArguments & RenderViewOption>) {
-    const { child, flex } = option ?? {};
-    super(child);
-    this.flex = flex;
-  }
-  set flex(value: number) {
-    if (this._flex === value) return;
-    this._flex = value;
-    this.markNeedsLayout();
-  }
-  get flex(): number {
-    return this._flex;
-  }
-  applyParentData(renderObject: RenderView): void {
-    if (renderObject.parentData instanceof FlexParentData) {
-      renderObject.parentData.flex = this.flex;
-    }
-  }
-}
 export class FlexRenderView extends MultiChildRenderView {
   private overflow: number = 0;
   public _direction: Axis = Axis.horizontal;
@@ -1001,14 +978,7 @@ export class FlexRenderView extends MultiChildRenderView {
   get crossAxisAlignment(): CrossAxisAlignment {
     return this._crossAxisAlignment;
   }
-  render(context: PaintingContext, offset?: Vector): void {
-    // offset.y += this.testdy;
-    // this.testdy += 40;
-    super.render(context, offset);
-    //console.log("---Flex渲染---", this.size);
-  }
   performLayout(): void {
-    //console.log("---Flex构建---");
     const computeSize: LayoutSizes = this.computeSize(this.constraints);
     if (this.direction === Axis.horizontal) {
       this.size = this.constraints.constrain(
@@ -1058,11 +1028,11 @@ export class FlexRenderView extends MultiChildRenderView {
     let child = this.firstChild;
     let childMainPosition: number = leadingSpace,
       childCrossPosition: number = 0;
-
+    let childCount=0;
     while (child != null) {
       const parentData =
         child.parentData as ContainerRenderViewParentData<RenderView>;
-
+      childCount+=1;
       const childMainSize = this.getMainSize(child.size),
         childCrossSize = this.getCrossSize(child.size);
 
@@ -1094,6 +1064,7 @@ export class FlexRenderView extends MultiChildRenderView {
   }
 
   private computeSize(constraints: BoxConstraints): LayoutSizes {
+    
     let totalFlex: number = 0,
       maxMainSize: number = 0,
       canFlex: boolean,
@@ -1143,13 +1114,14 @@ export class FlexRenderView extends MultiChildRenderView {
         }
         child.layout(innerConstraint);
         const childSize = child?.size || Size.zero;
+        
         allocatedSize += this.getMainSize(childSize);
         crossSize = Math.max(crossSize, this.getCrossSize(childSize));
       }
 
       child = parentData?.nextSibling;
     }
-
+    
     //弹性布局计算
     if (totalFlex > 0) {
       //剩余空间

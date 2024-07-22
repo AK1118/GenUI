@@ -1,17 +1,15 @@
 import {
+  BoxParentData,
   ColoredRender,
   ConstrainedBoxRender,
   MultiChildRenderView,
+  ParentData,
+  ParentDataRenderView,
   RenderView,
   RootRenderView,
 } from "../render-object/basic";
 import { PipelineOwner, RendererBinding } from "./binding";
-import {
-  BuildContext,
-  BuildOwner,
-  Element,
-  RenderViewElement,
-} from "./elements";
+import { BuildContext, BuildOwner, Element } from "./elements";
 
 abstract class Key {}
 export interface SingleChildRenderObjectWidgetOption {
@@ -44,9 +42,32 @@ export abstract class ComponentElement extends Element {
   private _performRebuild(): void {
     const built = this.build();
     super.performRebuild();
-    this.child = this.updateChild(this.child, built,this.slot);
+    this.child = this.updateChild(this.child, built, this.slot);
   }
   abstract build(): Widget;
+}
+
+export abstract class ProxyElement extends ComponentElement {
+  update(newWidget: Widget): void {
+    const oldWidget = { ...this.widget } as ProxyWidget;
+    if (this.widget?.key === newWidget?.key) return;
+    super.update(newWidget);
+    if (this.widget.key !== newWidget?.key) return;
+    this.updated(oldWidget);
+    this.rebuild(true);
+  }
+  updated(oldWidget: ProxyWidget) {
+    this.notifyClients(oldWidget);
+  }
+  abstract notifyClients(oldWidget: ProxyWidget);
+}
+
+export abstract class ProxyWidget extends Widget {
+  constructor(child?: Widget) {
+    super();
+    this.child = child;
+  }
+  public child: Widget;
 }
 
 class StatelessElement extends ComponentElement {
@@ -152,7 +173,18 @@ export abstract class RenderObjectElement extends Element {
     (built as RenderObjectWidget).updateRenderObject(this, this.renderView);
     super.performRebuild();
   }
-
+  protected findAncestorParentDataElement(): ParentDataElement {
+    let ancestor: Element = this.parent;
+    let result: ParentDataElement;
+    while (ancestor != null) {
+      if (ancestor instanceof ParentDataElement) {
+        result = ancestor;
+        break;
+      }
+      ancestor = ancestor.parent;
+    }
+    return result;
+  }
   protected findAncestorRenderObjectElement(): RenderObjectElement {
     let ancestor: Element = this.parent;
     while (ancestor != null) {
@@ -176,9 +208,13 @@ export abstract class RenderObjectElement extends Element {
       this.renderView,
       newSlot
     );
-    // if(this.renderView.parentData){
-    //   this.renderView
-    // }
+    const parentDataElement = this.findAncestorParentDataElement();
+    if (parentDataElement) {
+      this.updateParentData(parentDataElement.widget as ParentDataWidget);
+    }
+  }
+  public updateParentData(parentDataWidget: ParentDataWidget): void {
+    parentDataWidget.applyParentData(this.renderView as ParentDataRenderView);
   }
   visitChildren(visitor: (child: Element) => void): void {
     visitor(this.child);
@@ -324,7 +360,7 @@ export class MultiChildRenderObjectElement extends RenderObjectElement {
   visitChildren(visitor: (child: Element) => void): void {
     this.children.forEach(visitor);
   }
-  insertRenderObjectChild(child: MultiChildRenderView, slot?: Object): void {
+  insertRenderObjectChild(child: RenderView, slot?: Object): void {
     (this.renderView as MultiChildRenderView).insert(
       child,
       (slot as RenderObjectElement)?.renderView
@@ -367,4 +403,47 @@ export class RootRenderObjectElement extends SingleChildRenderObjectElement {
       this.markNeedsBuild();
     }
   }
+}
+/**
+ * 带有数据(ParentData)的节点基类，例如 @Expanded 、 @Positioned 等。
+ * 该节点不会在树中生成一个元素，而是将数据传递给子节点，且它派生自 @ComponentElement
+ * 故不会生成 @RenderView 对象，反而是将子节点的 @RenderView 加入节点的ParentData数据。
+ *
+ * @parentData 是每一个 @RenderView 都有的一个属性,在一般情况下初始化为 @ParentData 实例，
+ * 如父节点重写了 @setupParentData 方法，则子节点的 @parentData 属性会被创建为父节点指定的 @ParentData 的派生类 @ContainerRenderViewParentData ，详见
+ * /render-object/basic.ts RenderView.setupParentData。
+ *
+ * @parentData 的初始化数据赋值一般发生在 @ParentDataWidget 类的 @applyParentData 方法中，该方法是初始化 @parentData 的方法，也是更新 @parentData 的方法,
+ * 初始化调用时机参见 @RenderObjectElement @attachRenderObject 。
+ * 更新调用时机参见 @ProxyElement @update 。
+ *
+ */
+export class ParentDataElement<
+  T extends ParentData = ParentData
+> extends ProxyElement {
+  build(): Widget {
+    return (this.widget as RenderObjectWidget).child;
+  }
+  applyParentData(widget: ParentDataWidget): void {
+    const applyParentDataToChild = (child: Element) => {
+      if (child instanceof RenderObjectElement) {
+        child.updateParentData(widget);
+      } else if (child instanceof ParentDataElement) {
+        child.visitChildren(applyParentDataToChild);
+      }
+    };
+    this.visitChildren(applyParentDataToChild);
+  }
+  notifyClients(oldWidget: ProxyWidget) {
+    this.applyParentData(this.widget as ParentDataWidget);
+  }
+}
+
+export abstract class ParentDataWidget<
+  T extends ParentData = ParentData
+> extends ProxyWidget {
+  public createElement(): Element {
+    return new ParentDataElement<T>(this);
+  }
+  abstract applyParentData(child: ParentDataRenderView<T>): void;
 }

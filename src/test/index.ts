@@ -66,14 +66,15 @@ class StateTest extends State {
   private time: number = 0;
   private waveSpeed: number = 0.01;
   private waveFrequency: number = 0.01;
-  private flex:number=0;
+  private flex: number = 0;
   public initState(): void {
     //  this.handleAnimate();
-    setInterval(()=>{
-      this.setState(()=>{
-        this.flex+=1;
+    setInterval(() => {
+      g.clearRect(0, 0, canvas.width, canvas.height);
+      this.setState(() => {
+        this.flex += 1;
       });
-    },1000);
+    }, 1000);
   }
 
   handleAnimate() {
@@ -159,50 +160,74 @@ class StateTest extends State {
     return new SizeBox({
       width: canvas.width,
       height: canvas.height,
+      //child:
+      // new Wrap({
+      //   children: [
+      //     new ClipRRect({
+      //       borderRadius: 10,
+      //       child: new ColoredBox({
+      //         color: this.getRandomColor(),
+      //         child: new SizeBox({
+      //           width: 10*this.flex,
+      //           height: 40,
+      //         }),
+      //       }),
+      //     }),
+      //     new ClipRRect({
+      //       borderRadius: 10,
+      //       child: new ColoredBox({
+      //         color: this.getRandomColor(),
+      //         child: new SizeBox({
+      //           width: 40,
+      //           height: 40,
+      //         }),
+      //       }),
+      //     }),
+      //   ],
+      // }),
+
       child: new Flex({
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         direction: Axis.vertical,
         children: [
-          new Expanded({
-            flex:this.flex,
-            child:new ClipRRect({
-              borderRadius: 10,
-              child: new ColoredBox({
-                color: "#efefef",
-                child: new SizeBox({
-                  width: 40,
-                  height: 40,
-                }),
-              }),
-            }),
-          }),
-          new Expanded({
-            flex:2,
-            child:new ClipRRect({
-              borderRadius: 10,
-              child: new ColoredBox({
-                color: "#efefef",
-                child: new SizeBox({
-                  width: 40,
-                  height: 40,
-                }),
-              }),
-            }),
-          }),
-          // new Expanded({
-          //   flex:3,
-          //   child:new ClipRRect({
-          //     borderRadius: 10,
-          //     child: new ColoredBox({
-          //       color: "#efefef",
-          //       child: new SizeBox({
-          //         width: 40,
-          //         height: 40,
-          //       }),
+          // new ClipRRect({
+          //   borderRadius: 10,
+          //   child: new ColoredBox({
+          //     color: this.getRandomColor(),
+          //     child: new SizeBox({
+          //       width: 40,
+          //       height: 40,
           //     }),
           //   }),
           // }),
+          //  new ColoredBox({
+          //       color: this.getRandomColor(),
+          //       child: new SizeBox({
+          //         width: this.flex*1.1,
+          //         height: 40,
+          //       }),
+          //     }),
+          new Expanded({
+            flex: this.flex,
+            child: new ColoredBox({
+              color: "#bbbbbb",
+              child: new SizeBox({
+                width: 40,
+                height: 40,
+              }),
+            }),
+          }),
+          new Expanded({
+            flex: this.flex,
+            child: new ColoredBox({
+              color: "#efefef",
+              child: new SizeBox({
+                width: 40,
+                height: 40,
+              }),
+            }),
+          }),
         ],
       }),
     });

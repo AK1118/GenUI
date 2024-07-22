@@ -3,6 +3,7 @@ import { BuildContext, Element } from "../basic/elements";
 import {
   MultiChildRenderObjectWidget,
   MultiChildRenderObjectWidgetOption,
+  ParentDataWidget,
   RootRenderObjectElement,
   SingleChildRenderObjectWidget,
   SingleChildRenderObjectWidgetOption,
@@ -19,12 +20,13 @@ import {
   ConstrainedBoxRender,
   CrossAxisAlignment,
   ExpandedArguments,
-  ExpandedRenderView,
   FlexOption,
+  FlexParentData,
   FlexRenderView,
   MainAxisAlignment,
   PaddingOption,
   PaddingRenderView,
+  ParentDataRenderView,
   Radius,
   RenderView,
   RootRenderView,
@@ -121,24 +123,21 @@ export class RootWidget extends SingleChildRenderObjectWidget {
   }
   updateRenderObject(context: BuildContext, renderView: RenderView) {}
 }
-export class Expanded extends SingleChildRenderObjectWidget {
+export class Expanded extends ParentDataWidget<FlexParentData> {
   private flex: number = 0;
-  updateRenderObject(
-    context: BuildContext,
-    renderView: ExpandedRenderView
-  ): void {
-    renderView.flex = this.flex;
-  }
   constructor(
     option: Partial<ExpandedArguments & SingleChildRenderObjectWidgetOption>
   ) {
     super(option?.child);
     this.flex = option?.flex ?? 0;
   }
-  createRenderObject(): RenderView {
-    return new ExpandedRenderView({
-      flex: this.flex,
-    });
+  applyParentData(renderView: ParentDataRenderView<FlexParentData>): void {
+    const flexParentData = renderView?.parentData as FlexParentData;
+    flexParentData.flex = this.flex;
+    renderView.parentData = flexParentData;
+    if (renderView.parent instanceof RenderView) {
+      renderView.parent.markNeedsLayout();
+    }
   }
 }
 export class Flex extends MultiChildRenderObjectWidget {

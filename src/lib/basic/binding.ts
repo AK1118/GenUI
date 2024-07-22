@@ -4,7 +4,7 @@ import {
   RenderView,
 } from "../render-object/basic";
 import { BoxConstraints } from "@/lib/rendering/constraints";
-import { BuildOwner, Element, RootElementView } from "./elements";
+import { BuildOwner } from "./elements";
 import Painter from "../painting/painter";
 import Vector from "../math/vector";
 import { RootRenderObjectElement, Widget } from "@/lib/basic/framework";
