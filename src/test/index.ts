@@ -15,7 +15,9 @@ import {
 } from "@/lib/render-object/basic";
 import {
   Align,
+  ClipRRect,
   ColoredBox,
+  Expanded,
   Flex,
   Padding,
   SizeBox,
@@ -32,6 +34,7 @@ import Alignment from "@/lib/painting/alignment";
 import { BoxConstraints } from "@/lib/rendering/constraints";
 import Vector from "@/lib/math/vector";
 import runApp from "@/index";
+import { sin } from "@/lib/math/math";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
@@ -63,9 +66,14 @@ class StateTest extends State {
   private time: number = 0;
   private waveSpeed: number = 0.01;
   private waveFrequency: number = 0.01;
-
+  private flex:number=0;
   public initState(): void {
-    this.handleAnimate();
+    //  this.handleAnimate();
+    setInterval(()=>{
+      this.setState(()=>{
+        this.flex+=1;
+      });
+    },1000);
   }
 
   handleAnimate() {
@@ -151,16 +159,51 @@ class StateTest extends State {
     return new SizeBox({
       width: canvas.width,
       height: canvas.height,
-      child: new Wrap({
+      child: new Flex({
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         direction: Axis.vertical,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: Math.sin(this.time) * 20,
-        runSpacing: Math.sin(this.time) * 20,
-        alignment: WrapAlignment.center,
-        runAlignment: WrapAlignment.center,
-        children: new Array(200)
-          .fill(0)
-          .map((_, index) => this.buildV("orange", 1)),
+        children: [
+          new Expanded({
+            flex:this.flex,
+            child:new ClipRRect({
+              borderRadius: 10,
+              child: new ColoredBox({
+                color: "#efefef",
+                child: new SizeBox({
+                  width: 40,
+                  height: 40,
+                }),
+              }),
+            }),
+          }),
+          new Expanded({
+            flex:2,
+            child:new ClipRRect({
+              borderRadius: 10,
+              child: new ColoredBox({
+                color: "#efefef",
+                child: new SizeBox({
+                  width: 40,
+                  height: 40,
+                }),
+              }),
+            }),
+          }),
+          // new Expanded({
+          //   flex:3,
+          //   child:new ClipRRect({
+          //     borderRadius: 10,
+          //     child: new ColoredBox({
+          //       color: "#efefef",
+          //       child: new SizeBox({
+          //         width: 40,
+          //         height: 40,
+          //       }),
+          //     }),
+          //   }),
+          // }),
+        ],
       }),
     });
   }

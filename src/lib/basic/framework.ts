@@ -176,6 +176,9 @@ export abstract class RenderObjectElement extends Element {
       this.renderView,
       newSlot
     );
+    // if(this.renderView.parentData){
+    //   this.renderView
+    // }
   }
   visitChildren(visitor: (child: Element) => void): void {
     visitor(this.child);

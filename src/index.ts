@@ -7,6 +7,9 @@ import {
   RenderObjectElement,
   SingleChildRenderObjectElement,
   SingleChildRenderObjectWidget,
+  State,
+  StatefulWidget,
+  StatelessWidget,
   Widget,
 } from "./lib/basic/framework";
 import Rect, { Size } from "./lib/basic/rect";
@@ -45,6 +48,9 @@ export {
   //Widget
   SingleChildRenderObjectWidget,
   MultiChildRenderObjectWidget,
+  StatelessWidget,
+  StatefulWidget,
+  State,
   Widget,
   ColoredBox,
   Padding,
@@ -52,6 +58,7 @@ export {
   Wrap,
   Flex,
   SizeBox,
+  SizeBox as SizedBox,
   //Basic
   Alignment,
   WrapAlignment,

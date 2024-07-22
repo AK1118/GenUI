@@ -9,16 +9,23 @@ import {
   Widget,
 } from "../basic/framework";
 import {
+  AlignArguments,
   AlignRenderView,
   Axis,
+  ClipRectRenderView,
+  ClipRRectArguments,
+  ClipRRectRenderView,
   ColoredRender,
   ConstrainedBoxRender,
   CrossAxisAlignment,
+  ExpandedArguments,
+  ExpandedRenderView,
   FlexOption,
   FlexRenderView,
   MainAxisAlignment,
   PaddingOption,
   PaddingRenderView,
+  Radius,
   RenderView,
   RootRenderView,
   SizedBoxOption,
@@ -28,12 +35,14 @@ import {
   WrapRenderView,
 } from "../render-object/basic";
 import Alignment from "../painting/alignment";
-export interface ColoredBoxOption{
-  color:string,
+export interface ColoredBoxOption {
+  color: string;
 }
 export class ColoredBox extends SingleChildRenderObjectWidget {
   private color: string;
-  constructor(option:Partial<ColoredBoxOption&SingleChildRenderObjectWidgetOption>) {
+  constructor(
+    option: Partial<ColoredBoxOption & SingleChildRenderObjectWidgetOption>
+  ) {
     super(option?.child);
     this.color = option?.color;
   }
@@ -46,13 +55,13 @@ export class ColoredBox extends SingleChildRenderObjectWidget {
 }
 
 export class SizeBox extends SingleChildRenderObjectWidget {
-  private width: number;
-  private height: number;
+  protected width: number;
+  protected height: number;
   constructor(option: Partial<SizedBoxOption & SingleChildRenderObjectWidget>) {
     super(option?.child);
     const { width, height } = option;
-    this.width = width ?? 0;
-    this.height = height ?? 0;
+    this.width = width;
+    this.height = height;
   }
   createRenderObject(): RenderView {
     return new ConstrainedBoxRender({
@@ -64,6 +73,7 @@ export class SizeBox extends SingleChildRenderObjectWidget {
     (renderView as ConstrainedBoxRender).setSize(this.width, this.height);
   }
 }
+export { SizeBox as SizedBox };
 
 export class Padding extends SingleChildRenderObjectWidget {
   private option: Partial<PaddingOption>;
@@ -85,12 +95,16 @@ export class Padding extends SingleChildRenderObjectWidget {
 
 export class Align extends SingleChildRenderObjectWidget {
   private alignment: Alignment;
-  constructor(alignment?: Alignment, child?: Widget) {
-    super(child);
-    this.alignment = alignment ?? Alignment.center;
+  constructor(
+    option: Partial<AlignArguments & SingleChildRenderObjectWidgetOption>
+  ) {
+    super(option?.child);
+    this.alignment = option?.alignment ?? Alignment.center;
   }
   createRenderObject(): RenderView {
-    return new AlignRenderView(this.alignment);
+    return new AlignRenderView({
+      alignment: this.alignment,
+    });
   }
   updateRenderObject(context: BuildContext, renderView: RenderView): void {
     (renderView as AlignRenderView).alignment = this.alignment;
@@ -107,7 +121,26 @@ export class RootWidget extends SingleChildRenderObjectWidget {
   }
   updateRenderObject(context: BuildContext, renderView: RenderView) {}
 }
-
+export class Expanded extends SingleChildRenderObjectWidget {
+  private flex: number = 0;
+  updateRenderObject(
+    context: BuildContext,
+    renderView: ExpandedRenderView
+  ): void {
+    renderView.flex = this.flex;
+  }
+  constructor(
+    option: Partial<ExpandedArguments & SingleChildRenderObjectWidgetOption>
+  ) {
+    super(option?.child);
+    this.flex = option?.flex ?? 0;
+  }
+  createRenderObject(): RenderView {
+    return new ExpandedRenderView({
+      flex: this.flex,
+    });
+  }
+}
 export class Flex extends MultiChildRenderObjectWidget {
   public direction: Axis = Axis.horizontal;
   public mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.start;
@@ -172,5 +205,38 @@ export class Wrap extends MultiChildRenderObjectWidget {
     renderView.alignment = this.alignment;
     renderView.runAlignment = this.runAlignment;
     renderView.crossAxisAlignment = this.crossAxisAlignment;
+  }
+}
+
+export class ClipRect extends SizeBox {
+  createRenderObject(): RenderView {
+    return new ClipRectRenderView({
+      width: this.width,
+      height: this.height,
+    });
+  }
+}
+export class ClipRRect extends ClipRect {
+  private borderRadius: Radius = 0;
+  constructor(
+    option: Partial<
+      ClipRRectArguments & SizedBoxOption & SingleChildRenderObjectWidget
+    >
+  ) {
+    super(option);
+    this.borderRadius = option?.borderRadius ?? 0;
+  }
+  createRenderObject(): RenderView {
+    return new ClipRRectRenderView({
+      borderRadius: this.borderRadius,
+      width: this.width,
+      height: this.height,
+    });
+  }
+  updateRenderObject(
+    context: BuildContext,
+    renderView: ClipRRectRenderView
+  ): void {
+    renderView.borderRadius = this.borderRadius;
   }
 }

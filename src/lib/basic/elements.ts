@@ -33,6 +33,9 @@ export abstract class BuildContext {
   get size(): Size {
     return null;
   }
+  public findRenderView(): RenderView {
+    return null;
+  }
 }
 // ELEMENTS
 
@@ -60,6 +63,9 @@ export abstract class Element extends BuildContext {
   public _renderView: RenderView;
   set renderView(value: RenderView) {
     this._renderView = value;
+  }
+  public findRenderView(): RenderView {
+    return this.renderView;
   }
   /**
    * 当组件生成 @RenderView 时,可能会出现子级为@ComponentElement ,此时需要
@@ -461,9 +467,3 @@ interface SingleChildElementOption {
 //     super.update(newElement);
 //   }
 // }
-
-class MultiChildElement extends Element {
-  createRenderView(context: BuildContext): RenderView {
-    return new PlaceholderRenderView();
-  }
-}

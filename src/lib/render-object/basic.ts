@@ -102,10 +102,10 @@ export interface BoundsRRect extends BoundsRect {
   radii: number | Iterable<number>;
 }
 
-export interface ClipRectOption extends RenderViewOption {}
+export interface ClipRectArguments {}
 
 export type Radius = number | Iterable<number>;
-export interface ClipRRectOption extends ClipRectOption {
+export interface ClipRRectArguments extends ClipRectArguments {
   borderRadius: Radius;
 }
 
@@ -121,7 +121,7 @@ export interface LayoutSizes {
   allocatedSize: number;
 }
 
-export interface ExpandedOption {
+export interface ExpandedArguments {
   flex: number;
 }
 export interface StackOption {
@@ -394,6 +394,11 @@ export abstract class ParentDataRenderView<
     this.child = child;
   }
   abstract applyParentData(renderObject: RenderView): void;
+  updateParentData() {
+    if (this.parentData) {
+      this.applyParentData(this);
+    }
+  }
   layout(constraints: BoxConstraints, parentUseSize?: boolean): void {
     super.layout(constraints, parentUseSize);
     if (this.child) {
@@ -552,7 +557,7 @@ export class ConstrainedBoxRender extends SingleChildRenderView {
   private additionalConstraints: BoxConstraints;
   constructor(option: Partial<SizedBoxOption & SingleChildRenderViewOption>) {
     super(option?.child);
-    const { width = 0, height = 0 } = option;
+    const { width, height } = option;
     this.width = width;
     this.height = height;
     this.additionalConstraints = new BoxConstraints({
@@ -661,12 +666,14 @@ export class PaddingRenderView extends SingleChildRenderView {
     );
   }
 }
-
+export interface AlignArguments {
+  alignment: Alignment;
+}
 export class AlignRenderView extends SingleChildRenderView {
   private _alignment: Alignment = Alignment.center;
-  constructor(alignment: Alignment, child?: RenderBox) {
-    super(child);
-    this.alignment = alignment;
+  constructor(option: Partial<AlignArguments & SingleChildRenderViewOption>) {
+    super(option?.child);
+    this.alignment = option?.alignment;
   }
   set alignment(alignment: Alignment) {
     this._alignment = alignment ?? this._alignment;
@@ -701,12 +708,52 @@ export class AlignRenderView extends SingleChildRenderView {
   }
 }
 
-export class ClipRRect extends SingleChildRenderView {
-  private borderRadius: Radius;
-  constructor(option: Partial<ClipRRectOption>) {
-    const { child, borderRadius } = option;
-    super(child);
+export class ClipRectRenderView extends ConstrainedBoxRender {
+  performLayout(): void {
+    if (this.width===undefined  && this.height===undefined) {
+      this.child.layout(this.constraints);
+      this.size = this.child.size;
+    } else {
+      this.child.layout(this.constraints);
+      super.performLayout();
+    }
+  }
+  render(context: PaintingContext, offset?: Vector): void {
+    context.clipRectAndPaint(
+      Clip.hardEdge,
+      {
+        x: offset?.x ?? 0,
+        y: offset?.y ?? 0,
+        width: this.size.width,
+        height: this.size.height,
+      },
+      () => {
+        super.render(context, offset);
+      }
+    );
+  }
+}
+
+export class ClipRRectRenderView extends ClipRectRenderView {
+  private _borderRadius: Radius;
+  constructor(
+    option: Partial<
+      SizedBoxOption & ClipRRectArguments & SingleChildRenderViewOption
+    >
+  ) {
+    const { borderRadius } = option;
+    super(option);
     this.borderRadius = borderRadius;
+  }
+  get borderRadius(): Radius {
+    return this._borderRadius;
+  }
+  set borderRadius(borderRadius: Radius) {
+    this._borderRadius = borderRadius;
+    this.markNeedsPaint();
+  }
+  performLayout(): void {
+    super.performLayout();
   }
   render(context: PaintingContext, offset?: Vector): void {
     context.clipRRectAndPaint(
@@ -717,23 +764,6 @@ export class ClipRRect extends SingleChildRenderView {
         width: this.size.width,
         height: this.size.height,
         radii: this.borderRadius,
-      },
-      () => {
-        super.render(context, offset);
-      }
-    );
-  }
-}
-
-export class ClipRect extends SingleChildRenderView {
-  render(context: PaintingContext, offset?: Vector): void {
-    context.clipRectAndPaint(
-      Clip.hardEdge,
-      {
-        x: offset?.x ?? 0,
-        y: offset?.y ?? 0,
-        width: this.size.width,
-        height: this.size.height,
       },
       () => {
         super.render(context, offset);
@@ -913,15 +943,20 @@ export abstract class MultiChildRenderView extends RenderBox {
   }
 }
 
-export class Expanded extends ParentDataRenderView<FlexParentData> {
-  private flex: number;
-  constructor(option?: Partial<ExpandedOption & RenderViewOption>) {
+export class ExpandedRenderView extends ParentDataRenderView<FlexParentData> {
+  private _flex: number;
+  constructor(option?: Partial<ExpandedArguments & RenderViewOption>) {
     const { child, flex } = option ?? {};
     super(child);
     this.flex = flex;
   }
-  layout(constraints: BoxConstraints, parentUseSize?: boolean): void {
-    super.layout(constraints, true);
+  set flex(value: number) {
+    if (this._flex === value) return;
+    this._flex = value;
+    this.markNeedsLayout();
+  }
+  get flex(): number {
+    return this._flex;
   }
   applyParentData(renderObject: RenderView): void {
     if (renderObject.parentData instanceof FlexParentData) {
