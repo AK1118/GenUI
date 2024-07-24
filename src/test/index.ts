@@ -22,6 +22,7 @@ import {
   Flex,
   Padding,
   Positioned,
+  Rotate,
   SizeBox,
   Stack,
   Wrap,
@@ -37,7 +38,8 @@ import Alignment from "@/lib/painting/alignment";
 import { BoxConstraints } from "@/lib/rendering/constraints";
 import Vector from "@/lib/math/vector";
 import runApp from "@/index";
-import { sin } from "@/lib/math/math";
+import { abs, cos, radiansPerDegree, sin } from "@/lib/math/math";
+import { GlobalKey } from "@/lib/basic/key";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
@@ -71,13 +73,13 @@ class StateTest extends State {
   private waveFrequency: number = 0.01;
   private flex: number = 0;
   public initState(): void {
-    //  this.handleAnimate();
-    setInterval(() => {
-      g.clearRect(0, 0, canvas.width, canvas.height);
-      this.setState(() => {
-        this.flex += 1;
-      });
-    }, 1000);
+    this.handleAnimate();
+    // setInterval(() => {
+    //   g.clearRect(0, 0, canvas.width, canvas.height);
+    //   this.setState(() => {
+    //     this.flex += 1;
+    //   });
+    // }, 1000);
   }
 
   handleAnimate() {
@@ -159,122 +161,12 @@ class StateTest extends State {
     }
     return color;
   }
+  private globalKey = new GlobalKey();
+
   build(context: BuildContext): Widget {
     return new SizeBox({
       width: canvas.width,
       height: canvas.height,
-      // child: new Align({
-      //   child:
-      //     this.flex % 2 == 0
-      //       ? new ColoredBox({
-      //           color: "#efefef",
-      //           child: new SizeBox({
-      //             width: 40,
-      //             height: 40,
-      //           }),
-      //         })
-      //       : null,
-      // }),
-      child: new Stack({
-        fit: StackFit.expand,
-        children: [
-          // new Align({
-          //   child:
-          //     this.flex % 2 == 0
-          //       ? new ColoredBox({
-          //           color: "#efefef",
-          //           child: new SizeBox({
-          //             width: 40,
-          //             height: 40,
-          //           }),
-          //         })
-          //       : null,
-          // }),
-           this.flex % 2 == 0
-            ? new Positioned({
-                bottom: this.flex * 10,
-                left: 0,
-                child: new ColoredBox({
-                  color: "#efefef",
-                  child: new SizeBox({
-                    width: 40,
-                    height: 40,
-                  }),
-                }),
-              })
-            : null,
-        ],
-      }),
-      //child:
-      // new Wrap({
-      //   children: [
-      //     new ClipRRect({
-      //       borderRadius: 10,
-      //       child: new ColoredBox({
-      //         color: this.getRandomColor(),
-      //         child: new SizeBox({
-      //           width: 10*this.flex,
-      //           height: 40,
-      //         }),
-      //       }),
-      //     }),
-      //     new ClipRRect({
-      //       borderRadius: 10,
-      //       child: new ColoredBox({
-      //         color: this.getRandomColor(),
-      //         child: new SizeBox({
-      //           width: 40,
-      //           height: 40,
-      //         }),
-      //       }),
-      //     }),
-      //   ],
-      // }),
-
-      // child: new Flex({
-      //   mainAxisAlignment: MainAxisAlignment.center,
-      //   crossAxisAlignment: CrossAxisAlignment.center,
-      //   direction: Axis.vertical,
-      //   children: [
-      //     // new ClipRRect({
-      //     //   borderRadius: 10,
-      //     //   child: new ColoredBox({
-      //     //     color: this.getRandomColor(),
-      //     //     child: new SizeBox({
-      //     //       width: 40,
-      //     //       height: 40,
-      //     //     }),
-      //     //   }),
-      //     // }),
-      //     //  new ColoredBox({
-      //     //       color: this.getRandomColor(),
-      //     //       child: new SizeBox({
-      //     //         width: this.flex*1.1,
-      //     //         height: 40,
-      //     //       }),
-      //     //     }),
-      //     new Expanded({
-      //       flex: this.flex,
-      //       child: new ColoredBox({
-      //         color: "#bbbbbb",
-      //         child: new SizeBox({
-      //           width: 40,
-      //           height: 40,
-      //         }),
-      //       }),
-      //     }),
-      //     new Expanded({
-      //       flex: this.flex,
-      //       child: new ColoredBox({
-      //         color: "#efefef",
-      //         child: new SizeBox({
-      //           width: 40,
-      //           height: 40,
-      //         }),
-      //       }),
-      //     }),
-      //   ],
-      // }),
     });
   }
 }

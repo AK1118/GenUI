@@ -52,7 +52,7 @@ export class ColoredBox extends SingleChildRenderObjectWidget {
   constructor(
     option: Partial<ColoredBoxOption & SingleChildRenderObjectWidgetArguments>
   ) {
-    super(option?.child);
+    super(option?.child, option.key);
     this.color = option?.color;
   }
   createRenderObject(): RenderView {
@@ -67,7 +67,7 @@ export class SizeBox extends SingleChildRenderObjectWidget {
   protected width: number;
   protected height: number;
   constructor(option: Partial<SizedBoxOption & SingleChildRenderObjectWidget>) {
-    super(option?.child);
+    super(option?.child, option.key);
     const { width, height } = option;
     this.width = width;
     this.height = height;
@@ -89,7 +89,7 @@ export class Padding extends SingleChildRenderObjectWidget {
   constructor(
     option: Partial<PaddingOption & SingleChildRenderObjectWidgetArguments>
   ) {
-    super(option.child);
+    super(option.child, option.key);
     this.option = option;
   }
   createRenderObject(): RenderView {
@@ -107,7 +107,7 @@ export class Align extends SingleChildRenderObjectWidget {
   constructor(
     option: Partial<AlignArguments & SingleChildRenderObjectWidgetArguments>
   ) {
-    super(option?.child);
+    super(option?.child, option.key);
     this.alignment = option?.alignment ?? Alignment.center;
   }
   createRenderObject(): RenderView {
@@ -135,7 +135,7 @@ export class Expanded extends ParentDataWidget<FlexParentData> {
   constructor(
     option: Partial<ExpandedArguments & SingleChildRenderObjectWidgetArguments>
   ) {
-    super(option?.child);
+    super(option?.child, option.key);
     this.flex = option?.flex ?? 0;
   }
   applyParentData(renderView: ParentDataRenderView<FlexParentData>): void {
@@ -156,7 +156,7 @@ export class Flex extends MultiChildRenderObjectWidget {
   ) {
     const { direction, children, mainAxisAlignment, crossAxisAlignment } =
       option;
-    super(children);
+    super(children, option.key);
     this.direction = direction ?? this.direction;
     this.mainAxisAlignment = mainAxisAlignment ?? this.mainAxisAlignment;
     this.crossAxisAlignment = crossAxisAlignment ?? this.crossAxisAlignment;
@@ -185,7 +185,7 @@ export class Wrap extends MultiChildRenderObjectWidget {
   constructor(
     option: Partial<WrapOption & MultiChildRenderObjectWidgetArguments>
   ) {
-    super(option?.children);
+    super(option?.children, option.key);
     this.direction = option?.direction ?? Axis.horizontal;
     this.spacing = option?.spacing ?? 0;
     this.runSpacing = option?.runSpacing ?? 0;
@@ -260,7 +260,7 @@ export class Positioned extends ParentDataWidget<StackParentData> {
     >
   ) {
     const { child, top, bottom, left, right, width, height } = option;
-    super(child);
+    super(child, option.key);
     this.top = top;
     this.bottom = bottom;
     this.left = left;
@@ -288,7 +288,7 @@ export class Stack extends MultiChildRenderObjectWidget {
   constructor(
     option: Partial<StackOption & MultiChildRenderObjectWidgetArguments>
   ) {
-    super(option?.children);
+    super(option?.children, option.key);
     this._fit = option?.fit ?? StackFit.loose;
     this._alignment = option?.alignment ?? Alignment.topLeft;
   }
@@ -307,9 +307,9 @@ export class Stack extends MultiChildRenderObjectWidget {
 export class Rotate extends SingleChildRenderObjectWidget {
   private _angle: number;
   constructor(
-    option: Partial<RotateArguments & SingleChildRenderObjectWidget>
+    option: Partial<RotateArguments & SingleChildRenderObjectWidgetArguments>
   ) {
-    super(option?.child);
+    super(option?.child, option.key);
     this._angle = option.angle ?? 0;
   }
 

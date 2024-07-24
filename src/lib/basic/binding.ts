@@ -211,7 +211,7 @@ export class RendererBinding extends BindingBase {
 
 class ElementBinding extends BindingBase {
   public static instance: ElementBinding;
-  private buildOwner: BuildOwner;
+  public buildOwner: BuildOwner;
   private rootElement: RootRenderObjectElement;
   private static _elementCount: number = 0;
   static get elementCount(): number {

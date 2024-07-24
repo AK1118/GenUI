@@ -1,4 +1,6 @@
 // 三角函数
+export const radiansPerDegree = Math.PI / 180;
+
 export const sin = (angle: number): number => Math.sin(angle);
 
 export const cos = (angle: number): number => Math.cos(angle);
@@ -14,7 +16,8 @@ export const atan = (value: number): number => Math.atan(value);
 export const atan2 = (y: number, x: number): number => Math.atan2(y, x);
 
 // 幂函数和对数函数
-export const pow = (base: number, exponent: number): number => Math.pow(base, exponent);
+export const pow = (base: number, exponent: number): number =>
+  Math.pow(base, exponent);
 
 export const sqrt = (value: number): number => Math.sqrt(value);
 
@@ -55,14 +58,18 @@ export const trunc = (value: number): number => Math.trunc(value);
 export const fract = (value: number): number => value - Math.floor(value);
 
 // 二维矩阵旋转
-export const rotate2D = (x: number, y: number, angle: number): [number, number] => {
-    /**
-     *  cos(angle) - sin(angle) |
-     *  sin(angle) + cos(angle) |
-     */  
-    const cosA = Math.cos(angle);
-    const sinA = Math.sin(angle);
-    const newX = x * cosA - y * sinA;
-    const newY = x * sinA + y * cosA;
-    return [newX, newY];
+export const rotate2D = (
+  x: number,
+  y: number,
+  angle: number
+): [number, number] => {
+  /**
+   *  cos(angle) - sin(angle) |
+   *  sin(angle) + cos(angle) |
+   */
+  const cosA = Math.cos(angle);
+  const sinA = Math.sin(angle);
+  const newX = x * cosA - y * sinA;
+  const newY = x * sinA + y * cosA;
+  return [newX, newY];
 };

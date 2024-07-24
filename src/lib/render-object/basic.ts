@@ -5,7 +5,7 @@ import { BoxConstraints } from "@/lib/rendering/constraints";
 import Vector from "@/lib/math/vector";
 import { TextOverflow, TextPainter, TextSpan } from "../text-painter";
 import { PipelineOwner } from "../basic/binding";
-import { Key, SimpleKey, Widget } from "../basic/framework";
+import { Widget } from "../basic/framework";
 
 export enum Clip {
   none = "none",

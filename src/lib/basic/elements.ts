@@ -2,6 +2,7 @@ import { PlaceholderRenderView, RenderView } from "@/lib/render-object/basic";
 import { Size } from "./rect";
 import { RenderObjectElement, Widget } from "./framework";
 import { ElementBinding, SchedulerBinding } from "./binding";
+import { GlobalKey, Key } from "./key";
 
 export class InactiveElement {
   private _elements: Set<Element> = new Set();
@@ -11,6 +12,9 @@ export class InactiveElement {
   count(): number {
     return this.elements.size;
   }
+  /**
+   * 在帧构建完成后，清空所有未被重复使用的节点，该方法只能在 @ElementBinding.drawFrame 调用。
+   */
   clear() {
     this.elements.forEach((element) => {
       if (element.lifecycleState !== ElementLifecycle.inactive) return;
@@ -21,9 +25,17 @@ export class InactiveElement {
   remove(child: Element) {
     this.elements.delete(child);
   }
+  private performDeactivate(element: Element) {
+    if (element.lifecycleState !== ElementLifecycle.inactive) return;
+    element.visitChildren((child) => {
+      this.performDeactivate(child);
+    });
+    element.deactivate();
+  }
   add(child: Element) {
     if (child.lifecycleState !== ElementLifecycle.active) return;
-    child.lifecycleState = ElementLifecycle.inactive;
+    if (this.including(child)) return;
+    this.performDeactivate(child);
     this.elements.add(child);
   }
   including(child: Element): boolean {
@@ -62,6 +74,14 @@ export class BuildOwner {
     }
     this.dirtyElementList = [];
   }
+  private globalKeys: Map<GlobalKey, Element> = new Map();
+  public registerGlobalKey(key: GlobalKey, element: Element) {
+    if (this.globalKeys.has(key)) return;
+    this.globalKeys.set(key, element);
+  }
+  public getElementByGlobalKey(key: GlobalKey): Element {
+    return this.globalKeys.get(key);
+  }
 }
 
 export abstract class BuildContext {
@@ -88,7 +108,7 @@ enum ElementLifecycle {
 }
 type ChildVisitorCallback = (child: Element) => void;
 export abstract class Element extends BuildContext {
-  public key: string = Math.random().toString(16).substring(3);
+  public key: Key;
   public lifecycleState: ElementLifecycle = ElementLifecycle.initial;
   public dirty: boolean = true;
   public parent: Element;
@@ -151,8 +171,15 @@ export abstract class Element extends BuildContext {
     this.depth = parent?.depth + 1;
     this.slot = newSlot;
     this.lifecycleState = ElementLifecycle.active;
+    const key = this.widget?.key;
+    if (key instanceof GlobalKey) {
+      this.owner?.registerGlobalKey(key, this);
+    }
     this.markNeedsBuild();
   }
+  /**
+   * @MustCallSuper
+   */
   public unmount() {
     if (this.lifecycleState === ElementLifecycle.defunct) return;
     this.lifecycleState = ElementLifecycle.defunct;
@@ -163,13 +190,19 @@ export abstract class Element extends BuildContext {
     return a.depth - b.depth;
   }
   protected canUpdate(oldWidget: Widget, newWidget: Widget) {
-    return newWidget?.runtimeType === oldWidget?.runtimeType;
+    return (
+      newWidget?.runtimeType === oldWidget?.runtimeType &&
+      newWidget?.key === oldWidget?.key
+    );
   }
   protected detachRenderView() {
     this.visitChildren((child: Element) => {
       child?.detachRenderView();
     });
     this.slot = null;
+  }
+  public deactivate() {
+    this.lifecycleState = ElementLifecycle.inactive;
   }
   protected deactivateChild(child: Element) {
     child.parent = null;
@@ -209,13 +242,63 @@ export abstract class Element extends BuildContext {
     }
     return newChild;
   }
+  /**
+   * 通过 @newWidget 获取最新的 @Element 并返回, @newSlot 对于 @SingleChildObjectElement 永远为null,
+   * 它不需要像 @MultiChildObjectElement 一样通过 @newSlot 传递给子节点并插入 children list。
+   *
+   * 在获取最新的 @Element 之前，还需要判断 @newWidget 的key 是否为空，如果为空，则直接创建新的 @Element
+   * 如果不为空，且类型为 @GlobalKey 类型，则通过 @GlobalKey 获取旧的 @Element 并重复使用，当然这个旧的 @Element
+   * 的状态必须是 @ElementLifecycle.inactive 。
+   */
   protected inflateWidget(newWidget: Widget, newSlot?: Object): Element {
     let newChild: Element;
     const built = newWidget;
     if (!built) return newChild;
+    const key = built?.key;
+    if (key instanceof GlobalKey) {
+      newChild = this.retakeInactiveElement(key, newWidget);
+      if (newChild) {
+        newChild.activeWithParent(this, newSlot);
+        const updateChild = this.updateChild(newChild, newWidget, newSlot);
+        return updateChild;
+      }
+    }
     newChild = built.createElement();
     newChild.mount(this, newSlot);
     return newChild;
+  }
+  private retakeInactiveElement(key: GlobalKey, newWidget: Widget): Element {
+    const element = key.currentElement;
+    if (!element) return;
+    if (!this.canUpdate(element.widget, newWidget)) return;
+    this.owner.inactiveElements.remove(element);
+    return element;
+  }
+  private activeWithParent(parent: Element, newSlot?: Object) {
+    this.parent = parent;
+    this.updateDepth(parent?.depth);
+    this.activeRecursively(this);
+    this.attachRenderObject(newSlot);
+  }
+  protected activeRecursively(element: Element) {
+    if (element.lifecycleState !== ElementLifecycle.inactive) return;
+    element.activate();
+    this.visitChildren((child) => {
+      this.activeRecursively(child);
+    });
+  }
+  protected activate() {
+    this.lifecycleState = ElementLifecycle.active;
+    this.markNeedsBuild();
+  }
+  protected updateDepth(parentDepth: number) {
+    const expectedDepth = parentDepth + 1;
+    if (this.depth < expectedDepth) {
+      this.depth = expectedDepth;
+      this.visitChildren((child: Element) => {
+        child?.updateDepth(expectedDepth);
+      });
+    }
   }
   public markNeedsBuild() {
     if (this.dirty) return;

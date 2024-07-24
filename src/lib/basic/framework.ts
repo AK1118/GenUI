@@ -10,34 +10,25 @@ import {
 } from "../render-object/basic";
 import { PipelineOwner, RendererBinding } from "./binding";
 import { BuildContext, BuildOwner, Element } from "./elements";
-
-export abstract class Key {}
-export class SimpleKey extends Key {
-  private _value: string = Math.random().toString(16).substring(3);
-  get value(): string {
-    return this._value;
-  }
+import { Key } from "./key";
+export interface WidgetArguments {
+  key: Key;
 }
-export class GlobalKey extends SimpleKey {
-  _element: Element;
-  set element(value: Element) {
-    this._element = value;
-  }
-  get element(): Element {
-    return this._element;
-  }
-}
-export interface SingleChildRenderObjectWidgetArguments {
+export interface SingleChildRenderObjectWidgetArguments
+  extends WidgetArguments {
   child: Widget;
 }
-export interface MultiChildRenderObjectWidgetArguments {
+export interface MultiChildRenderObjectWidgetArguments extends WidgetArguments {
   children: Array<Widget>;
 }
 export abstract class Widget {
-  public key: string = Math.random().toString(16).substring(3);
+  public key: Key;
   abstract createElement(): Element;
   get runtimeType(): unknown {
     return this.constructor;
+  }
+  constructor(key?: Key) {
+    this.key = key;
   }
 }
 
@@ -65,9 +56,7 @@ export abstract class ComponentElement extends Element {
 export abstract class ProxyElement extends ComponentElement {
   update(newWidget: Widget): void {
     const oldWidget = { ...this.widget } as ProxyWidget;
-    if (this.widget?.key === newWidget?.key) return;
     super.update(newWidget);
-    if (this.widget.key !== newWidget?.key) return;
     this.updated(oldWidget);
     this.rebuild(true);
   }
@@ -78,15 +67,15 @@ export abstract class ProxyElement extends ComponentElement {
 }
 
 export abstract class ProxyWidget extends Widget {
-  constructor(child?: Widget) {
-    super();
+  constructor(child?: Widget, key?: Key) {
+    super(key);
     this.child = child;
   }
   public child: Widget;
 }
 
 class StatelessElement extends ComponentElement {
-  constructor(widget: Widget) {
+  constructor(widget: Widget, key?: Key) {
     super(widget);
   }
   update(newWidget: Widget): void {
@@ -123,6 +112,10 @@ class StatefulElement extends ComponentElement {
   build(): Widget {
     return this.state.build(this);
   }
+  public unmount(): void {
+    super.unmount();
+    this.state?.unmount();
+  }
 }
 
 export abstract class StatefulWidget extends Widget {
@@ -146,6 +139,7 @@ export abstract class State {
     this.element.markNeedsBuild();
   }
   abstract build(context: BuildContext): Widget;
+  public unmount() {}
 }
 
 /**
@@ -359,8 +353,8 @@ export class SingleChildRenderObjectElement extends RenderObjectElement {
 
 export abstract class RenderObjectWidget extends Widget {
   public child: Widget;
-  constructor(child?: Widget) {
-    super();
+  constructor(child?: Widget, key?: Key) {
+    super(key);
     this.child = child;
   }
   abstract createRenderObject(): RenderView;
@@ -426,8 +420,8 @@ export class MultiChildRenderObjectElement extends RenderObjectElement {
 
 export abstract class MultiChildRenderObjectWidget extends RenderObjectWidget {
   public children: Array<Widget>;
-  constructor(children: Array<Widget>) {
-    super();
+  constructor(children: Array<Widget>, key?: Key) {
+    super(null, key);
     this.children = children;
   }
   createElement(): Element {
