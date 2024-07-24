@@ -3,10 +3,47 @@ import { Size } from "./rect";
 import { RenderObjectElement, Widget } from "./framework";
 import { ElementBinding, SchedulerBinding } from "./binding";
 
+export class InactiveElement {
+  private _elements: Set<Element> = new Set();
+  get elements(): Set<Element> {
+    return this._elements;
+  }
+  count(): number {
+    return this.elements.size;
+  }
+  clear() {
+    this.elements.forEach((element) => {
+      if (element.lifecycleState !== ElementLifecycle.inactive) return;
+      this.unmount(element);
+    });
+    this.elements.clear();
+  }
+  remove(child: Element) {
+    this.elements.delete(child);
+  }
+  add(child: Element) {
+    if (child.lifecycleState !== ElementLifecycle.active) return;
+    child.lifecycleState = ElementLifecycle.inactive;
+    this.elements.add(child);
+  }
+  including(child: Element): boolean {
+    return this.elements.has(child);
+  }
+  private unmount(element: Element) {
+    if (!element) return;
+    element.visitChildren((child) => {
+      this.unmount(child);
+    });
+    element.unmount();
+    ElementBinding.decrementElementCount();
+  }
+}
+
 export class BuildOwner {
   private dirtyElementList: Array<Element> = [];
+  public readonly inactiveElements: InactiveElement = new InactiveElement();
   public scheduleBuildFor(dirtyElement: Element) {
-    if (dirtyElement.lifecycle === ElementLifecycle.active) {
+    if (dirtyElement.lifecycleState === ElementLifecycle.active) {
       this.dirtyElementList.push(dirtyElement);
       SchedulerBinding.instance.ensureVisualUpdate();
     }
@@ -41,18 +78,18 @@ export abstract class BuildContext {
 
 enum ElementLifecycle {
   //元素的初始状态。此状态表示元素刚刚被创建，尚未激活或参与任何活动。
-  initial,
+  initial = "initial",
   //元素处于活动状态，可以正常运行和响应各种事件或操作。
-  active,
-  //元素处于非活动状态，可能由于暂时不需要而被暂停。
-  inactive,
+  active = "active",
+  //元素暂时从树中分离，但可能会重新连接到树
+  inactive = "inactive",
   //元素已失效，不再使用。此状态表示元素已经完成了其生命周期，应该被清理或销毁。
-  defunct,
+  defunct = "defunct",
 }
 type ChildVisitorCallback = (child: Element) => void;
 export abstract class Element extends BuildContext {
   public key: string = Math.random().toString(16).substring(3);
-  public lifecycle: ElementLifecycle = ElementLifecycle.initial;
+  public lifecycleState: ElementLifecycle = ElementLifecycle.initial;
   public dirty: boolean = true;
   public parent: Element;
   protected child: Element = null;
@@ -98,6 +135,9 @@ export abstract class Element extends BuildContext {
   get widget(): Widget {
     return this._widget;
   }
+  set widget(value: Widget) {
+    this._widget = value;
+  }
   get runtimeType(): unknown {
     return this.constructor;
   }
@@ -110,14 +150,31 @@ export abstract class Element extends BuildContext {
     this.owner = parent?.owner;
     this.depth = parent?.depth + 1;
     this.slot = newSlot;
-    this.lifecycle = ElementLifecycle.active;
+    this.lifecycleState = ElementLifecycle.active;
     this.markNeedsBuild();
+  }
+  public unmount() {
+    if (this.lifecycleState === ElementLifecycle.defunct) return;
+    this.lifecycleState = ElementLifecycle.defunct;
+    this.widget = null;
+    this.renderView = null;
   }
   public static sort(a: Element, b: Element) {
     return a.depth - b.depth;
   }
   protected canUpdate(oldWidget: Widget, newWidget: Widget) {
     return newWidget?.runtimeType === oldWidget?.runtimeType;
+  }
+  protected detachRenderView() {
+    this.visitChildren((child: Element) => {
+      child?.detachRenderView();
+    });
+    this.slot = null;
+  }
+  protected deactivateChild(child: Element) {
+    child.parent = null;
+    child.detachRenderView();
+    this.owner.inactiveElements.add(child);
   }
   // abstract updateRenderView():void;
   /**
@@ -134,18 +191,30 @@ export abstract class Element extends BuildContext {
     newSlot?: Object
   ): Element {
     if (!child && !newWidget) return null;
+    //新对象没有子节点，移除旧子节点
+    if (child && !newWidget) {
+      this.deactivateChild(child);
+      return null;
+    }
     let newChild: Element = child;
     if (!child && newWidget) {
-      const built = newWidget;
-      if (!built) return newChild;
-      newChild = built.createElement();
-      newChild.mount(this, newSlot);
+      newChild = this.inflateWidget(newWidget, newSlot);
       return newChild;
     }
     if (this.canUpdate(child.widget, newWidget)) {
       child.update(newWidget);
       return child;
+    } else {
+      this.deactivateChild(child);
     }
+    return newChild;
+  }
+  protected inflateWidget(newWidget: Widget, newSlot?: Object): Element {
+    let newChild: Element;
+    const built = newWidget;
+    if (!built) return newChild;
+    newChild = built.createElement();
+    newChild.mount(this, newSlot);
     return newChild;
   }
   public markNeedsBuild() {

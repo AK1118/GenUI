@@ -234,79 +234,95 @@ export abstract class RenderObjectElement extends Element {
   visitChildren(visitor: (child: Element) => void): void {
     visitor(this.child);
   }
-    /**
-   * 从祖先的 @RenderObjectElement 中移除子节点 
+  /**
+   * 从祖先的 @RenderObjectElement 中移除子节点
    * 并将 @ancestorRenderObjectElement 置为null
    */
-    protected detachRenderView(): void {
-      if(this.ancestorRenderObjectElement){
-          this.ancestorRenderObjectElement.removeRenderViewChild(this.renderView,this.slot);
-          this.ancestorRenderObjectElement=null;
-      }
-      this.slot=null;
+  protected detachRenderView(): void {
+    if (this.ancestorRenderObjectElement) {
+      this.ancestorRenderObjectElement.removeRenderViewChild(
+        this.renderView,
+        this.slot
+      );
+      this.ancestorRenderObjectElement = null;
+    }
+    this.slot = null;
   }
-  protected removeRenderViewChild(child:RenderView,slot?:Object): void{
-
-  }
+  protected removeRenderViewChild(child: RenderView, slot?: Object): void {}
+  /**
+   * 这个方法 updateChildren 的目的是将一组旧的元素数组（oldChildren）与新的小部件数组（newWidgets）进行比较，
+   * 并更新旧的元素以生成一个新的元素数组（newChildren），从而反映新小部件的变化。
+   * 这个方法通过从底部到顶部和从顶部到底部的方式进行差异检测和更新。
+   */
   updateChildren(
     oldChildren: Array<Element>,
     newWidgets: Array<Widget>
   ): Array<Element> {
-    let oldChildrenTop = 0;
-    let oldChildrenBottom = oldChildren.length - 1;
-    let newChildrenTop = 0;
-    let newChildrenBottom = newWidgets.length - 1;
-    const newChildren: Array<Element> = new Array(newWidgets.length).fill(null);
+    /**
+     * bottom [0,1,2,3,4,5,6,7,8,9,...] top   old
+     * bottom [0,1,2,3] top  new
+     * 即后来居上
+     */
+    let oldChildrenTop = 0; // 旧元素数组的顶部指针
+    let oldChildrenBottom = oldChildren.length - 1; // 旧元素数组的底部指针
+    let newChildrenTop = 0; // 新小部件数组的顶部指针
+    let newChildrenBottom = newWidgets.length - 1; // 新小部件数组的底部指针
+    const newChildren: Array<Element> = new Array(newWidgets.length).fill(null); // 初始化新的元素数组，长度为新小部件数组的长度，初始填充为空
 
-    let previousChild: Element | null = null;
+    let previousChild: Element | null = null; // 用于存储前一个更新的元素，以便在更新下一个元素时使用
 
-    // Update the top of the list
+    /**
+     * bottom -> top
+     * 从数组底部开始向上diff，如果相同位置的 @oldChild 不为空，且 @oldChild.widget 与 @newWidget 相同，则直接使用并更新
+     * 如不满足其中条件跳出循环
+     */
     while (
       oldChildrenTop <= oldChildrenBottom &&
       newChildrenTop <= newChildrenBottom
     ) {
-      let oldChild = oldChildren[oldChildrenTop];
-      const newWidget = newWidgets[newChildrenTop];
-
-      if (oldChild == null || !this.canUpdate(oldChild.widget, newWidget)) {
-        break;
+      let oldChild = oldChildren[oldChildrenTop]; // 获取旧数组顶部的元素
+      const newWidget = newWidgets[newChildrenTop]; // 获取新数组顶部的小部件
+      if (oldChild == null && !this.canUpdate(oldChild?.widget, newWidget)) {
+        break; // 如果旧元素为空且不能更新，跳出循环
       }
 
-      const newChild = this.updateChild(oldChild, newWidget, previousChild);
-      newChildren[newChildrenTop] = newChild;
-      previousChild = newChild;
-      newChildrenTop += 1;
-      oldChildrenTop += 1;
+      const newChild = this.updateChild(oldChild, newWidget, previousChild); // 更新旧元素
+      newChildren[newChildrenTop] = newChild; // 将更新后的元素放入新的数组中
+      previousChild = newChild; // 更新previousChild为当前的newChild
+      newChildrenTop += 1; // 新数组顶部指针向上移动
+      oldChildrenTop += 1; // 旧数组顶部指针向上移动
     }
 
     // Update the bottom of the list
+    // 从数组顶部开始向下diff，逻辑同上
     while (
       oldChildrenTop <= oldChildrenBottom &&
       newChildrenTop <= newChildrenBottom
     ) {
-      let oldChild = oldChildren[oldChildrenBottom];
-      const newWidget = newWidgets[newChildrenBottom];
+      let oldChild = oldChildren[oldChildrenBottom]; // 获取旧数组底部的元素
+      const newWidget = newWidgets[newChildrenBottom]; // 获取新数组底部的小部件
 
-      if (oldChild == null || !this.canUpdate(oldChild.widget, newWidget)) {
-        break;
+      if (oldChild == null && !this.canUpdate(oldChild?.widget, newWidget)) {
+        break; // 如果旧元素为空且不能更新，跳出循环
       }
 
-      const newChild = this.updateChild(oldChild, newWidget, previousChild);
-      newChildren[newChildrenBottom] = newChild;
-      previousChild = newChild;
-      newChildrenBottom -= 1;
-      oldChildrenBottom -= 1;
+      const newChild = this.updateChild(oldChild, newWidget, previousChild); // 更新旧元素
+      newChildren[newChildrenBottom] = newChild; // 将更新后的元素放入新的数组中
+      previousChild = newChild; // 更新previousChild为当前的newChild
+      newChildrenBottom -= 1; // 新数组底部指针向下移动
+      oldChildrenBottom -= 1; // 旧数组底部指针向下移动
     }
 
     // Handle the remaining middle part
+    // 处理中间剩余部分的新小部件
     while (newChildrenTop <= newChildrenBottom) {
-      const newWidget = newWidgets[newChildrenTop];
-      const newChild = this.updateChild(null, newWidget, previousChild);
-      newChildren[newChildrenTop] = newChild;
-      previousChild = newChild;
-      newChildrenTop += 1;
+      const newWidget = newWidgets[newChildrenTop]; // 获取新数组顶部的小部件
+      const newChild = this.updateChild(null, newWidget, previousChild); // 创建新的元素
+      newChildren[newChildrenTop] = newChild; // 将新的元素放入新的数组中
+      previousChild = newChild; // 更新previousChild为当前的newChild
+      newChildrenTop += 1; // 新数组顶部指针向上移动
     }
-    return newChildren;
+    return newChildren; // 返回新的元素数组
   }
 }
 
@@ -334,11 +350,11 @@ export class SingleChildRenderObjectElement extends RenderObjectElement {
     this.renderView.child = child;
   }
   protected removeRenderViewChild(child: RenderView, slot?: Object): void {
-    child.parent=null;
-    if(this.renderView.child===child){
-      this.renderView.child=null;
+    if (this.renderView.child === child) {
+      this.renderView.child = null;
+      child.parent = null;
     }
-}
+  }
 }
 
 export abstract class RenderObjectWidget extends Widget {
@@ -402,10 +418,10 @@ export class MultiChildRenderObjectElement extends RenderObjectElement {
     );
   }
   protected removeRenderViewChild(child: RenderView, slot?: Object): void {
-    if(child.parent===this.renderView){
+    if (child.parent === this.renderView) {
       (this.renderView as MultiChildRenderView).remove(child);
     }
-}
+  }
 }
 
 export abstract class MultiChildRenderObjectWidget extends RenderObjectWidget {

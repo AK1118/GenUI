@@ -274,7 +274,6 @@ export abstract class RenderView extends AbstractNode {
     return this._child;
   }
   set child(value: RenderView) {
-    if (!value) return;
     this.dropChild(value);
     this._child = value;
     this.adoptChild(value);

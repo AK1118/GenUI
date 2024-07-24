@@ -163,34 +163,48 @@ class StateTest extends State {
     return new SizeBox({
       width: canvas.width,
       height: canvas.height,
-      child: new Align({
-        child:
-          this.flex % 2 == 0
-            ? new ColoredBox({
-                color: "#efefef",
-                child: new SizeBox({
-                  width: 40,
-                  height: 40,
+      // child: new Align({
+      //   child:
+      //     this.flex % 2 == 0
+      //       ? new ColoredBox({
+      //           color: "#efefef",
+      //           child: new SizeBox({
+      //             width: 40,
+      //             height: 40,
+      //           }),
+      //         })
+      //       : null,
+      // }),
+      child: new Stack({
+        fit: StackFit.expand,
+        children: [
+          // new Align({
+          //   child:
+          //     this.flex % 2 == 0
+          //       ? new ColoredBox({
+          //           color: "#efefef",
+          //           child: new SizeBox({
+          //             width: 40,
+          //             height: 40,
+          //           }),
+          //         })
+          //       : null,
+          // }),
+           this.flex % 2 == 0
+            ? new Positioned({
+                bottom: this.flex * 10,
+                left: 0,
+                child: new ColoredBox({
+                  color: "#efefef",
+                  child: new SizeBox({
+                    width: 40,
+                    height: 40,
+                  }),
                 }),
               })
             : null,
+        ],
       }),
-      // child: new Stack({
-      //   fit: StackFit.expand,
-      //   children: [
-      //     this.flex % 2 == 0?new Positioned({
-      //       bottom: this.flex * 10,
-      //       left: 0,
-      //       child: new ColoredBox({
-      //         color: "#efefef",
-      //         child: new SizeBox({
-      //           width: 40,
-      //           height: 40,
-      //         }),
-      //       }),
-      //     }):null,
-      //   ],
-      // }),
       //child:
       // new Wrap({
       //   children: [

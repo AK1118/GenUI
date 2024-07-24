@@ -126,36 +126,54 @@ class FrameUpdater {
   }
   private render(frame: number) {
     this.painter.save();
-    this.painter.globalAlpha=.5;
+    this.painter.globalAlpha = 0.5;
     // 设置字体样式
     this.painter.font = "12px Arial";
-    
+
     // 获取文本的宽度和高度
     const fpsText = `${frame}fps`;
     const elementText = `ele:${ElementBinding.elementCount}`;
-    
+
     const fpsTextMetrics = this.painter.measureText(fpsText);
     const elementTextMetrics = this.painter.measureText(elementText);
-    
+
     // 确定最大的文本宽度
     const textWidth = Math.max(fpsTextMetrics.width, elementTextMetrics.width);
-    
+
     // 设置矩形的宽度和高度
     const padding = 10;
     const rectWidth = textWidth + 2 * padding;
     const rectHeight = 40;
-
+    this.painter.clearRect(
+      this.painter.canvas.width - rectWidth,
+      0,
+      rectWidth,
+      rectHeight
+    );
     // 绘制背景矩形
     this.painter.fillStyle = "#429aba";
-    this.painter.fillRect(this.painter.canvas.width - rectWidth, 0, rectWidth, rectHeight);
+    this.painter.fillRect(
+      this.painter.canvas.width - rectWidth,
+      0,
+      rectWidth,
+      rectHeight
+    );
 
     // 绘制文本
     this.painter.fillStyle = "white";
-    this.painter.fillText(fpsText, this.painter.canvas.width - rectWidth + padding, 15);
-    this.painter.fillText(elementText, this.painter.canvas.width - rectWidth + padding, 30);
+    this.painter.fillText(
+      fpsText,
+      this.painter.canvas.width - rectWidth + padding,
+      15
+    );
+    this.painter.fillText(
+      elementText,
+      this.painter.canvas.width - rectWidth + padding,
+      30
+    );
 
     this.painter.restore();
-}
+  }
 
   public update(): number {
     const now = performance.now();
@@ -205,6 +223,9 @@ class ElementBinding extends BindingBase {
   static decrementElementCount() {
     this._elementCount--;
   }
+  static subElementCount(count: number) {
+    this._elementCount -= count;
+  }
   protected initInstance(): void {
     super.initInstance();
     ElementBinding.instance = this;
@@ -212,6 +233,7 @@ class ElementBinding extends BindingBase {
   drawFrame() {
     this.buildOwner.buildScope(this.rootElement);
     RendererBinding.instance.drawFrame();
+    this.buildOwner.inactiveElements.clear();
   }
   attachRootWidget(rootWidget: Widget) {
     const wrappedWidget = new RootWidget(rootWidget);
