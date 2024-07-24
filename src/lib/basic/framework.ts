@@ -11,11 +11,26 @@ import {
 import { PipelineOwner, RendererBinding } from "./binding";
 import { BuildContext, BuildOwner, Element } from "./elements";
 
-abstract class Key {}
-export interface SingleChildRenderObjectWidgetOption {
+export abstract class Key {}
+export class SimpleKey extends Key {
+  private _value: string = Math.random().toString(16).substring(3);
+  get value(): string {
+    return this._value;
+  }
+}
+export class GlobalKey extends SimpleKey {
+  _element: Element;
+  set element(value: Element) {
+    this._element = value;
+  }
+  get element(): Element {
+    return this._element;
+  }
+}
+export interface SingleChildRenderObjectWidgetArguments {
   child: Widget;
 }
-export interface MultiChildRenderObjectWidgetOption {
+export interface MultiChildRenderObjectWidgetArguments {
   children: Array<Widget>;
 }
 export abstract class Widget {
@@ -219,6 +234,20 @@ export abstract class RenderObjectElement extends Element {
   visitChildren(visitor: (child: Element) => void): void {
     visitor(this.child);
   }
+    /**
+   * 从祖先的 @RenderObjectElement 中移除子节点 
+   * 并将 @ancestorRenderObjectElement 置为null
+   */
+    protected detachRenderView(): void {
+      if(this.ancestorRenderObjectElement){
+          this.ancestorRenderObjectElement.removeRenderViewChild(this.renderView,this.slot);
+          this.ancestorRenderObjectElement=null;
+      }
+      this.slot=null;
+  }
+  protected removeRenderViewChild(child:RenderView,slot?:Object): void{
+
+  }
   updateChildren(
     oldChildren: Array<Element>,
     newWidgets: Array<Widget>
@@ -304,11 +333,17 @@ export class SingleChildRenderObjectElement extends RenderObjectElement {
   insertRenderObjectChild(child: RenderView, slot?: Object): void {
     this.renderView.child = child;
   }
+  protected removeRenderViewChild(child: RenderView, slot?: Object): void {
+    child.parent=null;
+    if(this.renderView.child===child){
+      this.renderView.child=null;
+    }
+}
 }
 
 export abstract class RenderObjectWidget extends Widget {
   public child: Widget;
-  constructor(child?: Widget, key?: Key) {
+  constructor(child?: Widget) {
     super();
     this.child = child;
   }
@@ -366,6 +401,11 @@ export class MultiChildRenderObjectElement extends RenderObjectElement {
       (slot as RenderObjectElement)?.renderView
     );
   }
+  protected removeRenderViewChild(child: RenderView, slot?: Object): void {
+    if(child.parent===this.renderView){
+      (this.renderView as MultiChildRenderView).remove(child);
+    }
+}
 }
 
 export abstract class MultiChildRenderObjectWidget extends RenderObjectWidget {

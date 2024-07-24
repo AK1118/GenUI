@@ -5,7 +5,7 @@ import { BoxConstraints } from "@/lib/rendering/constraints";
 import Vector from "@/lib/math/vector";
 import { TextOverflow, TextPainter, TextSpan } from "../text-painter";
 import { PipelineOwner } from "../basic/binding";
-import { Widget } from "../basic/framework";
+import { Key, SimpleKey, Widget } from "../basic/framework";
 
 export enum Clip {
   none = "none",
@@ -74,7 +74,7 @@ export interface RenderViewOption {
   child: RenderBox;
 }
 
-export interface SingleChildRenderViewOption<ChildType = RenderBox> {
+export interface SingleChildRenderViewArguments<ChildType = RenderBox> {
   child: ChildType;
 }
 
@@ -82,7 +82,7 @@ export interface MultiChildRenderViewOption {
   children: RenderBox[];
 }
 
-export interface PositionedOption {
+export interface PositionedArguments {
   top: number;
   left: number;
   bottom: number;
@@ -180,7 +180,7 @@ export class FlexParentData extends ContainerRenderViewParentData<RenderView> {
 }
 
 export abstract class AbstractNode {
-  public key: string = Math.random().toString(16).substring(3);
+  public key:string=Math.random().toString(16).substring(3);
   private _owner: Object;
   private _parent: AbstractNode;
   private _depth: number = 0;
@@ -555,7 +555,9 @@ export class ConstrainedBoxRender extends SingleChildRenderView {
   public _width: number;
   public _height: number;
   private additionalConstraints: BoxConstraints;
-  constructor(option: Partial<SizedBoxOption & SingleChildRenderViewOption>) {
+  constructor(
+    option: Partial<SizedBoxOption & SingleChildRenderViewArguments>
+  ) {
     super(option?.child);
     const { width, height } = option;
     this.width = width;
@@ -631,7 +633,9 @@ export class PaddingRenderView extends SingleChildRenderView {
     this.markNeedsLayout();
     this.markNeedsPaint();
   }
-  constructor(option?: Partial<PaddingOption & SingleChildRenderViewOption>) {
+  constructor(
+    option?: Partial<PaddingOption & SingleChildRenderViewArguments>
+  ) {
     super(option?.child);
     this.padding = option?.padding;
   }
@@ -670,7 +674,9 @@ export interface AlignArguments {
 }
 export class AlignRenderView extends SingleChildRenderView {
   private _alignment: Alignment = Alignment.center;
-  constructor(option: Partial<AlignArguments & SingleChildRenderViewOption>) {
+  constructor(
+    option: Partial<AlignArguments & SingleChildRenderViewArguments>
+  ) {
     super(option?.child);
     this.alignment = option?.alignment;
   }
@@ -737,7 +743,7 @@ export class ClipRRectRenderView extends ClipRectRenderView {
   private _borderRadius: Radius;
   constructor(
     option: Partial<
-      SizedBoxOption & ClipRRectArguments & SingleChildRenderViewOption
+      SizedBoxOption & ClipRRectArguments & SingleChildRenderViewArguments
     >
   ) {
     const { borderRadius } = option;
@@ -858,6 +864,33 @@ export abstract class MultiChildRenderView extends RenderBox {
     // if (renderView instanceof ParentDataRenderView) {
     //   renderView?.applyParentData(renderView);
     // }
+  }
+  remove(child: RenderView) {
+    this.removeFromChildList(child);
+    this.dropChild(child);
+  }
+  private removeFromChildList(child: RenderView) {
+    const childParentData =
+      child.parentData! as ContainerRenderViewParentData<RenderView>;
+    if (this.childCount <= 0) return;
+    if (childParentData.previousSibling == null) {
+      this.firstChild = childParentData.nextSibling;
+    } else {
+      const childPreviousSiblingParentData = childParentData.previousSibling!
+        .parentData! as ContainerRenderViewParentData<RenderView>;
+      childPreviousSiblingParentData.nextSibling = childParentData.nextSibling;
+    }
+    if (childParentData.nextSibling == null) {
+      this.lastChild = childParentData.previousSibling;
+    } else {
+      const childNextSiblingParentData = childParentData.nextSibling!
+        .parentData! as ContainerRenderViewParentData<RenderView>;
+      childNextSiblingParentData.previousSibling =
+        childParentData.previousSibling;
+    }
+    childParentData.previousSibling = null;
+    childParentData.nextSibling = null;
+    this.childCount -= 1;
   }
   private insertIntoList(child: RenderView, after?: RenderView) {
     let currentParentData =
@@ -1028,11 +1061,11 @@ export class FlexRenderView extends MultiChildRenderView {
     let child = this.firstChild;
     let childMainPosition: number = leadingSpace,
       childCrossPosition: number = 0;
-    let childCount=0;
+    let childCount = 0;
     while (child != null) {
       const parentData =
         child.parentData as ContainerRenderViewParentData<RenderView>;
-      childCount+=1;
+      childCount += 1;
       const childMainSize = this.getMainSize(child.size),
         childCrossSize = this.getCrossSize(child.size);
 
@@ -1064,7 +1097,6 @@ export class FlexRenderView extends MultiChildRenderView {
   }
 
   private computeSize(constraints: BoxConstraints): LayoutSizes {
-    
     let totalFlex: number = 0,
       maxMainSize: number = 0,
       canFlex: boolean,
@@ -1114,14 +1146,14 @@ export class FlexRenderView extends MultiChildRenderView {
         }
         child.layout(innerConstraint);
         const childSize = child?.size || Size.zero;
-        
+
         allocatedSize += this.getMainSize(childSize);
         crossSize = Math.max(crossSize, this.getCrossSize(childSize));
       }
 
       child = parentData?.nextSibling;
     }
-    
+
     //弹性布局计算
     if (totalFlex > 0) {
       //剩余空间
@@ -1220,15 +1252,32 @@ export class FlexRenderView extends MultiChildRenderView {
   }
 }
 
-export class Stack extends MultiChildRenderView {
-  fit: StackFit = StackFit.loose;
-  alignment: Alignment = Alignment.topLeft;
+export class StackRenderView extends MultiChildRenderView {
+  private _fit: StackFit = StackFit.loose;
+  private _alignment: Alignment = Alignment.topLeft;
   constructor(option: Partial<StackOption & MultiChildRenderViewOption>) {
     const { children, alignment, fit } = option;
     super(children);
     this.alignment = alignment ?? this.alignment;
     this.fit = fit ?? this.fit;
   }
+  get alignment(): Alignment {
+    return this._alignment;
+  }
+  set alignment(value: Alignment) {
+    if (value === this._alignment) return;
+    this._alignment = value;
+    this.markNeedsLayout();
+  }
+  get fit(): StackFit {
+    return this._fit;
+  }
+  set fit(value: StackFit) {
+    if (value === this._fit) return;
+    this._fit = value;
+    this.markNeedsLayout();
+  }
+
   private computeSize(constraints: BoxConstraints): Size {
     //未被定位子组件约束盒子
     let nonPositionedConstraints: BoxConstraints = BoxConstraints.zero;
@@ -1349,7 +1398,7 @@ export class Stack extends MultiChildRenderView {
   }
 }
 
-class StackParentData extends ContainerRenderViewParentData<RenderView> {
+export class StackParentData extends ContainerRenderViewParentData<RenderView> {
   top: number;
   left: number;
   right: number;
@@ -1366,39 +1415,6 @@ class StackParentData extends ContainerRenderViewParentData<RenderView> {
       this.width != null ||
       this.height != null
     );
-  }
-}
-
-export class Positioned extends ParentDataRenderView<StackParentData> {
-  private top: number;
-  private left: number;
-  private right: number;
-  private bottom: number;
-  private width: number;
-  private height: number;
-  constructor(option: Partial<PositionedOption & SingleChildRenderViewOption>) {
-    const { child, top, bottom, left, right, width, height } = option;
-    super(child);
-    this.top = top;
-    this.bottom = bottom;
-    this.left = left;
-    this.right = right;
-    this.width = width;
-    this.height = height;
-  }
-  applyParentData(renderObject: RenderView): void {
-    if (renderObject.parentData instanceof StackParentData) {
-      const parentData = renderObject.parentData;
-      parentData.left = this.left;
-      parentData.right = this.right;
-      parentData.bottom = this.bottom;
-      parentData.top = this.top;
-      parentData.width = this.width;
-      parentData.height = this.height;
-    }
-  }
-  render(context: PaintingContext, offset?: Vector): void {
-    context.paintChild(this.child, offset);
   }
 }
 
@@ -1841,5 +1857,40 @@ export class WrapRenderView extends MultiChildRenderView {
   }
   protected setupParentData(child: RenderView): void {
     child.parentData = new WrapParentData();
+  }
+}
+
+export interface RotateArguments {
+  angle: number;
+}
+export class RotateRenderView extends SingleChildRenderView {
+  private _angle: number = 0;
+  constructor(
+    option: Partial<RotateArguments & SingleChildRenderViewArguments>
+  ) {
+    super(option?.child);
+    this.angle = option?.angle ?? 0;
+  }
+  set angle(value: number) {
+    if (this._angle === value) return;
+    this._angle = value;
+    this.markNeedsPaint();
+  }
+  get angle(): number {
+    return this._angle;
+  }
+  render(context: PaintingContext, offset?: Vector): void {
+    const painter = context.paint;
+    painter.save();
+    painter.beginPath();
+    const center: Vector = this.size.copy().half().toVector();
+    center.add(offset ?? Vector.zero);
+    painter.translate(center.x, center.y);
+    painter.rotate(this.angle);
+    center.negate();
+    painter.translate(center.x, center.y);
+    context.paintChild(this.child, offset);
+    painter.closePath();
+    painter.restore();
   }
 }

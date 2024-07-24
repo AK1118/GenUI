@@ -16,8 +16,19 @@ export class Size {
   get height(): number {
     return this._height;
   }
+  set width(value: number) {
+    this._width = value;
+  }
+  set height(value: number) {
+    this._height = value;
+  }
   toVector() {
     return new Vector(this._width, this._height);
+  }
+  half(): Size {
+    this.width *= 0.5;
+    this.height *= 0.5;
+    return this;
   }
   copy(): Size {
     return new Size(this._width, this._height);
