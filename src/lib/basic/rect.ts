@@ -51,6 +51,9 @@ export class Size {
       height: this._height,
     };
   }
+  contains(offset:Vector):boolean{
+    return offset.x >= 0.0 && offset.x < this.width && offset.y >= 0.0 && offset.y < this.height;
+  }
 }
 
 export class Offset {

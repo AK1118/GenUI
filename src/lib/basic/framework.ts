@@ -125,8 +125,11 @@ export abstract class StatefulWidget extends Widget {
   }
 }
 
-export abstract class State {
+export abstract class State<T extends StatefulWidget = StatefulWidget> {
   private _element: Element;
+  get widget(): T {
+    return this.element?.widget as T;
+  }
   get element(): Element {
     return this._element;
   }
@@ -438,6 +441,7 @@ export class RootRenderObjectElement extends SingleChildRenderObjectElement {
     this.renderView = (built as RenderObjectWidget).createRenderObject();
     const pipOwner: PipelineOwner = RendererBinding.instance.pipelineOwner;
     this.renderView.attach(pipOwner);
+    pipOwner.attachNode(this.renderView);
     this.attachRenderObject(newSlot);
     this.firstBuild();
   }
@@ -448,6 +452,7 @@ export class RootRenderObjectElement extends SingleChildRenderObjectElement {
       // this.renderView.layout(null, false);
       // this.root.reassemble();
       (this.renderView as RootRenderView).scheduleFirstFrame();
+
       this.owner.buildScope(this);
     } else {
       this.markNeedsBuild();

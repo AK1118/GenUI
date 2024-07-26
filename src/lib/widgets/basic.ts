@@ -24,11 +24,16 @@ import {
   FlexParentData,
   FlexRenderView,
   MainAxisAlignment,
+  onPointerDownCallback,
+  onPointerMoveCallback,
+  onPointerUpCallback,
   PaddingOption,
   PaddingRenderView,
   ParentDataRenderView,
   PositionedArguments,
   Radius,
+  RenderPointerListener,
+  RenderPointerListenerArguments,
   RenderView,
   RootRenderView,
   RotateArguments,
@@ -323,5 +328,36 @@ export class Rotate extends SingleChildRenderObjectWidget {
     renderView: RotateRenderView
   ): void {
     renderView.angle = this._angle;
+  }
+}
+
+export class Listener extends SingleChildRenderObjectWidget {
+  private _onPointerDown: onPointerDownCallback;
+  private _onPointerMove: onPointerMoveCallback;
+  private _onPointerUp: onPointerUpCallback;
+  constructor(
+    option: Partial<
+      RenderPointerListenerArguments & SingleChildRenderObjectWidget
+    >
+  ) {
+    super(option?.child, option.key);
+    this._onPointerDown = option.onPointerDown;
+    this._onPointerMove = option.onPointerMove;
+    this._onPointerUp = option.onPointerUp;
+  }
+  createRenderObject(): RenderView {
+    return new RenderPointerListener({
+      onPointerDown: this._onPointerDown,
+      onPointerMove: this._onPointerMove,
+      onPointerUp: this._onPointerUp,
+    });
+  }
+  updateRenderObject(
+    context: BuildContext,
+    renderView: RenderPointerListener
+  ): void {
+    renderView.onPointerDown = this._onPointerDown;
+    renderView.onPointerMove = this._onPointerMove;
+    renderView.onPointerUp = this._onPointerUp;
   }
 }

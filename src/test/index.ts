@@ -1,7 +1,7 @@
 import Painter from "@/lib/painting/painter";
-import { Binding } from "../lib/basic/binding";
+import { Binding, BindingBase } from "../lib/basic/binding";
 import { BuildContext, Element } from "../lib/basic/elements";
-import { Size } from "@/lib/basic/rect";
+import { Offset, Size } from "@/lib/basic/rect";
 import {
   Axis,
   ContainerRenderViewParentData,
@@ -20,6 +20,7 @@ import {
   ColoredBox,
   Expanded,
   Flex,
+  Listener,
   Padding,
   Positioned,
   Rotate,
@@ -57,7 +58,7 @@ const g = canvas.getContext("2d", {
 });
 // g.imageSmoothingEnabled = false;
 Painter.setPaint(g);
-
+// g.scale(dev, dev);
 class Ful extends StatefulWidget {
   createState(): State {
     return new StateTest();
@@ -72,6 +73,7 @@ class StateTest extends State {
   private waveSpeed: number = 0.01;
   private waveFrequency: number = 0.01;
   private flex: number = 0;
+  private vec: Vector = Vector.zero;
   public initState(): void {
     this.handleAnimate();
     // setInterval(() => {
@@ -167,10 +169,92 @@ class StateTest extends State {
     return new SizeBox({
       width: canvas.width,
       height: canvas.height,
+      child: new Stack({
+        children: [
+          ...Array.from(new Array(1)).map((_, index) => {
+            return new Slider();
+          }),
+        ],
+      }),
     });
   }
 }
 
+class Slider extends StatefulWidget {
+  createState(): State {
+    return new SliderState();
+  }
+}
+
+class SliderState extends State<Slider> {
+  private position: Vector = Vector.zero;
+  private time: number = 0;
+  public initState(): void {
+    // this.animation();
+  }
+  private animation() {
+    this.setState(() => {
+      this.time += 0.01;
+    });
+    requestAnimationFrame(this.animation.bind(this));
+  }
+  build(context: BuildContext): Widget {
+    return new Positioned({
+      top: this.position.y,
+      left: this.position.x,
+      child: new Listener({
+        onPointerDown:(event)=>{
+          console.log("选中")
+        },
+        child: new ColoredBox({
+          color: "white",
+          child: new SizeBox({
+            width: 300*dev,
+            height: 300*dev,
+            child: new Align({
+              child: new Rotate({
+                angle: this.time,
+                child: new Padding({
+                  child: new ColoredBox({
+                    color: "#efefef",
+                    child: new SizeBox({ width: 40*dev, height: 40*dev }),
+                  }),
+                }),
+              }),
+            }),
+          }),
+        }),
+        onPointerMove: (event) => {
+          this.setState(() => {
+            this.position.add(
+              new Vector(event.delta.offsetX, event.delta.offsetY)
+            );
+          });
+        },
+      }),
+    });
+  }
+}
+
+// bool defaultHitTestChildren(BoxHitTestResult result, { required Offset position }) {
+//   // The x, y parameters have the top left of the node's box as the origin.
+//   ChildType? child = lastChild;
+//   while (child != null) {
+//     final ParentDataType childParentData = child.parentData! as ParentDataType;
+//     final bool isHit = result.addWithPaintOffset(
+//       offset: childParentData.offset,
+//       position: position,
+//       hitTest: (BoxHitTestResult result, Offset? transformed) {
+//         assert(transformed == position - childParentData.offset);
+//         return child!.hitTest(result, position: transformed!);
+//       },
+//     );
+//     if (isHit)
+//       return true;
+//     child = childParentData.previousSibling;
+//   }
+//   return false;
+// }
 const view = //new V(new Size(100,100))//new ColoredBox("white",new SizeBox(200,200))//
   new Ful();
 
@@ -181,3 +265,43 @@ runApp(view);
 // console.log(view)
 // console.log(element);
 // element.mount();
+
+class Queue<T> {
+  public list: Array<T> = new Array<T>();
+  public push(value: T) {
+    this.list.push(value);
+  }
+  public addFirst(value: T) {
+    this.list.push(value);
+  }
+  public addLast(value: T) {
+    this.list.unshift(value);
+  }
+  public removeFirst(): T {
+    return this.list.shift();
+  }
+  public removeLast(): T {
+    return this.list.pop();
+  }
+  public get size(): number {
+    return this.list.length;
+  }
+  public get isEmpty(): boolean {
+    return this.size === 0;
+  }
+  public clear() {
+    this.list = [];
+  }
+}
+
+const queue = new Queue<number>();
+
+queue.addFirst(1);
+queue.addFirst(2);
+
+console.log(queue.list);
+
+queue.removeFirst();
+console.log(queue.list);
+
+// new GestureBinding();

@@ -6,6 +6,17 @@ import Vector from "@/lib/math/vector";
 import { TextOverflow, TextPainter, TextSpan } from "../text-painter";
 import { PipelineOwner } from "../basic/binding";
 import { Widget } from "../basic/framework";
+import {
+  HitTestEntry,
+  HitTestResult,
+  HitTestTarget,
+} from "../gesture/hit_test";
+import {
+  DownPointerEvent,
+  MovePointerEvent,
+  PointerEvent,
+  UpPointerEvent,
+} from "../gesture/events";
 
 export enum Clip {
   none = "none",
@@ -180,7 +191,7 @@ export class FlexParentData extends ContainerRenderViewParentData<RenderView> {
 }
 
 export abstract class AbstractNode {
-  public key:string=Math.random().toString(16).substring(3);
+  public key: string = Math.random().toString(16).substring(3);
   private _owner: Object;
   private _parent: AbstractNode;
   private _depth: number = 0;
@@ -234,7 +245,7 @@ export abstract class AbstractNode {
 }
 type ChildVisitorCallback = (child: RenderView) => void;
 //原子渲染对象，可以有层级渲染，没有renderbox，依赖于context传输的大小来渲染
-export abstract class RenderView extends AbstractNode {
+export abstract class RenderView extends AbstractNode implements HitTestTarget {
   public layerHandler: LayerHandler<OffsetLayer>;
   private _child?: RenderView;
   private _firstChild?: RenderView;
@@ -351,6 +362,11 @@ export abstract class RenderView extends AbstractNode {
   abstract performResize(): void;
   abstract computeDryLayout(constrains: BoxConstraints): Size;
   abstract getDryLayout(constrains: BoxConstraints): Size;
+  public hitTest(result: HitTestResult, position: Vector): boolean {
+    return;
+  }
+  handleEvent(event: PointerEvent, entry: HitTestEntry): void {}
+  
 }
 
 export abstract class RenderBox extends RenderView {
@@ -380,6 +396,41 @@ export abstract class RenderBox extends RenderView {
   }
   getDryLayout(constrains: BoxConstraints): Size {
     return this.computeDryLayout(constrains);
+  }
+  public hitTest(result: HitTestResult, position: Vector): boolean {
+    if (this.size.contains(position)) {
+      const isHit =
+        this.hitTestChildren(result, position) || this.hitTestSelf(position);
+      if (isHit) {
+        result.add(new HitTestEntry(this));
+        return true;
+      }
+    }
+    return false;
+  }
+  public hitTestChildren(result: HitTestResult, position: Vector): boolean {
+    return this.defaultHitTestChildren(result, position);
+  }
+  public hitTestSelf(position: Vector): boolean {
+    return false;
+  }
+  protected defaultHitTestChildren(
+    result: HitTestResult,
+    position: Vector
+  ): boolean {
+    let child = this.child;
+    while (child != null) {
+      const parentData =
+        child.parentData as ContainerRenderViewParentData<RenderView>;
+      const transformed = Vector.sub(position, parentData.offset);
+      const isHit = child.hitTest(result, transformed);
+      if (isHit) {
+        return true;
+        // result.add(new HitTestEntry(child));
+      }
+      child = parentData?.nextSibling;
+    }
+    return false;
   }
 }
 
@@ -850,6 +901,24 @@ export abstract class MultiChildRenderView extends RenderBox {
     if (children) {
       this.addAll(children);
     }
+  }
+  protected defaultHitTestChildren(
+    result: HitTestResult,
+    position: Vector
+  ): boolean {
+    let child = this.firstChild;
+    while (child != null) {
+      const parentData =
+        child.parentData as ContainerRenderViewParentData<RenderView>;
+      const transformed = Vector.sub(position, parentData.offset);
+      const isHit = child.hitTest(result, transformed);
+      if (isHit) {
+        return true;
+        // result.add(new HitTestEntry(child));
+      }
+      child = parentData?.nextSibling;
+    }
+    return false;
   }
   public addAll(value: RenderView[]) {
     value?.forEach((_) => this.insert(_, this.lastChild));
@@ -1891,5 +1960,52 @@ export class RotateRenderView extends SingleChildRenderView {
     context.paintChild(this.child, offset);
     painter.closePath();
     painter.restore();
+  }
+}
+
+export type onPointerDownCallback = (event: DownPointerEvent) => void;
+export type onPointerMoveCallback = (event: MovePointerEvent) => void;
+export type onPointerUpCallback = (event: UpPointerEvent) => void;
+
+export interface RenderPointerListenerArguments {
+  onPointerDown: onPointerDownCallback;
+  onPointerMove: onPointerMoveCallback;
+  onPointerUp: onPointerUpCallback;
+}
+
+export class RenderPointerListener extends SingleChildRenderView {
+  private _onPointerDown: onPointerDownCallback;
+  private _onPointerMove: onPointerMoveCallback;
+  private _onPointerUp: onPointerUpCallback;
+  set onPointerDown(value: onPointerDownCallback) {
+    this._onPointerDown = value;
+  }
+  set onPointerMove(value: onPointerMoveCallback) {
+    this._onPointerMove = value;
+  }
+  set onPointerUp(value: onPointerUpCallback) {
+    this._onPointerUp = value;
+  }
+  constructor(
+    option: Partial<
+      RenderPointerListenerArguments & SingleChildRenderViewArguments
+    >
+  ) {
+    super(option?.child);
+    this._onPointerDown = option?.onPointerDown;
+    this._onPointerMove = option?.onPointerMove;
+    this._onPointerUp = option?.onPointerUp;
+  }
+  handleEvent(event: PointerEvent, entry: HitTestEntry): void {
+    if (event instanceof DownPointerEvent) {
+      this._onPointerDown?.(event);
+    } else if (event instanceof MovePointerEvent) {
+      this._onPointerMove?.(event);
+    } else if (event instanceof UpPointerEvent) {
+      this._onPointerUp?.(event);
+    }
+  }
+  public hitTestSelf(position: Vector): boolean {
+    return this.size.contains(position);
   }
 }

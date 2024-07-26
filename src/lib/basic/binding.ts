@@ -9,8 +9,20 @@ import Painter from "../painting/painter";
 import Vector from "../math/vector";
 import { RootRenderObjectElement, Widget } from "@/lib/basic/framework";
 import { RootWidget } from "@/lib/widgets/basic";
+import {
+  GenPointerData,
+  PointerEvent,
+  PointerEventConverter,
+  PointerEventHandler,
+} from "../gesture/events";
+import { Queue } from "../utils/utils";
+import {
+  HitTestEntry,
+  HitTestResult,
+  HitTestTarget,
+} from "../gesture/hit_test";
 
-abstract class BindingBase {
+export abstract class BindingBase {
   constructor() {
     this.initInstance();
   }
@@ -50,6 +62,9 @@ export class PipelineOwner {
   private rootNode: AbstractNode;
   private needRepaintList: Array<RenderView> = new Array<RenderView>();
   private needReLayoutList: Array<RenderView> = new Array<RenderView>();
+  get renderView(): RenderView {
+    return this.rootNode as RenderView;
+  }
   attachNode(rootNode: AbstractNode) {
     this.rootNode = rootNode;
   }
@@ -190,11 +205,63 @@ class FrameUpdater {
   }
 }
 
-export class RendererBinding extends BindingBase {
+export class GestureBinding extends BindingBase implements HitTestTarget {
+  public static instance: GestureBinding;
+  private pointerEventHandler: PointerEventHandler;
+  private pointerEvents: Queue<PointerEvent> = new Queue();
+  protected initInstance(): void {
+    GestureBinding.instance = this;
+    this.pointerEventHandler = new PointerEventHandler(
+      this.handlePointerData.bind(this)
+    );
+  }
+  /**
+   * 将输入事件转换为 @PointerEvent
+   */
+  public handlePointerData(data: GenPointerData) {
+    const pointerEvent = PointerEventConverter.expand(data);
+    if (pointerEvent) {
+      this.pointerEvents.addFirst(pointerEvent);
+    }
+    this.flushPointerEvents();
+  }
+
+  private flushPointerEvents() {
+    while (!this.pointerEvents.isEmpty) {
+      const pointerEvent = this.pointerEvents.removeFirst();
+      this.handlePointerEvent(pointerEvent);
+    }
+  }
+  handlePointerEvent(event: PointerEvent) {
+    this.performPointerEventHandle(event);
+  }
+  private performPointerEventHandle(event: PointerEvent) {
+    let hisTestResult: HitTestResult = new HitTestResult();
+    this.hitTest(hisTestResult, event.position);
+    // console.log(hisTestResult.path);
+    for (let entry of hisTestResult.path) {
+      entry.target.handleEvent(event, entry);
+    }
+  }
+  handleEvent(event: PointerEvent, entry: HitTestEntry): void {
+    
+  }
+  protected hitTest(result: HitTestResult, position: Vector) {
+    result.add(new HitTestEntry(this));
+  }
+}
+
+export class RendererBinding extends GestureBinding {
   private _pipelineOwner: PipelineOwner;
   public static instance: RendererBinding;
   private frameUpdater: FrameUpdater = new FrameUpdater();
-
+  get renderView(): RenderView {
+    return this._pipelineOwner.renderView;
+  }
+  constructor() {
+    super();
+    super.initInstance();
+  }
   protected initInstance(): void {
     RendererBinding.instance = this;
     this._pipelineOwner = new PipelineOwner();
@@ -206,6 +273,10 @@ export class RendererBinding extends BindingBase {
     this.pipelineOwner.flushLayout();
     this.pipelineOwner.flushPaint();
     this.frameUpdater.update();
+  }
+  protected hitTest(result: HitTestResult, position: Vector): void {
+    this.renderView.hitTest(result, position);
+    super.hitTest(result,position);
   }
 }
 
