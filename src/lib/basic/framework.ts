@@ -11,6 +11,14 @@ import {
 import { PipelineOwner, RendererBinding } from "./binding";
 import { BuildContext, BuildOwner, Element } from "./elements";
 import { Key } from "./key";
+
+export abstract class BindingBase {
+  constructor() {
+    this.initInstance();
+  }
+  protected initInstance() {}
+}
+
 export interface WidgetArguments {
   key: Key;
 }

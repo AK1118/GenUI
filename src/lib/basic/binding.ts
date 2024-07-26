@@ -7,13 +7,15 @@ import { BoxConstraints } from "@/lib/rendering/constraints";
 import { BuildOwner } from "./elements";
 import Painter from "../painting/painter";
 import Vector from "../math/vector";
-import { RootRenderObjectElement, Widget } from "@/lib/basic/framework";
+import { BindingBase, RootRenderObjectElement, Widget } from "@/lib/basic/framework";
 import { RootWidget } from "@/lib/widgets/basic";
 import {
+  DownPointerEvent,
   GenPointerData,
   PointerEvent,
   PointerEventConverter,
   PointerEventHandler,
+  UpPointerEvent,
 } from "../gesture/events";
 import { Queue } from "../utils/utils";
 import {
@@ -21,13 +23,7 @@ import {
   HitTestResult,
   HitTestTarget,
 } from "../gesture/hit_test";
-
-export abstract class BindingBase {
-  constructor() {
-    this.initInstance();
-  }
-  protected initInstance() {}
-}
+import { GestureBinding } from "../gesture/binding";
 
 interface FrameCallbackEntity {
   callback: (tamp: number) => void;
@@ -62,6 +58,7 @@ export class PipelineOwner {
   private rootNode: AbstractNode;
   private needRepaintList: Array<RenderView> = new Array<RenderView>();
   private needReLayoutList: Array<RenderView> = new Array<RenderView>();
+  private frameUpdater: FrameUpdater = new FrameUpdater();
   get renderView(): RenderView {
     return this.rootNode as RenderView;
   }
@@ -116,8 +113,13 @@ export class PipelineOwner {
       Binding.getInstance().schedulerBinding.ensureVisualUpdate();
       this.timer = null; // 重置定时器
     };
+    this.handleCleanCanvas();
     // 使用 requestAnimationFrame 进行帧调度
     this.timer = requestAnimationFrame(update);
+  }
+  private handleCleanCanvas(){
+    new Painter().clearRect(0, 0, 1000, 1000);
+    this.frameUpdater.update();
   }
 
   // 用于清理定时器的方法，在不需要更新时调用
@@ -205,56 +207,11 @@ class FrameUpdater {
   }
 }
 
-export class GestureBinding extends BindingBase implements HitTestTarget {
-  public static instance: GestureBinding;
-  private pointerEventHandler: PointerEventHandler;
-  private pointerEvents: Queue<PointerEvent> = new Queue();
-  protected initInstance(): void {
-    GestureBinding.instance = this;
-    this.pointerEventHandler = new PointerEventHandler(
-      this.handlePointerData.bind(this)
-    );
-  }
-  /**
-   * 将输入事件转换为 @PointerEvent
-   */
-  public handlePointerData(data: GenPointerData) {
-    const pointerEvent = PointerEventConverter.expand(data);
-    if (pointerEvent) {
-      this.pointerEvents.addFirst(pointerEvent);
-    }
-    this.flushPointerEvents();
-  }
 
-  private flushPointerEvents() {
-    while (!this.pointerEvents.isEmpty) {
-      const pointerEvent = this.pointerEvents.removeFirst();
-      this.handlePointerEvent(pointerEvent);
-    }
-  }
-  handlePointerEvent(event: PointerEvent) {
-    this.performPointerEventHandle(event);
-  }
-  private performPointerEventHandle(event: PointerEvent) {
-    let hisTestResult: HitTestResult = new HitTestResult();
-    this.hitTest(hisTestResult, event.position);
-    // console.log(hisTestResult.path);
-    for (let entry of hisTestResult.path) {
-      entry.target.handleEvent(event, entry);
-    }
-  }
-  handleEvent(event: PointerEvent, entry: HitTestEntry): void {
-    
-  }
-  protected hitTest(result: HitTestResult, position: Vector) {
-    result.add(new HitTestEntry(this));
-  }
-}
 
 export class RendererBinding extends GestureBinding {
   private _pipelineOwner: PipelineOwner;
   public static instance: RendererBinding;
-  private frameUpdater: FrameUpdater = new FrameUpdater();
   get renderView(): RenderView {
     return this._pipelineOwner.renderView;
   }
@@ -272,11 +229,10 @@ export class RendererBinding extends GestureBinding {
   drawFrame() {
     this.pipelineOwner.flushLayout();
     this.pipelineOwner.flushPaint();
-    this.frameUpdater.update();
   }
   protected hitTest(result: HitTestResult, position: Vector): void {
     this.renderView.hitTest(result, position);
-    super.hitTest(result,position);
+    super.hitTest(result, position);
   }
 }
 

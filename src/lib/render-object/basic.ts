@@ -366,7 +366,6 @@ export abstract class RenderView extends AbstractNode implements HitTestTarget {
     return;
   }
   handleEvent(event: PointerEvent, entry: HitTestEntry): void {}
-  
 }
 
 export abstract class RenderBox extends RenderView {
@@ -906,7 +905,7 @@ export abstract class MultiChildRenderView extends RenderBox {
     result: HitTestResult,
     position: Vector
   ): boolean {
-    let child = this.firstChild;
+    let child = this.lastChild;
     while (child != null) {
       const parentData =
         child.parentData as ContainerRenderViewParentData<RenderView>;
@@ -916,7 +915,7 @@ export abstract class MultiChildRenderView extends RenderBox {
         return true;
         // result.add(new HitTestEntry(child));
       }
-      child = parentData?.nextSibling;
+      child = parentData?.previousSibling;
     }
     return false;
   }

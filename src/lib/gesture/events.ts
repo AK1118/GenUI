@@ -167,7 +167,7 @@ export enum PointerChange {
   export abstract class PointerEvent {
     public position: Vector;
     public delta: Offset;
-    public pointer: number = 0;
+    public pointer: number =1;
     constructor(position: Vector, delta: Offset) {
       this.position = position;
       this.delta = delta;

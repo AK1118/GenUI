@@ -1,5 +1,5 @@
 import Painter from "@/lib/painting/painter";
-import { Binding, BindingBase } from "../lib/basic/binding";
+import { Binding } from "../lib/basic/binding";
 import { BuildContext, Element } from "../lib/basic/elements";
 import { Offset, Size } from "@/lib/basic/rect";
 import {
@@ -39,8 +39,9 @@ import Alignment from "@/lib/painting/alignment";
 import { BoxConstraints } from "@/lib/rendering/constraints";
 import Vector from "@/lib/math/vector";
 import runApp from "@/index";
-import { abs, cos, radiansPerDegree, sin } from "@/lib/math/math";
+import { abs, cos, radiansPerDegree, random, sin } from "@/lib/math/math";
 import { GlobalKey } from "@/lib/basic/key";
+import { getRandomColor } from "@/lib/utils/utils";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
@@ -75,7 +76,7 @@ class StateTest extends State {
   private flex: number = 0;
   private vec: Vector = Vector.zero;
   public initState(): void {
-    this.handleAnimate();
+    // this.handleAnimate();
     // setInterval(() => {
     //   g.clearRect(0, 0, canvas.width, canvas.height);
     //   this.setState(() => {
@@ -171,9 +172,9 @@ class StateTest extends State {
       height: canvas.height,
       child: new Stack({
         children: [
-          ...Array.from(new Array(1)).map((_, index) => {
-            return new Slider();
-          }),
+            ...Array.from(new Array(1)).map(_=>{
+              return new Slider(getRandomColor());
+            })
         ],
       }),
     });
@@ -181,16 +182,21 @@ class StateTest extends State {
 }
 
 class Slider extends StatefulWidget {
+  public color: string;
+  constructor(color: string) {
+    super();
+    this.color = color;
+  }
   createState(): State {
     return new SliderState();
   }
 }
 
 class SliderState extends State<Slider> {
-  private position: Vector = Vector.zero;
+  private position: Vector =  new Vector(random()*canvas.width,random()*canvas.height);
   private time: number = 0;
   public initState(): void {
-    // this.animation();
+    this.animation();
   }
   private animation() {
     this.setState(() => {
@@ -203,21 +209,21 @@ class SliderState extends State<Slider> {
       top: this.position.y,
       left: this.position.x,
       child: new Listener({
-        onPointerDown:(event)=>{
-          console.log("选中")
+        onPointerDown: (event) => {
+          console.log("选中");
         },
         child: new ColoredBox({
           color: "white",
           child: new SizeBox({
-            width: 300*dev,
-            height: 300*dev,
+            width: 100,
+            height: 100,
             child: new Align({
               child: new Rotate({
                 angle: this.time,
                 child: new Padding({
                   child: new ColoredBox({
-                    color: "#efefef",
-                    child: new SizeBox({ width: 40*dev, height: 40*dev }),
+                    color:this.widget.color,
+                    child: new SizeBox({ width: 40, height: 40 }),
                   }),
                 }),
               }),
