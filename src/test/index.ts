@@ -76,7 +76,7 @@ class StateTest extends State {
   private flex: number = 0;
   private vec: Vector = Vector.zero;
   public initState(): void {
-    // this.handleAnimate();
+    //  this.handleAnimate();
     // setInterval(() => {
     //   g.clearRect(0, 0, canvas.width, canvas.height);
     //   this.setState(() => {
@@ -170,12 +170,15 @@ class StateTest extends State {
     return new SizeBox({
       width: canvas.width,
       height: canvas.height,
-      child: new Stack({
-        children: [
-            ...Array.from(new Array(1)).map(_=>{
-              return new Slider(getRandomColor());
-            })
-        ],
+      child: new Rotate({
+        angle:(Math.PI/180)*45,
+        child:new Stack({
+          children: [
+              ...Array.from(new Array(1)).map(_=>{
+                return new Slider("#efefef");
+              })
+          ],
+        }),
       }),
     });
   }
@@ -193,7 +196,7 @@ class Slider extends StatefulWidget {
 }
 
 class SliderState extends State<Slider> {
-  private position: Vector =  new Vector(random()*canvas.width,random()*canvas.height);
+  private position: Vector =  new Vector(0,0);
   private time: number = 0;
   public initState(): void {
     this.animation();
@@ -218,14 +221,9 @@ class SliderState extends State<Slider> {
             width: 100,
             height: 100,
             child: new Align({
-              child: new Rotate({
-                angle: this.time,
-                child: new Padding({
-                  child: new ColoredBox({
-                    color:this.widget.color,
-                    child: new SizeBox({ width: 40, height: 40 }),
-                  }),
-                }),
+              child:  new ColoredBox({
+                color:this.widget.color,
+                child: new SizeBox({ width: 10, height: 100 }),
               }),
             }),
           }),

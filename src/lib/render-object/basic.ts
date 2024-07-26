@@ -1953,15 +1953,39 @@ export class RotateRenderView extends SingleChildRenderView {
     const center: Vector = this.size.copy().half().toVector();
     center.add(offset ?? Vector.zero);
     painter.translate(center.x, center.y);
-    painter.rotate(this.angle);
+    // painter.rotate(this.angle);
+    const angle=this.angle;
+    /**
+     * [ cos(θ)  -sin(θ)  0  0 ]
+[ sin(θ)   cos(θ)  0  0 ]
+[   0       0      1  0 ]
+[   0       0      0  1 ]
+
+     */
+    painter.transform(Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0);
     center.negate();
     painter.translate(center.x, center.y);
     context.paintChild(this.child, offset);
     painter.closePath();
     painter.restore();
   }
+  /**
+   * 以元素中心为圆心点旋转angle，
+   */
+  public hitTest(result: HitTestResult, position: Vector): boolean {
+    let {x,y}=position;
+    const centerX=this.size.width*0.5;
+    const centerY=this.size.height*0.5;
+    const dx=x-centerX;
+    const dy=y-centerY;
+    const angle=this.angle*-1;
+    const rotateX=dx*Math.cos(angle)-dy*Math.sin(angle);
+    const rotateY=dx*Math.sin(angle)+dy*Math.cos(angle);
+    position.x=rotateX+centerX;
+    position.y=rotateY+centerY;
+    return super.hitTest(result, position);
+  }
 }
-
 export type onPointerDownCallback = (event: DownPointerEvent) => void;
 export type onPointerMoveCallback = (event: MovePointerEvent) => void;
 export type onPointerUpCallback = (event: UpPointerEvent) => void;

@@ -329,7 +329,19 @@ class Painter implements Painter {
   ): CanvasGradient {
     return this.paint?.createRadialGradient(x0, y0, r0, x1, y1, r1);
   }
-
+  /**
+   * 水平缩放。 垂直倾斜。水平倾斜。垂直缩放。水平移动。垂直移动。
+   */
+  transform(
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number
+  ): void {
+    this.paint?.transform(a, b, c, d, e, f);
+  }
   createConicGradient() {}
   roundRect(
     x: number,
