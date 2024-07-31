@@ -34,6 +34,8 @@ import {
   Radius,
   RenderPointerListener,
   RenderPointerListenerArguments,
+  RenderTransformArguments,
+  RenderTransformBox,
   RenderView,
   RootRenderView,
   RotateArguments,
@@ -49,6 +51,8 @@ import {
   WrapRenderView,
 } from "../render-object/basic";
 import Alignment from "../painting/alignment";
+import { Matrix4 } from "../math/matrix";
+import Vector from "../math/vector";
 export interface ColoredBoxOption {
   color: string;
 }
@@ -359,5 +363,79 @@ export class Listener extends SingleChildRenderObjectWidget {
     renderView.onPointerDown = this._onPointerDown;
     renderView.onPointerMove = this._onPointerMove;
     renderView.onPointerUp = this._onPointerUp;
+  }
+}
+export interface TransformRotateArguments {
+  angle: number;
+  origin: Vector;
+  alignment: Alignment;
+}
+
+export interface TransformScaleArguments {
+  scale: number;
+  scaleX: number;
+  scaleY: number;
+  alignment: Alignment;
+}
+export class Transform extends SingleChildRenderObjectWidget {
+  private _transform: Matrix4;
+  private origin: Vector;
+  private alignment: Alignment;
+  constructor(
+    option: Partial<RenderTransformArguments & SingleChildRenderObjectWidget>
+  ) {
+    super(option?.child, option.key);
+    this._transform = option.transform ?? Matrix4.zero;
+    this.origin = option.origin;
+    this.alignment = option.alignment;
+  }
+  createRenderObject(): RenderView {
+    return new RenderTransformBox({
+      transform: this._transform,
+      origin: this.origin,
+      alignment: this.alignment,
+    });
+  }
+  updateRenderObject(
+    context: BuildContext,
+    renderView: RenderTransformBox
+  ): void {
+    renderView.transform = this._transform;
+    renderView.origin = this.origin;
+    renderView.alignment = this.alignment;
+  }
+
+  static rotate(
+    option: Partial<
+      TransformRotateArguments & SingleChildRenderObjectWidgetArguments
+    >
+  ): Transform {
+    const transform: Matrix4 = Matrix4.zero.identity();
+    transform.rotateZ(option?.angle ?? 0);
+    return new Transform({
+      child: option?.child,
+      transform: transform,
+      origin: option?.origin ?? Vector.zero,
+    });
+  }
+
+  static scale(
+    option: Partial<
+      TransformScaleArguments & SingleChildRenderObjectWidgetArguments
+    >
+  ): Transform {
+    const { scaleX = 1, scaleY = 1, scale, alignment } = option;
+    const transform: Matrix4 = Matrix4.zero;
+    transform.scale(scaleX, scaleY);
+    if (scale) {
+      transform.scale(scale, scale);
+    }
+    transform.setValue(15, 1);
+    return new Transform({
+      child: option?.child,
+      transform: transform,
+      alignment: alignment,
+      origin: Vector.zero,
+    });
   }
 }

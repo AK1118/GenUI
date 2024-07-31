@@ -1,12 +1,9 @@
-import { Offset,Size } from "../basic/rect";
+import { Offset, Size } from "../basic/rect";
 import Vector from "../math/vector";
 class Alignment {
   private x: number;
   private y: number;
-  private offset: Offset = {
-    offsetX: 0,
-    offsetY: 0,
-  };
+  private offset: Offset = Offset.zero;
   constructor(x: number, y: number) {
     this.x = x;
     this.y = y;
@@ -45,6 +42,11 @@ class Alignment {
       halfWidthDelta * this.x + this.offset.offsetX,
       halfHeighDelta * this.y + this.offset.offsetY
     );
+  }
+  public alongSize(other: Size): Offset {
+    const centerX = other.width * 0.5;
+    const centerY = other.height * 0.5;
+    return new Offset(centerX + centerX * this.x, centerY + centerY * this.y);
   }
   public inscribe(size: Size, parentSize: Size): Vector {
     const halfWidthDelta: number = (parentSize.width - size.width) * 0.5;

@@ -63,8 +63,11 @@ export class Offset {
     this.offsetX = offsetX;
     this.offsetY = offsetY;
   }
-  static zero(): Offset {
+  static get zero(): Offset {
     return new Offset(0, 0);
+  }
+  toVector(): Vector {
+    return new Vector(this.offsetX, this.offsetY);
   }
 }
 

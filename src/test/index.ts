@@ -26,6 +26,7 @@ import {
   Rotate,
   SizeBox,
   Stack,
+  Transform,
   Wrap,
 } from "@/lib/widgets/basic";
 import {
@@ -42,6 +43,7 @@ import runApp from "@/index";
 import { abs, cos, radiansPerDegree, random, sin } from "@/lib/math/math";
 import { GlobalKey } from "@/lib/basic/key";
 import { getRandomColor } from "@/lib/utils/utils";
+import { Matrix4 } from "@/lib/math/matrix";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
@@ -170,15 +172,12 @@ class StateTest extends State {
     return new SizeBox({
       width: canvas.width,
       height: canvas.height,
-      child: new Rotate({
-        angle:(Math.PI/180)*45,
-        child:new Stack({
-          children: [
-              ...Array.from(new Array(1)).map(_=>{
-                return new Slider("#efefef");
-              })
-          ],
-        }),
+      child: new Stack({
+        children: [
+          ...Array.from(new Array(1)).map((_) => {
+            return new Slider("#efefef");
+          }),
+        ],
       }),
     });
   }
@@ -196,18 +195,31 @@ class Slider extends StatefulWidget {
 }
 
 class SliderState extends State<Slider> {
-  private position: Vector =  new Vector(0,0);
+  private position: Vector = new Vector(10,10);
   private time: number = 0;
   public initState(): void {
-    this.animation();
+    // setInterval(() => {
+    //   this.animation();
+    // }, 1000);
+   this.animation();
   }
   private animation() {
     this.setState(() => {
       this.time += 0.01;
     });
+    // this.transform.rotateZ(this.time*45);
+
     requestAnimationFrame(this.animation.bind(this));
   }
   build(context: BuildContext): Widget {
+    const origin = Vector.zero;
+    if (context.mounted) {
+      const renderBox = context.findRenderView();
+      //  if(renderBox){
+      //     origin.x=renderBox.size.width/2;
+      //     origin.y=renderBox.size.height;
+      //  }
+    }
     return new Positioned({
       top: this.position.y,
       left: this.position.x,
@@ -215,15 +227,19 @@ class SliderState extends State<Slider> {
         onPointerDown: (event) => {
           console.log("选中");
         },
-        child: new ColoredBox({
-          color: "white",
-          child: new SizeBox({
-            width: 100,
-            height: 100,
-            child: new Align({
-              child:  new ColoredBox({
-                color:this.widget.color,
-                child: new SizeBox({ width: 10, height: 100 }),
+        child: Transform.scale({
+          scale: (sin(this.time)+1.5*1),
+          alignment: Alignment.topRight,
+          child: new ColoredBox({
+            color: "white",
+            child: new SizeBox({
+              width: 100,
+              height: 100,
+              child: new Align({
+                child: new ColoredBox({
+                  color: this.widget.color,
+                  child: new SizeBox({ width: 10, height: 100 }),
+                }),
               }),
             }),
           }),

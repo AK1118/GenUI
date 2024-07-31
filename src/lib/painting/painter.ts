@@ -15,7 +15,8 @@ class Painter implements Painter {
   constructor(
     paint:
       | CanvasRenderingContext2D
-      | OffscreenCanvasRenderingContext2D = Painter._paint
+      | OffscreenCanvasRenderingContext2D = Painter._paint,
+    store: boolean = true
   ) {
     if (!paint) {
       if (Painter._paint) {
@@ -25,10 +26,13 @@ class Painter implements Painter {
           "The Painter must insert a paint object of CanvasRenderingContext2D. Try running new Painter(g) to avoid this error.The 'g' value is a CanvasRenderingContext2D object."
         );
       }
-    } else {
+    } else if (store && paint) {
       this.setPaintQuality(paint);
       this.paint = paint;
       Painter._paint = paint;
+    } else if (paint && !store) {
+      this.setPaintQuality(paint);
+      this.paint = paint;
     }
     // this.setPaintQuality(paint);
     // this.paint = paint;

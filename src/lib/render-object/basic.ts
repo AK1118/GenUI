@@ -17,6 +17,8 @@ import {
   PointerEvent,
   UpPointerEvent,
 } from "../gesture/events";
+import { Matrix, Matrix4 } from "../math/matrix";
+import MatrixUtils from "../utils/matrixUtils";
 
 export enum Clip {
   none = "none",
@@ -888,6 +890,31 @@ export class PaintingContext extends ClipContext {
   }
   paintChild(child: RenderView, offset: Vector = Vector.zero): void {
     child?.paintWidthContext(this, offset);
+  }
+  pushTransform(offset: Vector, transform: Matrix4, render: VoidFunction) {
+   
+    const effectiveTransform=
+    Matrix4.zero.identity().translate(offset.x,offset.y)
+    .multiply(transform)
+    .translate(-offset.x, -offset.y);
+    const matrix = effectiveTransform.matrix; //Matrix4.zero.matrix;
+    // console.log(matrix);
+    this.paint.save();
+    this.paint.beginPath();
+    // this.paint.translate(offset.x, offset.y);
+    this.paint.transform(
+      matrix[0],
+      matrix[1], // m11, m12
+      matrix[4],
+      matrix[5], // m21, m22
+      matrix[12],
+      matrix[13]// dx, dy
+    );
+    
+    render();
+    // this.paint.translate(-offset.x, -offset.y);
+    this.paint.closePath();
+    this.paint.restore();
   }
 }
 
@@ -1954,7 +1981,7 @@ export class RotateRenderView extends SingleChildRenderView {
     center.add(offset ?? Vector.zero);
     painter.translate(center.x, center.y);
     // painter.rotate(this.angle);
-    const angle=this.angle;
+    const angle = this.angle;
     /**
      * [ cos(θ)  -sin(θ)  0  0 ]
 [ sin(θ)   cos(θ)  0  0 ]
@@ -1962,7 +1989,14 @@ export class RotateRenderView extends SingleChildRenderView {
 [   0       0      0  1 ]
 
      */
-    painter.transform(Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0);
+    painter.transform(
+      Math.cos(angle),
+      Math.sin(angle),
+      -Math.sin(angle),
+      Math.cos(angle),
+      0,
+      0
+    );
     center.negate();
     painter.translate(center.x, center.y);
     context.paintChild(this.child, offset);
@@ -1973,16 +2007,16 @@ export class RotateRenderView extends SingleChildRenderView {
    * 以元素中心为圆心点旋转angle，
    */
   public hitTest(result: HitTestResult, position: Vector): boolean {
-    let {x,y}=position;
-    const centerX=this.size.width*0.5;
-    const centerY=this.size.height*0.5;
-    const dx=x-centerX;
-    const dy=y-centerY;
-    const angle=this.angle*-1;
-    const rotateX=dx*Math.cos(angle)-dy*Math.sin(angle);
-    const rotateY=dx*Math.sin(angle)+dy*Math.cos(angle);
-    position.x=rotateX+centerX;
-    position.y=rotateY+centerY;
+    let { x, y } = position;
+    const centerX = this.size.width * 0.5;
+    const centerY = this.size.height * 0.5;
+    const dx = x - centerX;
+    const dy = y - centerY;
+    const angle = this.angle * -1;
+    const rotateX = dx * Math.cos(angle) - dy * Math.sin(angle);
+    const rotateY = dx * Math.sin(angle) + dy * Math.cos(angle);
+    position.x = rotateX + centerX;
+    position.y = rotateY + centerY;
     return super.hitTest(result, position);
   }
 }
@@ -2030,5 +2064,88 @@ export class RenderPointerListener extends SingleChildRenderView {
   }
   public hitTestSelf(position: Vector): boolean {
     return this.size.contains(position);
+  }
+}
+
+export interface RenderTransformArguments {
+  transform: Matrix4;
+  origin: Vector;
+  alignment: Alignment;
+}
+
+export class RenderTransformBox extends SingleChildRenderView {
+  private _transform: Matrix4 = Matrix4.zero;
+  private _origin: Vector;
+  private _alignment: Alignment;
+  set alignment(value: Alignment) {
+    this._alignment = value;
+    this.markNeedsPaint();
+  }
+  get alignment(): Alignment {
+    return this._alignment;
+  }
+  set origin(value: Vector) {
+    this._origin = value;
+    this.markNeedsPaint();
+  }
+  get origin(): Vector {
+    return this._origin;
+  }
+  set transform(value: Matrix4) {
+    this._transform = value;
+    this.markNeedsPaint();
+  }
+  get transform(): Matrix4 {
+    return this._transform;
+  }
+  constructor(
+    option: Partial<RenderTransformArguments & SingleChildRenderViewArguments>
+  ) {
+    super(option?.child);
+    this.transform = option?.transform;
+  }
+
+  render(context: PaintingContext, offset?: Vector): void {
+    if (this.child) {
+      // this.transform.rotateZ((Math.PI / 180) * 14);
+      // const childOffset = this.computeOriginOffset(offset);
+      const childOffset=MatrixUtils.getAsTranslation(this.effectiveTransform);
+      //检测是否只是平移
+      if(childOffset==null){
+        context.pushTransform(offset, this.effectiveTransform, () => {
+          context.paintChild(this.child, offset);
+        });
+      }else{
+        super.render(context, childOffset.add(offset));
+      }
+   
+    }
+  }
+  get effectiveTransform(): Matrix4 {
+    const result = Matrix4.zero.identity();
+    const alignment = this.alignment;
+    const origin = this.origin;
+    let translation = Vector.zero;
+    if (!this.origin && !this.alignment) {
+      return result;
+    }
+    if (this.origin) {
+      // offset.add(this.origin);
+      result.translate(this.origin.x, this.origin.y);
+    }
+    if (alignment) {
+      translation = alignment.alongSize(this.size).toVector();
+      // offset.add(alignment.compute(this.size).toVector());
+      result.translate(translation.x, translation.y);
+    }
+    result.multiply(this.transform);
+    if (alignment) {
+      result.translate(-translation.x, -translation.y);
+    }
+    if (origin) {
+      result.translate(-origin.x, -origin.y);
+    }
+    
+    return result;
   }
 }

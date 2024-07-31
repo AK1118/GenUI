@@ -5,9 +5,10 @@ class Vector {
     this.x = x;
     this.y = y;
   }
-  public add(v: Vector) {
+  public add(v: Vector): Vector {
     this.x += v.x;
     this.y += v.y;
+    return this;
   }
   sub(v: Vector) {
     this.x -= v.x;
@@ -17,6 +18,11 @@ class Vector {
   mult(v: Vector) {
     this.x *= v.x;
     this.y *= v.y;
+    return this;
+  }
+  multNumber(n: number): Vector {
+    this.x *= n;
+    this.y *= n;
     return this;
   }
   div(v: Vector) {
