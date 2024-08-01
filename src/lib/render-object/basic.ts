@@ -399,9 +399,8 @@ export abstract class RenderBox extends RenderView {
     return this.computeDryLayout(constrains);
   }
   public hitTest(result: HitTestResult, position: Vector): boolean {
-    if (this.size.contains(position)) {
-      const isHit =
-        this.hitTestChildren(result, position) || this.hitTestSelf(position);
+    if (this.hitTestSelf(position)) {
+      const isHit = this.hitTestChildren(result, position);
       if (isHit) {
         result.add(new HitTestEntry(this));
         return true;
@@ -413,7 +412,7 @@ export abstract class RenderBox extends RenderView {
     return this.defaultHitTestChildren(result, position);
   }
   public hitTestSelf(position: Vector): boolean {
-    return false;
+    return this.size.contains(position);
   }
   protected defaultHitTestChildren(
     result: HitTestResult,
@@ -2064,7 +2063,7 @@ export class RenderPointerListener extends SingleChildRenderView {
     }
   }
   public hitTestSelf(position: Vector): boolean {
-    return this.size.contains(position);
+    return true;
   }
 }
 
@@ -2121,6 +2120,21 @@ export class RenderTransformBox extends SingleChildRenderView {
   }
   public hitTest(result: HitTestResult, position: Vector): boolean {
     return this.hitTestChildren(result, position);
+  }
+  public hitTestChildren(result: HitTestResult, position: Vector): boolean {
+    // console.log(transformedPosition);
+    const childParentData = this.child
+      ?.parentData as ContainerRenderViewParentData;
+    if (childParentData) {
+      const transformedPosition = MatrixUtils.transformPoint(
+        this.effectiveTransform.inverted(),
+        position
+      );
+      //
+      // console.log(this.child.hitTest(result, transformedPosition),this.child.size.contains(transformedPosition))
+      return this.child.size.contains(transformedPosition);
+    }
+    return false;
   }
   get effectiveTransform(): Matrix4 {
     const result = Matrix4.zero
