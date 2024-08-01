@@ -365,6 +365,7 @@ export class Listener extends SingleChildRenderObjectWidget {
     renderView.onPointerUp = this._onPointerUp;
   }
 }
+
 export interface TransformRotateArguments {
   angle: number;
   origin: Vector;
@@ -376,6 +377,12 @@ export interface TransformScaleArguments {
   scaleX: number;
   scaleY: number;
   alignment: Alignment;
+  origin: Vector;
+}
+
+export interface TransformTranslateArguments {
+  x: number;
+  y: number;
 }
 export class Transform extends SingleChildRenderObjectWidget {
   private _transform: Matrix4;
@@ -415,16 +422,29 @@ export class Transform extends SingleChildRenderObjectWidget {
     return new Transform({
       child: option?.child,
       transform: transform,
-      origin: option?.origin ?? Vector.zero,
+      alignment: option?.alignment,
+      origin: option?.origin,
     });
   }
-
+  static translate(
+    option: Partial<
+      TransformTranslateArguments & SingleChildRenderObjectWidgetArguments
+    >
+  ): Transform {
+    const { x, y } = option;
+    const transform = Matrix4.zero.identity();
+    transform.translate(x, y);
+    return new Transform({
+      transform,
+      child: option?.child,
+    });
+  }
   static scale(
     option: Partial<
       TransformScaleArguments & SingleChildRenderObjectWidgetArguments
     >
   ): Transform {
-    const { scaleX = 1, scaleY = 1, scale, alignment } = option;
+    const { scaleX = 1, scaleY = 1, scale, origin,alignment } = option;
     const transform: Matrix4 = Matrix4.zero;
     transform.scale(scaleX, scaleY);
     if (scale) {
@@ -433,9 +453,9 @@ export class Transform extends SingleChildRenderObjectWidget {
     transform.setValue(15, 1);
     return new Transform({
       child: option?.child,
-      transform: transform,
-      alignment: alignment,
-      origin: Vector.zero,
+      transform,
+      alignment,
+      origin,
     });
   }
 }

@@ -53,6 +53,21 @@ class MatrixUtils {
     }
     return null;
   }
+
+  static transformPoint(transform: Matrix4, point: Vector): Vector {
+    const storage = transform.matrix;
+    const x = point.x;
+    const y = point.y;
+
+    const rx = storage[0] * x + storage[4] * y + storage[12];
+    const ry = storage[1] * x + storage[5] * y + storage[13];
+    const rw = storage[3] * x + storage[7] * y + storage[15];
+    if (rw == 1.0) {
+      return new Vector(rx, ry);
+    } else {
+      return new Vector(rx / rw, ry / rw);
+    }
+  }
 }
 
 export default MatrixUtils;

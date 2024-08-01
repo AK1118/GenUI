@@ -195,13 +195,13 @@ class Slider extends StatefulWidget {
 }
 
 class SliderState extends State<Slider> {
-  private position: Vector = new Vector(10,10);
+  private position: Vector = new Vector(0, 0);
   private time: number = 0;
   public initState(): void {
     // setInterval(() => {
     //   this.animation();
     // }, 1000);
-   this.animation();
+    this.animation();
   }
   private animation() {
     this.setState(() => {
@@ -224,12 +224,9 @@ class SliderState extends State<Slider> {
       top: this.position.y,
       left: this.position.x,
       child: new Listener({
-        onPointerDown: (event) => {
-          console.log("选中");
-        },
-        child: Transform.scale({
-          scale: (sin(this.time)+1.5*1),
-          alignment: Alignment.topRight,
+        child: Transform.translate({
+          x: 100, //100+sin(this.time)*100,
+          y: 100, //100+cos(this.time)*100,
           child: new ColoredBox({
             color: "white",
             child: new SizeBox({
@@ -314,14 +311,10 @@ class Queue<T> {
   }
 }
 
-const queue = new Queue<number>();
+const testMatrix1 = Matrix4.zero.identity();
+testMatrix1.setMatrix([0.5, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 1]);
 
-queue.addFirst(1);
-queue.addFirst(2);
+const testMatrix2 = Matrix4.zero.identity();
+testMatrix2.setMatrix([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 100, 0, 0, 1]);
 
-console.log(queue.list);
-
-queue.removeFirst();
-console.log(queue.list);
-
-// new GestureBinding();
+console.log(testMatrix1.multiply(testMatrix2));

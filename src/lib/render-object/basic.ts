@@ -891,28 +891,29 @@ export class PaintingContext extends ClipContext {
   paintChild(child: RenderView, offset: Vector = Vector.zero): void {
     child?.paintWidthContext(this, offset);
   }
+  /**
+   * 使用该方法将child矩形矩阵转换
+   * @effectiveTransform 矩阵来自偏移矩阵+效果矩阵，原点为(0,0)，这意味着在使用
+   * transform 之前需要将原点移动到 @offset 位置，并在变换完毕后将原点移动回来
+   */
   pushTransform(offset: Vector, transform: Matrix4, render: VoidFunction) {
-   
-    const effectiveTransform=
-    Matrix4.zero.identity().translate(offset.x,offset.y)
-    .multiply(transform)
-    .translate(-offset.x, -offset.y);
-    const matrix = effectiveTransform.matrix; //Matrix4.zero.matrix;
-    // console.log(matrix);
+    const effectiveTransform = Matrix4.zero
+      .identity()
+      .multiply(transform)
+      .translate(offset.x, offset.y);
+    const matrix = effectiveTransform.matrix;
     this.paint.save();
     this.paint.beginPath();
-    // this.paint.translate(offset.x, offset.y);
     this.paint.transform(
       matrix[0],
       matrix[1], // m11, m12
       matrix[4],
       matrix[5], // m21, m22
       matrix[12],
-      matrix[13]// dx, dy
+      matrix[13] // dx, dy
     );
-    
+    this.paint.transform(1, 0, 0, 1, -matrix[12], -matrix[13]);
     render();
-    // this.paint.translate(-offset.x, -offset.y);
     this.paint.closePath();
     this.paint.restore();
   }
@@ -2107,45 +2108,45 @@ export class RenderTransformBox extends SingleChildRenderView {
 
   render(context: PaintingContext, offset?: Vector): void {
     if (this.child) {
-      // this.transform.rotateZ((Math.PI / 180) * 14);
-      // const childOffset = this.computeOriginOffset(offset);
-      const childOffset=MatrixUtils.getAsTranslation(this.effectiveTransform);
+      const childOffset = MatrixUtils.getAsTranslation(this.effectiveTransform);
       //检测是否只是平移
-      if(childOffset==null){
+      if (childOffset == null || Vector.zero.equals(childOffset)) {
         context.pushTransform(offset, this.effectiveTransform, () => {
           context.paintChild(this.child, offset);
         });
-      }else{
+      } else {
         super.render(context, childOffset.add(offset));
       }
-   
     }
   }
+  public hitTest(result: HitTestResult, position: Vector): boolean {
+    return this.hitTestChildren(result, position);
+  }
   get effectiveTransform(): Matrix4 {
-    const result = Matrix4.zero.identity();
+    const result = Matrix4.zero
+      .identity()
+      .setMatrix([...this.transform.matrix]) as Matrix4;
+
     const alignment = this.alignment;
     const origin = this.origin;
     let translation = Vector.zero;
     if (!this.origin && !this.alignment) {
       return result;
     }
-    if (this.origin) {
-      // offset.add(this.origin);
+    if (origin) {
       result.translate(this.origin.x, this.origin.y);
     }
     if (alignment) {
       translation = alignment.alongSize(this.size).toVector();
-      // offset.add(alignment.compute(this.size).toVector());
       result.translate(translation.x, translation.y);
     }
-    result.multiply(this.transform);
+    this.transform.multiply(result);
     if (alignment) {
       result.translate(-translation.x, -translation.y);
     }
     if (origin) {
       result.translate(-origin.x, -origin.y);
     }
-    
     return result;
   }
 }

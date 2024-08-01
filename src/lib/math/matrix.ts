@@ -13,10 +13,11 @@ export abstract class Matrix {
   public getMatrix(): Array<number> {
     return this._matrix;
   }
-  setMatrix(matrix: Array<number>): void {
+  setMatrix(matrix: Array<number>): Matrix {
     this._matrix = matrix;
+    return this;
   }
-  setValue(index:number,value:number){
+  setValue(index: number, value: number) {
     this._matrix[index] = value;
   }
   abstract translate(...args: Array<number>): void;

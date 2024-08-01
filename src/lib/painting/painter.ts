@@ -335,6 +335,11 @@ class Painter implements Painter {
   }
   /**
    * 水平缩放。 垂直倾斜。水平倾斜。垂直缩放。水平移动。垂直移动。
+   * 如果一个点原始坐标为 (x, y)，经过变换后，其坐标将变为 (ax + cy + e, bx + dy + f)
+
+e 和 f 控制上下文的水平和垂直平移。
+当 b 和 c 为 0 时，a 和 d 控制上下文的水平和垂直缩放。
+当 a 和 d 为 1 时，b 和 c 控制上下文的水平和垂直倾斜。
    */
   transform(
     a: number,
