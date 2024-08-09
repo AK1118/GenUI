@@ -120,25 +120,24 @@ export class Matrix4 extends Matrix {
     this.multiply(translation);
     return this;
   }
+  /**
+   * Rotate around the Z axis.
+   * 
+   *  cos(θ), sin(θ), 0, 0,
+      -sin(θ), cos(θ), 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1,
+   */
   rotateZ(angle: number): void {
     const cosAngle: number = cos(angle);
     const sinAngle: number = sin(angle);
-    const t1 = this._matrix[0] * cosAngle + this._matrix[4] * sinAngle;
-    const t2 = this._matrix[1] * cosAngle + this._matrix[5] * sinAngle;
-    const t3 = this._matrix[2] * cosAngle + this._matrix[6] * sinAngle;
-    const t4 = this._matrix[3] * cosAngle + this._matrix[7] * sinAngle;
-    const t5 = this._matrix[0] * -sinAngle + this._matrix[4] * cosAngle;
-    const t6 = this._matrix[1] * -sinAngle + this._matrix[5] * cosAngle;
-    const t7 = this._matrix[2] * -sinAngle + this._matrix[6] * cosAngle;
-    const t8 = this._matrix[3] * -sinAngle + this._matrix[7] * cosAngle;
-    this._matrix[0] = t1;
-    this._matrix[1] = t2;
-    this._matrix[2] = t3;
-    this._matrix[3] = t4;
-    this._matrix[4] = t5;
-    this._matrix[5] = t6;
-    this._matrix[6] = t7;
-    this._matrix[7] = t8;
+    const transform = Matrix4.zero.identity();
+    const matrix = transform.matrix;
+    matrix[0] = cosAngle;
+    matrix[1] = sinAngle;
+    matrix[4] = -sinAngle;
+    matrix[5] = cosAngle;
+    this.multiply(transform);
   }
   rotateY(angle: number): void {
     const cosAngle: number = cos(angle);
@@ -151,6 +150,14 @@ export class Matrix4 extends Matrix {
     matrix[10] = cosAngle;
     this.multiply(transform);
   }
+  /**
+   * Rotate around the X axis.
+   * 
+   *  1, 0, 0, 0,
+      0, cos(θ), sin(θ), 0,
+      0, -sin(θ), cos(θ), 0,
+      0, 0, 0, 1,
+   */
   rotateX(angle: number): void {
     const cosAngle: number = cos(angle);
     const sinAngle: number = sin(angle);

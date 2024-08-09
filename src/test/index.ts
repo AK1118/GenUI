@@ -229,6 +229,7 @@ class SliderState extends State<Slider> {
             // x: 100, //100+sin(this.time)*100,
             // y: 100, //100+cos(this.time)*100,
             alignment: Alignment.bottomRight,
+            angle:(Math.PI / 180) * this.time*50,
             angleX: (Math.PI / 180) * this.time*50,
             angleY: (Math.PI / 180) * this.time*50,
             child: new ColoredBox({
