@@ -341,16 +341,18 @@ e 和 f 控制上下文的水平和垂直平移。
 当 b 和 c 为 0 时，a 和 d 控制上下文的水平和垂直缩放。
 当 a 和 d 为 1 时，b 和 c 控制上下文的水平和垂直倾斜。
    */
-  transform(
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-    e: number,
-    f: number
-  ): void {
-    this.paint?.transform(a, b, c, d, e, f);
+  transform(matrix: Array<number>): void {
+    this.paint.transform(
+      matrix[0],
+      matrix[1], // m11, m12
+      matrix[4],
+      matrix[5], // m21, m22
+      matrix[12],
+      matrix[13]
+    );
+    // this.paint?.transform(a, b, c, d, e, f);
   }
+
   createConicGradient() {}
   roundRect(
     x: number,

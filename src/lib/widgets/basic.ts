@@ -38,8 +38,6 @@ import {
   RenderTransformBox,
   RenderView,
   RootRenderView,
-  RotateArguments,
-  RotateRenderView,
   SizedBoxOption,
   StackFit,
   StackOption,
@@ -313,28 +311,6 @@ export class Stack extends MultiChildRenderObjectWidget {
   }
 }
 
-export class Rotate extends SingleChildRenderObjectWidget {
-  private _angle: number;
-  constructor(
-    option: Partial<RotateArguments & SingleChildRenderObjectWidgetArguments>
-  ) {
-    super(option?.child, option.key);
-    this._angle = option.angle ?? 0;
-  }
-
-  createRenderObject(): RenderView {
-    return new RotateRenderView({
-      angle: this._angle,
-    });
-  }
-  updateRenderObject(
-    context: BuildContext,
-    renderView: RotateRenderView
-  ): void {
-    renderView.angle = this._angle;
-  }
-}
-
 export class Listener extends SingleChildRenderObjectWidget {
   private _onPointerDown: onPointerDownCallback;
   private _onPointerMove: onPointerMoveCallback;
@@ -370,6 +346,8 @@ export interface TransformRotateArguments {
   angle: number;
   origin: Vector;
   alignment: Alignment;
+  angleX: number;
+  angleY: number;
 }
 
 export interface TransformScaleArguments {
@@ -417,8 +395,17 @@ export class Transform extends SingleChildRenderObjectWidget {
       TransformRotateArguments & SingleChildRenderObjectWidgetArguments
     >
   ): Transform {
+    const { angleX, angleY, angle } = option;
     const transform: Matrix4 = Matrix4.zero.identity();
-    transform.rotateZ(option?.angle ?? 0);
+    if (angle) {
+      transform.rotateZ(angle);
+    }
+    if (angleY) {
+      transform.rotateY(angleY);
+    }
+    if (angleX) {
+      transform.rotateX(angleX);
+    }
     return new Transform({
       child: option?.child,
       transform: transform,
@@ -444,7 +431,7 @@ export class Transform extends SingleChildRenderObjectWidget {
       TransformScaleArguments & SingleChildRenderObjectWidgetArguments
     >
   ): Transform {
-    const { scaleX = 1, scaleY = 1, scale, origin,alignment } = option;
+    const { scaleX = 1, scaleY = 1, scale, origin, alignment } = option;
     const transform: Matrix4 = Matrix4.zero;
     transform.scale(scaleX, scaleY);
     if (scale) {

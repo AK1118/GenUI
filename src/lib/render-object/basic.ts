@@ -399,8 +399,10 @@ export abstract class RenderBox extends RenderView {
     return this.computeDryLayout(constrains);
   }
   public hitTest(result: HitTestResult, position: Vector): boolean {
-    if (this.hitTestSelf(position)) {
-      const isHit = this.hitTestChildren(result, position);
+    if (this.hitTestSelf(result, position)) {
+      const isHit =
+        this.hitTestChildren(result, position) ||
+        this.hitTestSelf(result, position);
       if (isHit) {
         result.add(new HitTestEntry(this));
         return true;
@@ -411,7 +413,7 @@ export abstract class RenderBox extends RenderView {
   public hitTestChildren(result: HitTestResult, position: Vector): boolean {
     return this.defaultHitTestChildren(result, position);
   }
-  public hitTestSelf(position: Vector): boolean {
+  public hitTestSelf(result: HitTestResult, position: Vector): boolean {
     return this.size.contains(position);
   }
   protected defaultHitTestChildren(
@@ -898,20 +900,13 @@ export class PaintingContext extends ClipContext {
   pushTransform(offset: Vector, transform: Matrix4, render: VoidFunction) {
     const effectiveTransform = Matrix4.zero
       .identity()
+      .translate(offset.x, offset.y)
       .multiply(transform)
-      .translate(offset.x, offset.y);
-    const matrix = effectiveTransform.matrix;
+      .translate(-offset.x, -offset.y);
+    let matrix = effectiveTransform.matrix;
     this.paint.save();
     this.paint.beginPath();
-    this.paint.transform(
-      matrix[0],
-      matrix[1], // m11, m12
-      matrix[4],
-      matrix[5], // m21, m22
-      matrix[12],
-      matrix[13] // dx, dy
-    );
-    this.paint.transform(1, 0, 0, 1, -matrix[12], -matrix[13]);
+    this.paint.transform(matrix);
     render();
     this.paint.closePath();
     this.paint.restore();
@@ -1953,73 +1948,6 @@ export class WrapRenderView extends MultiChildRenderView {
     child.parentData = new WrapParentData();
   }
 }
-
-export interface RotateArguments {
-  angle: number;
-}
-export class RotateRenderView extends SingleChildRenderView {
-  private _angle: number = 0;
-  constructor(
-    option: Partial<RotateArguments & SingleChildRenderViewArguments>
-  ) {
-    super(option?.child);
-    this.angle = option?.angle ?? 0;
-  }
-  set angle(value: number) {
-    if (this._angle === value) return;
-    this._angle = value;
-    this.markNeedsPaint();
-  }
-  get angle(): number {
-    return this._angle;
-  }
-  render(context: PaintingContext, offset?: Vector): void {
-    const painter = context.paint;
-    painter.save();
-    painter.beginPath();
-    const center: Vector = this.size.copy().half().toVector();
-    center.add(offset ?? Vector.zero);
-    painter.translate(center.x, center.y);
-    // painter.rotate(this.angle);
-    const angle = this.angle;
-    /**
-     * [ cos(θ)  -sin(θ)  0  0 ]
-[ sin(θ)   cos(θ)  0  0 ]
-[   0       0      1  0 ]
-[   0       0      0  1 ]
-
-     */
-    painter.transform(
-      Math.cos(angle),
-      Math.sin(angle),
-      -Math.sin(angle),
-      Math.cos(angle),
-      0,
-      0
-    );
-    center.negate();
-    painter.translate(center.x, center.y);
-    context.paintChild(this.child, offset);
-    painter.closePath();
-    painter.restore();
-  }
-  /**
-   * 以元素中心为圆心点旋转angle，
-   */
-  public hitTest(result: HitTestResult, position: Vector): boolean {
-    let { x, y } = position;
-    const centerX = this.size.width * 0.5;
-    const centerY = this.size.height * 0.5;
-    const dx = x - centerX;
-    const dy = y - centerY;
-    const angle = this.angle * -1;
-    const rotateX = dx * Math.cos(angle) - dy * Math.sin(angle);
-    const rotateY = dx * Math.sin(angle) + dy * Math.cos(angle);
-    position.x = rotateX + centerX;
-    position.y = rotateY + centerY;
-    return super.hitTest(result, position);
-  }
-}
 export type onPointerDownCallback = (event: DownPointerEvent) => void;
 export type onPointerMoveCallback = (event: MovePointerEvent) => void;
 export type onPointerUpCallback = (event: UpPointerEvent) => void;
@@ -2062,8 +1990,8 @@ export class RenderPointerListener extends SingleChildRenderView {
       this._onPointerUp?.(event);
     }
   }
-  public hitTestSelf(position: Vector): boolean {
-    return true;
+  public hitTestSelf(result: HitTestResult, position: Vector): boolean {
+    return this.hitTestChildren(result, position);
   }
 }
 
@@ -2121,40 +2049,61 @@ export class RenderTransformBox extends SingleChildRenderView {
   public hitTest(result: HitTestResult, position: Vector): boolean {
     return this.hitTestChildren(result, position);
   }
+  /**
+   */
   public hitTestChildren(result: HitTestResult, position: Vector): boolean {
     // console.log(transformedPosition);
     const childParentData = this.child
       ?.parentData as ContainerRenderViewParentData;
+    const invertedTransform = this.effectiveTransform.inverted();
     if (childParentData) {
       const transformedPosition = MatrixUtils.transformPoint(
-        this.effectiveTransform.inverted(),
+        invertedTransform,
         position
       );
-      //
-      // console.log(this.child.hitTest(result, transformedPosition),this.child.size.contains(transformedPosition))
-      return this.child.size.contains(transformedPosition);
+      return this.child.hitTest(result, transformedPosition); //this.child.size.contains(transformedPosition);
     }
     return false;
   }
-  get effectiveTransform(): Matrix4 {
-    const result = Matrix4.zero
-      .identity()
-      .setMatrix([...this.transform.matrix]) as Matrix4;
 
+  get originTransform(): Matrix4 {
+    const result = Matrix4.zero.identity() as Matrix4;
     const alignment = this.alignment;
     const origin = this.origin;
     let translation = Vector.zero;
-    if (!this.origin && !this.alignment) {
+    if (!origin && !alignment) {
       return result;
     }
     if (origin) {
-      result.translate(this.origin.x, this.origin.y);
+      result.translate(origin.x, origin.y);
     }
     if (alignment) {
       translation = alignment.alongSize(this.size).toVector();
       result.translate(translation.x, translation.y);
     }
-    this.transform.multiply(result);
+    return result;
+  }
+  get effectiveTransform(): Matrix4 {
+    const result = Matrix4.zero.identity() as Matrix4;
+    const transform = Matrix4.zero.setMatrix([
+      ...this.transform.matrix,
+    ]) as Matrix4;
+   
+
+    const alignment = this.alignment;
+    const origin = this.origin;
+    let translation = Vector.zero;
+    if (!origin && !alignment) {
+      return transform;
+    }
+    if (origin) {
+      result.translate(origin.x, origin.y);
+    }
+    if (alignment) {
+      translation = alignment.alongSize(this.size).toVector();
+      result.translate(translation.x, translation.y);
+    }
+    result.multiply(transform);
     if (alignment) {
       result.translate(-translation.x, -translation.y);
     }
