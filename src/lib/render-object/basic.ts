@@ -12,6 +12,7 @@ import {
   HitTestTarget,
 } from "../gesture/hit_test";
 import {
+  CancelPointerEvent,
   DownPointerEvent,
   MovePointerEvent,
   PointerEvent,
@@ -1951,17 +1952,20 @@ export class WrapRenderView extends MultiChildRenderView {
 export type onPointerDownCallback = (event: DownPointerEvent) => void;
 export type onPointerMoveCallback = (event: MovePointerEvent) => void;
 export type onPointerUpCallback = (event: UpPointerEvent) => void;
+export type onPointerCancelCallback = (event: UpPointerEvent) => void;
 
 export interface RenderPointerListenerArguments {
   onPointerDown: onPointerDownCallback;
   onPointerMove: onPointerMoveCallback;
   onPointerUp: onPointerUpCallback;
+  onPointerCancel: onPointerCancelCallback;
 }
 
 export class RenderPointerListener extends SingleChildRenderView {
   private _onPointerDown: onPointerDownCallback;
   private _onPointerMove: onPointerMoveCallback;
   private _onPointerUp: onPointerUpCallback;
+  private _onPointerCancel:onPointerCancelCallback;
   set onPointerDown(value: onPointerDownCallback) {
     this._onPointerDown = value;
   }
@@ -1971,6 +1975,10 @@ export class RenderPointerListener extends SingleChildRenderView {
   set onPointerUp(value: onPointerUpCallback) {
     this._onPointerUp = value;
   }
+  set onPointerCancel(value:onPointerCancelCallback){
+    this._onPointerCancel = value;
+  }
+
   constructor(
     option: Partial<
       RenderPointerListenerArguments & SingleChildRenderViewArguments
@@ -1980,6 +1988,7 @@ export class RenderPointerListener extends SingleChildRenderView {
     this._onPointerDown = option?.onPointerDown;
     this._onPointerMove = option?.onPointerMove;
     this._onPointerUp = option?.onPointerUp;
+    this._onPointerCancel=option?.onPointerCancel;
   }
   handleEvent(event: PointerEvent, entry: HitTestEntry): void {
     if (event instanceof DownPointerEvent) {
@@ -1988,6 +1997,8 @@ export class RenderPointerListener extends SingleChildRenderView {
       this._onPointerMove?.(event);
     } else if (event instanceof UpPointerEvent) {
       this._onPointerUp?.(event);
+    }else if(event instanceof CancelPointerEvent){
+      this._onPointerCancel?.(event);
     }
   }
   public hitTestSelf(result: HitTestResult, position: Vector): boolean {

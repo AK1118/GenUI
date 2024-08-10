@@ -223,26 +223,24 @@ class SliderState extends State<Slider> {
       top: this.position.y,
       left: this.position.x,
       child: new Listener({
-        child: Transform.scale({
-          scale: 0.5,
-          child: Transform.rotate({
-            // x: 100, //100+sin(this.time)*100,
-            // y: 100, //100+cos(this.time)*100,
-            alignment: Alignment.bottomRight,
-            angle:(Math.PI / 180) * this.time*50,
-            angleX: (Math.PI / 180) * this.time*50,
-            angleY: (Math.PI / 180) * this.time*50,
-            child: new ColoredBox({
-              color: "white",
-              child: new SizeBox({
-                width: 100,
-                height: 100,
-                child: new Align({
-                  child: new ColoredBox({
-                    color: this.widget.color,
-                    child: new SizeBox({ width: 10, height: 100 }),
-                  }),
-                }),
+        onPointerDown: (e) => {
+          console.log("点击", e.pointer);
+        },
+        onPointerUp: (e) => {
+          console.log("抬起", e);
+        },
+        onPointerCancel: (e) => {
+          console.log("取消", e);
+        },
+        child: new ColoredBox({
+          color: "white",
+          child: new SizeBox({
+            width: 100,
+            height: 100,
+            child: new Align({
+              child: new ColoredBox({
+                color: this.widget.color,
+                child: new SizeBox({ width: 10, height: 100 }),
               }),
             }),
           }),

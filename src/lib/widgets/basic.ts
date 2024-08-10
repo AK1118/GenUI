@@ -24,6 +24,7 @@ import {
   FlexParentData,
   FlexRenderView,
   MainAxisAlignment,
+  onPointerCancelCallback,
   onPointerDownCallback,
   onPointerMoveCallback,
   onPointerUpCallback,
@@ -315,6 +316,7 @@ export class Listener extends SingleChildRenderObjectWidget {
   private _onPointerDown: onPointerDownCallback;
   private _onPointerMove: onPointerMoveCallback;
   private _onPointerUp: onPointerUpCallback;
+  private _onPointerCancel: onPointerCancelCallback;
   constructor(
     option: Partial<
       RenderPointerListenerArguments & SingleChildRenderObjectWidget
@@ -324,12 +326,14 @@ export class Listener extends SingleChildRenderObjectWidget {
     this._onPointerDown = option.onPointerDown;
     this._onPointerMove = option.onPointerMove;
     this._onPointerUp = option.onPointerUp;
+    this._onPointerCancel = option.onPointerCancel;
   }
   createRenderObject(): RenderView {
     return new RenderPointerListener({
       onPointerDown: this._onPointerDown,
       onPointerMove: this._onPointerMove,
       onPointerUp: this._onPointerUp,
+      onPointerCancel: this._onPointerCancel,
     });
   }
   updateRenderObject(
@@ -339,6 +343,7 @@ export class Listener extends SingleChildRenderObjectWidget {
     renderView.onPointerDown = this._onPointerDown;
     renderView.onPointerMove = this._onPointerMove;
     renderView.onPointerUp = this._onPointerUp;
+    renderView.onPointerCancel = this._onPointerCancel;
   }
 }
 
