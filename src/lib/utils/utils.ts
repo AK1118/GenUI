@@ -36,6 +36,8 @@ export const getRandomColor = (): string => {
   return color;
 };
 
-
+export const getRandomStrKey=()=>{
+  return  Math.random().toString(16).substring(3);
+}
 
 

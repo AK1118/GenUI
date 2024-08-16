@@ -3,7 +3,7 @@ interface DurationArguments {
   hour: number;
   minute: number;
   second: number;
-  millisecond: number;
+  milliseconds: number;
   microsecond: number;
 }
 export class Duration {
@@ -22,8 +22,8 @@ export class Duration {
     if (duration.second) {
       this._duration += duration.second * 1000;
     }
-    if (duration.millisecond) {
-      this._duration += duration.millisecond;
+    if (duration.milliseconds) {
+      this._duration += duration.milliseconds;
     }
     if (duration.microsecond) {
       this._duration += duration.microsecond / 1000;

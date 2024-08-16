@@ -1,5 +1,9 @@
 import { Offset } from "../basic/rect";
+import { Matrix4 } from "../math/matrix";
 import Vector from "../math/vector";
+
+//两次点击|点击移动的合法距离
+export const G_postAcceptSlopTolerance: number = 18;
 
 export enum PointerChange {
   cancel,
@@ -172,8 +176,8 @@ export class PointerEventHandler {
      * 在手指接触到屏幕一刻记录初始触摸点位置
      */
     if (pointerEvent) {
-      if(this.initialPosition){
-        this.addCancelPointer(change, event, pointerEvent,position);
+      if (this.initialPosition) {
+        this.addCancelPointer(change, event, pointerEvent, position);
       }
       if (pointerEvent instanceof DownPointerEvent) {
         this.initialPosition = position;
@@ -186,7 +190,12 @@ export class PointerEventHandler {
    * 取消手势判定一般为在手指触摸屏幕后移动超过18像素距离
    * 该方法在被判定为取消手势后，会回调 @handlePointerEvent 函数，
    */
-  private addCancelPointer(change:PointerChange, event: MouseEvent | Touch, pointerEvent:PointerEvent,position:Vector): void {
+  private addCancelPointer(
+    change: PointerChange,
+    event: MouseEvent | Touch,
+    pointerEvent: PointerEvent,
+    position: Vector
+  ): void {
     if (change === PointerChange.up) {
       this.reset();
     } else if (
@@ -195,7 +204,7 @@ export class PointerEventHandler {
       this.initialPosition != null
     ) {
       const distance = position.dist(this.initialPosition);
-      if (distance > 18) {
+      if (distance > G_postAcceptSlopTolerance) {
         this.handlePointerEvent(PointerChange.cancel, event);
         // 超过18像素认为为移动
         this.reset();
@@ -292,5 +301,44 @@ export abstract class PointerEventConverter {
         break;
     }
     return null;
+  }
+}
+
+export type PointerRoute = (event: PointerEvent) => void;
+
+/**
+ *
+ */
+export class PointerRouter {
+  private routeMap: Map<number, Map<PointerRoute, Matrix4>> = new Map();
+  addRoute(
+    pointer: number,
+    route: PointerRoute,
+    matrix4: Matrix4 = Matrix4.zero.identity()
+  ) {
+    let routes: Map<PointerRoute, Matrix4> = this.routeMap.get(pointer);
+    if (!routes) {
+      routes = new Map();
+    }
+    if (routes.has(route)) return;
+    routes.set(route, matrix4);
+    this.routeMap.set(pointer, routes);
+  }
+  removeRoute(pointer: number, route: PointerRoute) {
+    const routes = this.routeMap.get(pointer);
+    if (routes) {
+      routes.delete(route);
+    }
+  }
+  route(event: PointerEvent) {
+    this.dispatch(event);
+  }
+  private dispatch(event: PointerEvent) {
+    const routes = this.routeMap.get(event.pointer);
+    if (routes) {
+      for (let [route, matrix4] of routes) {
+        route(event);
+      }
+    }
   }
 }

@@ -1,10 +1,11 @@
+import { getRandomStrKey } from "../utils/utils";
 import { ElementBinding } from "./binding";
 import { Element } from "./elements";
 import { Widget } from "./framework";
 
 export abstract class Key {}
 export class SimpleKey extends Key {
-  private _value: string = Math.random().toString(16).substring(3);
+  private _value: string = getRandomStrKey();
   get value(): string {
     return this._value;
   }

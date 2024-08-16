@@ -7,6 +7,9 @@ import {
   RootRenderObjectElement,
   SingleChildRenderObjectWidget,
   SingleChildRenderObjectWidgetArguments,
+  State,
+  StatefulWidget,
+  StatelessWidget,
   Widget,
 } from "../basic/framework";
 import {
@@ -52,6 +55,22 @@ import {
 import Alignment from "../painting/alignment";
 import { Matrix4 } from "../math/matrix";
 import Vector from "../math/vector";
+import {
+  CancelPointerEvent,
+  DownPointerEvent,
+  MovePointerEvent,
+  UpPointerEvent,
+} from "../gesture/events";
+import {
+  GestureRecognizer,
+  GestureRecognizerFactory,
+} from "../gesture/recognizers/gesture-recognizer";
+import TapGestureRecognizer, {
+  TapGestureRecognizerArguments,
+} from "../gesture/recognizers/tap";
+import DoubleTapGestureRecognizer, {
+  DoubleTapGestureRecognizerArguments,
+} from "../gesture/recognizers/double-tap";
 export interface ColoredBoxOption {
   color: string;
 }
@@ -449,5 +468,120 @@ export class Transform extends SingleChildRenderObjectWidget {
       alignment,
       origin,
     });
+  }
+}
+
+interface GestureDetectorArguments
+  extends TapGestureRecognizerArguments,
+    DoubleTapGestureRecognizerArguments {}
+
+export class GestureDetector
+  extends StatelessWidget
+  implements GestureDetectorArguments
+{
+  private gestureRecognizers: Map<any, GestureRecognizer> = new Map();
+  private child: Widget;
+  onTap: VoidFunction;
+  onTapDown: VoidFunction;
+  onTapUp: VoidFunction;
+  onDoubleTap: VoidFunction;
+  onTapCancel: VoidFunction;
+  constructor(
+    option?: Partial<
+      GestureDetectorArguments & SingleChildRenderObjectWidgetArguments
+    >
+  ) {
+    super(option?.key);
+    this.child = option?.child;
+    this.onTap = option?.onTap;
+    this.onTapDown = option?.onTapDown;
+    this.onTapUp = option?.onTapUp;
+    this.onTapCancel = option?.onTapCancel;
+    this.onDoubleTap = option?.onDoubleTap;
+  }
+
+  build(context: BuildContext): Widget {
+    const gestures: Map<
+      any,
+      GestureRecognizerFactory<GestureRecognizer>
+    > = new Map();
+    gestures.set(
+      TapGestureRecognizer,
+      new GestureRecognizerFactory(
+        () => new TapGestureRecognizer(),
+        (instance) => {
+          instance.onTap = this.onTap;
+          instance.onTapDown = this.onTapDown;
+          instance.onTapUp = this.onTapUp;
+          instance.onTapCancel = this.onTapCancel;
+        }
+      )
+    );
+    gestures.set(
+      DoubleTapGestureRecognizer,
+      new GestureRecognizerFactory(
+        () => new DoubleTapGestureRecognizer(),
+        (instance) => {
+          instance.onDoubleTap= this.onDoubleTap;
+        }
+      )
+    );
+
+    return new RawGestureDetector({
+      gestures: gestures,
+      child: this.child,
+    });
+  }
+}
+
+interface RawGestureDetectorArguments {
+  gestures: Map<any, GestureRecognizerFactory<GestureRecognizer>>;
+}
+
+class RawGestureDetector extends StatefulWidget {
+  public gestures: Map<any, GestureRecognizerFactory<GestureRecognizer>> =
+    new Map();
+  public child: Widget;
+  constructor(
+    option: Partial<
+      RawGestureDetectorArguments & SingleChildRenderObjectWidgetArguments
+    >
+  ) {
+    super();
+    this.gestures = option?.gestures;
+    this.child = option?.child;
+  }
+  createState(): State {
+    return new _RawGestureDetectorState();
+  }
+}
+
+class _RawGestureDetectorState extends State<RawGestureDetector> {
+  public gestureRecognizers: Map<any, GestureRecognizer> = new Map();
+
+  public initState(): void {
+    super.initState();
+    this.handleInitGestures(this.widget.gestures);
+  }
+
+  build(context: BuildContext): Widget {
+    return new Listener({
+      child: this.widget.child,
+      onPointerDown: this.handlePointerDown.bind(this),
+    });
+  }
+  private handlePointerDown(event: DownPointerEvent) {
+    for (const gesture of this.gestureRecognizers.values()) {
+      gesture.addPointer(event);
+    }
+  }
+  private handleInitGestures(
+    gestures: Map<any, GestureRecognizerFactory<GestureRecognizer>>
+  ) {
+    for (const [key, gesture] of gestures) {
+      const gesture_ = gesture._constructor();
+      gesture._initializer(gesture_);
+      this.gestureRecognizers.set(key, gesture_);
+    }
   }
 }

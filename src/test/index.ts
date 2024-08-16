@@ -20,6 +20,7 @@ import {
   ColoredBox,
   Expanded,
   Flex,
+  GestureDetector,
   Listener,
   Padding,
   Positioned,
@@ -211,50 +212,82 @@ class SliderState extends State<Slider> {
     requestAnimationFrame(this.animation.bind(this));
   }
   build(context: BuildContext): Widget {
-    const origin = Vector.zero;
-    if (context.mounted) {
-      const renderBox = context.findRenderView();
-      //  if(renderBox){
-      //     origin.x=renderBox.size.width/2;
-      //     origin.y=renderBox.size.height;
-      //  }
-    }
-    return new Positioned({
-      top: this.position.y,
-      left: this.position.x,
-      child: new Listener({
-        onPointerDown: (e) => {
-          console.log("点击", e.pointer);
-        },
-        onPointerUp: (e) => {
-          console.log("抬起", e);
-        },
-        onPointerCancel: (e) => {
-          console.log("取消", e);
-        },
-        child: new ColoredBox({
-          color: "white",
-          child: new SizeBox({
-            width: 100,
-            height: 100,
-            child: new Align({
-              child: new ColoredBox({
-                color: this.widget.color,
-                child: new SizeBox({ width: 10, height: 100 }),
-              }),
+    return new GestureDetector({
+      onTapDown: () => {
+        console.log("Down");
+      },
+      onTap: () => {
+        console.log("Tap");
+      },
+      onTapUp: () => {
+        console.log("Up");
+      },
+      onTapCancel: () => {
+        console.log("Cancel");
+      },
+      onDoubleTap: () => {
+        console.log("DoubleTap")
+      },
+      child: new ColoredBox({
+        color: "white",
+        child: new SizeBox({
+          width: 100,
+          height: 100,
+          child: new Align({
+            child: new ColoredBox({
+              color: this.widget.color,
+              child: new SizeBox({ width: 10, height: 100 }),
             }),
           }),
         }),
-        onPointerMove: (event) => {
-          this.setState(() => {
-            this.position.add(
-              new Vector(event.delta.offsetX, event.delta.offsetY)
-            );
-          });
-        },
       }),
     });
   }
+  // build(context: BuildContext): Widget {
+  //   const origin = Vector.zero;
+  //   if (context.mounted) {
+  //     const renderBox = context.findRenderView();
+  //     //  if(renderBox){
+  //     //     origin.x=renderBox.size.width/2;
+  //     //     origin.y=renderBox.size.height;
+  //     //  }
+  //   }
+  //   return new Positioned({
+  //     top: this.position.y,
+  //     left: this.position.x,
+  //     child: new Listener({
+  //       onPointerDown: (e) => {
+  //         console.log("点击", e.pointer);
+  //       },
+  //       onPointerUp: (e) => {
+  //         console.log("抬起", e);
+  //       },
+  //       onPointerCancel: (e) => {
+  //         console.log("取消", e);
+  //       },
+  //       child: new ColoredBox({
+  //         color: "white",
+  //         child: new SizeBox({
+  //           width: 100,
+  //           height: 100,
+  //           child: new Align({
+  //             child: new ColoredBox({
+  //               color: this.widget.color,
+  //               child: new SizeBox({ width: 10, height: 100 }),
+  //             }),
+  //           }),
+  //         }),
+  //       }),
+  //       onPointerMove: (event) => {
+  //         this.setState(() => {
+  //           this.position.add(
+  //             new Vector(event.delta.offsetX, event.delta.offsetY)
+  //           );
+  //         });
+  //       },
+  //     }),
+  //   });
+  // }
 }
 
 // bool defaultHitTestChildren(BoxHitTestResult result, { required Offset position }) {

@@ -8,6 +8,7 @@ import {
   PointerEvent,
   PointerEventConverter,
   PointerEventHandler,
+  PointerRouter,
   UpPointerEvent,
 } from "./events";
 import { HitTestEntry, HitTestResult, HitTestTarget } from "./hit_test";
@@ -17,13 +18,15 @@ export class GestureBinding extends BindingBase implements HitTestTarget {
   private pointerEventHandler: PointerEventHandler;
   private hitTestPointer: Map<number, HitTestResult> = new Map();
   private pointerEvents: Queue<PointerEvent> = new Queue();
+
   protected initInstance(): void {
     GestureBinding.instance = this;
     this.pointerEventHandler = new PointerEventHandler(
       this.handlePointerData.bind(this)
     );
   }
-  private gestureArena:GestureArenaManager=new GestureArenaManager();
+  public gestureArena: GestureArenaManager = new GestureArenaManager();
+  public pointerRouter: PointerRouter = new PointerRouter();
   /**
    * 将输入事件转换为 @PointerEvent
    */
@@ -61,7 +64,14 @@ export class GestureBinding extends BindingBase implements HitTestTarget {
       entry.target.handleEvent(event, entry);
     }
   }
-  handleEvent(event: PointerEvent, entry: HitTestEntry): void {}
+  handleEvent(event: PointerEvent, entry: HitTestEntry): void {
+    this.pointerRouter.route(event);
+    if(event instanceof DownPointerEvent) {
+      this.gestureArena.close(event.pointer);
+    }else if(event instanceof UpPointerEvent) {
+      this.gestureArena.sweep(event.pointer);
+    }
+  }
   protected hitTest(result: HitTestResult, position: Vector) {
     result.add(new HitTestEntry(this));
   }
