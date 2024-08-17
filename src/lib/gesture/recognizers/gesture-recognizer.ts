@@ -42,8 +42,8 @@ export abstract class GestureRecognizer extends GestureArenaMember {
 }
 
 /**
- * GestureArenaMember 以为参赛人员
- * 每一个手指都有可以是GestureArenaEntry 对象，GestureArenaEntry  意为参赛身份人
+ * GestureArenaMember 为参赛人员
+ * GestureArenaEntry  入场券
  */
 export abstract class OnePointerGestureRecognizer extends GestureRecognizer {
   constructor() {

@@ -59,6 +59,9 @@ import {
   CancelPointerEvent,
   DownPointerEvent,
   MovePointerEvent,
+  PanZoomEndPointerEvent,
+  PanZoomStartPointerEvent,
+  PanZoomUpdatePointerEvent,
   UpPointerEvent,
 } from "../gesture/events";
 import {
@@ -74,6 +77,7 @@ import DoubleTapGestureRecognizer, {
 import LongPressGestureRecognizer, {
   LongPressGestureRecognizerArguments,
 } from "../gesture/recognizers/long-press";
+import PanDragGestureRecognizer, { PanDragGestureRecognizerArguments } from "../gesture/recognizers/pan-drag";
 export interface ColoredBoxOption {
   color: string;
 }
@@ -307,6 +311,7 @@ export class Positioned extends ParentDataWidget<StackParentData> {
     parentData.width = this.width;
     parentData.height = this.height;
     if (child?.parent instanceof RenderView) {
+      console.log("更新Position",this.top,this.left);
       child.parent.markNeedsLayout();
     }
   }
@@ -477,7 +482,8 @@ export class Transform extends SingleChildRenderObjectWidget {
 interface GestureDetectorArguments
   extends TapGestureRecognizerArguments,
     DoubleTapGestureRecognizerArguments,
-    LongPressGestureRecognizerArguments {}
+    LongPressGestureRecognizerArguments,
+    PanDragGestureRecognizerArguments {}
 
 export class GestureDetector
   extends StatelessWidget
@@ -491,6 +497,9 @@ export class GestureDetector
   onDoubleTap: VoidFunction;
   onTapCancel: VoidFunction;
   onLongPress: VoidFunction;
+  onPanStart: (event: PanZoomStartPointerEvent) => void;
+  onPanUpdate: (event: PanZoomUpdatePointerEvent) => void;
+  onPanEnd: (event: PanZoomEndPointerEvent) => void;
   constructor(
     option?: Partial<
       GestureDetectorArguments & SingleChildRenderObjectWidgetArguments
@@ -504,7 +513,11 @@ export class GestureDetector
     this.onTapCancel = option?.onTapCancel;
     this.onDoubleTap = option?.onDoubleTap;
     this.onLongPress = option?.onLongPress;
+    this.onPanStart = option?.onPanStart;
+    this.onPanUpdate = option?.onPanUpdate;
+    this.onPanEnd = option?.onPanEnd;
   }
+ 
 
   build(context: BuildContext): Widget {
     const gestures: Map<
@@ -532,15 +545,27 @@ export class GestureDetector
         }
       )
     );
-    // gestures.set(
-    //   LongPressGestureRecognizer,
-    //   new GestureRecognizerFactory(
-    //     () => new LongPressGestureRecognizer(),
-    //     (instance) => {
-    //       instance.onLongPress = this.onLongPress;
-    //     }
-    //   )
-    // );
+    gestures.set(
+      LongPressGestureRecognizer,
+      new GestureRecognizerFactory(
+        () => new LongPressGestureRecognizer(),
+        (instance) => {
+          instance.onLongPress = this.onLongPress;
+        }
+      )
+    );
+    gestures.set(
+      PanDragGestureRecognizer,
+      new GestureRecognizerFactory(
+        () => new PanDragGestureRecognizer(),
+        (instance) => {
+          instance.onPanEnd = this.onPanEnd;
+          instance.onPanStart = this.onPanStart;
+          instance.onPanUpdate = this.onPanUpdate;
+        }
+      )
+    );
+
     return new RawGestureDetector({
       gestures: gestures,
       child: this.child,

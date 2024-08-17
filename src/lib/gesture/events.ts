@@ -44,6 +44,7 @@ export type GenEvent = MouseEvent | TouchEvent | Touch | WheelEvent;
 export type PointerChangeCallback = (data: GenPointerData) => PointerEvent;
 export class PointerEventHandler {
   private isPointerDown = false;
+  //是否平移缩放
   private isPanZoom = false;
   private onPointerChange: PointerChangeCallback;
   private prePointerData: GenPointerData = null;
@@ -63,17 +64,28 @@ export class PointerEventHandler {
   }
 
   private initializeEventListeners() {
-    window.addEventListener("mousedown", this.handlePointerDown.bind(this));
-    window.addEventListener("mouseup", this.handlePointerUp.bind(this));
-    window.addEventListener("mousemove", this.handlePointerMove.bind(this));
-    window.addEventListener("mouseout", this.handlePointerCancel.bind(this));
-    window.addEventListener("wheel", this.handleWheel.bind(this));
-
-    // Touch events for mobile devices
-    window.addEventListener("touchstart", this.handleTouchStart.bind(this));
-    window.addEventListener("touchmove", this.handleTouchMove.bind(this));
-    window.addEventListener("touchend", this.handleTouchEnd.bind(this));
-    window.addEventListener("touchcancel", this.handleTouchCancel.bind(this));
+    //browser event listener
+    if (window) {
+      if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        // Touch events for mobile devices
+        window.addEventListener("touchstart", this.handleTouchStart.bind(this));
+        window.addEventListener("touchmove", this.handleTouchMove.bind(this));
+        window.addEventListener("touchend", this.handleTouchEnd.bind(this));
+        window.addEventListener(
+          "touchcancel",
+          this.handleTouchCancel.bind(this)
+        );
+      } else {
+        window.addEventListener("mousedown", this.handlePointerDown.bind(this));
+        window.addEventListener("mouseup", this.handlePointerUp.bind(this));
+        window.addEventListener("mousemove", this.handlePointerMove.bind(this));
+        window.addEventListener(
+          "mouseout",
+          this.handlePointerCancel.bind(this)
+        );
+        window.addEventListener("wheel", this.handleWheel.bind(this));
+      }
+    }
   }
 
   private handlePointerDown(event: MouseEvent) {
@@ -95,7 +107,6 @@ export class PointerEventHandler {
   private handlePointerMove(event: MouseEvent) {
     if (this.isPointerDown) {
       this.handlePointerEvent(PointerChange.move, event);
-
       if (this.isPanZoom) {
         this.handlePointerEvent(PointerChange.panZoomUpdate, event);
       }
@@ -245,8 +256,14 @@ export class UpPointerEvent extends PointerEvent {}
 export class MovePointerEvent extends PointerEvent {}
 export class HoverPointerEvent extends PointerEvent {}
 export class CancelPointerEvent extends PointerEvent {}
+export class PanZoomStartPointerEvent extends PointerEvent {}
+export class PanZoomUpdatePointerEvent extends PointerEvent {}
+export class PanZoomEndPointerEvent extends PointerEvent {}
+
+
 export abstract class PointerEventConverter {
-  private static dpr = window.devicePixelRatio;
+  private static dpr =
+    typeof window === "undefined" ? 1 : window?.devicePixelRatio;
   static expand(data: GenPointerData): PointerEvent {
     const position = new Vector(
       data.position.x * this.dpr,
@@ -263,7 +280,6 @@ export abstract class PointerEventConverter {
           delta,
           pointer: data.pointer,
         });
-        break;
       case PointerChange.add:
         break;
       case PointerChange.remove:
@@ -274,7 +290,6 @@ export abstract class PointerEventConverter {
           delta,
           pointer: data.pointer,
         });
-        break;
       case PointerChange.down:
         return new DownPointerEvent({
           position,
@@ -294,11 +309,24 @@ export abstract class PointerEventConverter {
           pointer: data.pointer,
         });
       case PointerChange.panZoomStart:
-        break;
+        return new PanZoomStartPointerEvent({
+          position,
+          delta,
+          pointer: data.pointer,
+        });
+
       case PointerChange.panZoomUpdate:
-        break;
+        return new PanZoomUpdatePointerEvent({
+          position,
+          delta,
+          pointer: data.pointer,
+        });
       case PointerChange.panZoomEnd:
-        break;
+        return new PanZoomEndPointerEvent({
+          position,
+          delta,
+          pointer: data.pointer,
+        });
     }
     return null;
   }

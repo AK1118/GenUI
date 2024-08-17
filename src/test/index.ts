@@ -200,7 +200,7 @@ class SliderState extends State<Slider> {
   public initState(): void {
     // setInterval(() => {
     //   this.animation();
-    // }, 1000);
+    // }, 100);
     this.animation();
   }
   private animation() {
@@ -211,62 +211,41 @@ class SliderState extends State<Slider> {
 
     requestAnimationFrame(this.animation.bind(this));
   }
-  build(context: BuildContext): Widget {
-    return new GestureDetector({
-      onTapDown: () => {
-        // console.log("Down");
-      },
-      onTap: () => {
-        console.log("Tap");
-      },
-      onTapUp: () => {
-        // console.log("Up");
-      },
-      onTapCancel: () => {
-        console.log("Cancel");
-      },
-      onDoubleTap: () => {
-        console.log("DoubleTap");
-      },
-      // onLongPress: () => {
-      //   console.log("LongPress");
-      // },
-      child: new ColoredBox({
-        color: "white",
-        child: new SizeBox({
-          width: 100,
-          height: 100,
-          child: new Align({
-            child: new ColoredBox({
-              color: this.widget.color,
-              child: new SizeBox({ width: 10, height: 100 }),
-            }),
-          }),
-        }),
-      }),
-    });
-  }
   // build(context: BuildContext): Widget {
-  //   const origin = Vector.zero;
-  //   if (context.mounted) {
-  //     const renderBox = context.findRenderView();
-  //     //  if(renderBox){
-  //     //     origin.x=renderBox.size.width/2;
-  //     //     origin.y=renderBox.size.height;
-  //     //  }
-  //   }
   //   return new Positioned({
   //     top: this.position.y,
   //     left: this.position.x,
-  //     child: new Listener({
-  //       onPointerDown: (e) => {
-  //         console.log("点击", e.pointer);
+  //     child: new GestureDetector({
+  //       onTapDown: () => {
+  //         // console.log("Down");
   //       },
-  //       onPointerUp: (e) => {
-  //         console.log("抬起", e);
+  //       onTap: () => {
+  //         console.log("Tap");
   //       },
-  //       onPointerCancel: (e) => {
-  //         console.log("取消", e);
+  //       onTapUp: () => {
+  //         // console.log("Up");
+  //       },
+  //       onTapCancel: () => {
+  //         console.log("Cancel");
+  //       },
+  //       onDoubleTap: () => {
+  //         console.log("DoubleTap");
+  //       },
+  //       onLongPress: () => {
+  //         console.log("LongPress");
+  //       },
+  //       onPanStart: (event) => {
+  //         console.log("开始拖动", event.position, this);
+  //       },
+  //       onPanUpdate: (event) => {
+  //         this.setState(() => {
+  //           this.position.add(
+  //             new Vector(event.delta.offsetX, event.delta.offsetY)
+  //           );
+  //         });
+  //       },
+  //       onPanEnd: (event) => {
+  //         console.log("结束拖动", event.position);
   //       },
   //       child: new ColoredBox({
   //         color: "white",
@@ -281,72 +260,117 @@ class SliderState extends State<Slider> {
   //           }),
   //         }),
   //       }),
-  //       onPointerMove: (event) => {
-  //         this.setState(() => {
-  //           this.position.add(
-  //             new Vector(event.delta.offsetX, event.delta.offsetY)
-  //           );
-  //         });
-  //       },
   //     }),
   //   });
   // }
+  build(context: BuildContext): Widget {
+    return new Positioned({
+      top: this.position.y,
+      left: this.position.x + this.time * 10,
+      child: new TestW(
+        new ColoredBox({
+          color: "white",
+          child: new SizeBox({
+            width: 100,
+            height: 100,
+            child: new Align({
+              child: new ColoredBox({
+                color: this.widget.color,
+                child: new SizeBox({
+                  width: 10 + sin(this.time) * 10,
+                  height: 100,
+                }),
+              }),
+            }),
+          }),
+        })
+      ),
+      // child: new GestureDetector({
+      //   onTapDown: () => {
+      //     console.log("Down");
+      //   },
+      //   onTap: () => {
+      //     console.log("Tap");
+      //   },
+      //   onTapUp: () => {
+      //     console.log("Up");
+      //   },
+      //   onTapCancel: () => {
+      //     console.log("Cancel");
+      //   },
+      //   onDoubleTap: () => {
+      //     console.log("DoubleTap");
+      //   },
+      //   onLongPress: () => {
+      //     console.log("LongPress");
+      //   },
+      //   onPanUpdate: (event) => {
+      //     this.setState(() => {
+      //       this.position.add(
+      //         new Vector(event.delta.offsetX, event.delta.offsetY)
+      //       );
+      //     });
+      //   },
+      //   child: new ColoredBox({
+      //     color: "white",
+      //     child: new SizeBox({
+      //       width: 100,
+      //       height: 100,
+      //       child: new Align({
+      //         child: new ColoredBox({
+      //           color: this.widget.color,
+      //           child: new SizeBox({ width: 10+sin(this.time)*10, height: 100 }),
+      //         }),
+      //       }),
+      //     }),
+      //   }),
+      // }),
+    });
+  }
 }
 
-// bool defaultHitTestChildren(BoxHitTestResult result, { required Offset position }) {
-//   // The x, y parameters have the top left of the node's box as the origin.
-//   ChildType? child = lastChild;
-//   while (child != null) {
-//     final ParentDataType childParentData = child.parentData! as ParentDataType;
-//     final bool isHit = result.addWithPaintOffset(
-//       offset: childParentData.offset,
-//       position: position,
-//       hitTest: (BoxHitTestResult result, Offset? transformed) {
-//         assert(transformed == position - childParentData.offset);
-//         return child!.hitTest(result, position: transformed!);
-//       },
-//     );
-//     if (isHit)
-//       return true;
-//     child = childParentData.previousSibling;
-//   }
-//   return false;
-// }
+class A extends StatelessWidget {
+  child: Widget;
+  constructor(child: Widget) {
+    super();
+    this.child = child;
+  }
+  build(context: BuildContext): Widget {
+    return this.child//new TestW();
+  }
+}
+
+class TestW extends StatefulWidget {
+  child: Widget;
+  constructor(child: Widget) {
+    super();
+    this.child = child;
+  }
+  createState(): State {
+    return new TestState();
+  }
+}
+
+class TestState extends State<TestW> {
+  build(context: BuildContext): Widget {
+    return new ColoredBox({
+      color: "#efefef",
+      child: new Padding({
+        padding: {
+          top: 10,
+          left: 10,
+          right: 10,
+          bottom: 10,
+        },
+        child: new Listener({
+          child: this.widget.child,
+        }),
+      }),
+    });
+  }
+}
+
 const view = //new V(new Size(100,100))//new ColoredBox("white",new SizeBox(200,200))//
   new Ful();
 
 runApp(view);
-// const view = new ColoredBox("white", new SizeBox(100, 100));
-// const element=view.createElement();
-
-// console.log(view)
-// console.log(element);
-// element.mount();
-
-class Queue<T> {
-  public list: Array<T> = new Array<T>();
-  public push(value: T) {
-    this.list.push(value);
-  }
-  public addFirst(value: T) {
-    this.list.push(value);
-  }
-  public addLast(value: T) {
-    this.list.unshift(value);
-  }
-  public removeFirst(): T {
-    return this.list.shift();
-  }
-  public removeLast(): T {
-    return this.list.pop();
-  }
-  public get size(): number {
-    return this.list.length;
-  }
-  public get isEmpty(): boolean {
-    return this.size === 0;
-  }
-  public clear() {
-    this.list = [];
-  }
-}
