@@ -214,20 +214,23 @@ class SliderState extends State<Slider> {
   build(context: BuildContext): Widget {
     return new GestureDetector({
       onTapDown: () => {
-        console.log("Down");
+        // console.log("Down");
       },
       onTap: () => {
         console.log("Tap");
       },
       onTapUp: () => {
-        console.log("Up");
+        // console.log("Up");
       },
       onTapCancel: () => {
         console.log("Cancel");
       },
       onDoubleTap: () => {
-        console.log("DoubleTap")
+        console.log("DoubleTap");
       },
+      // onLongPress: () => {
+      //   console.log("LongPress");
+      // },
       child: new ColoredBox({
         color: "white",
         child: new SizeBox({

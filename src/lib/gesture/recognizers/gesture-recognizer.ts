@@ -94,25 +94,32 @@ export abstract class OnePointerGestureRecognizer extends GestureRecognizer {
 
 export abstract class PrimaryPointerTapGestureRecognizer extends OnePointerGestureRecognizer {
   protected deadline: Duration;
-  //= new Duration({millisecond: 100,});
   protected timer: any;
+  constructor(deadline?: Duration) {
+    super();
+    this.deadline = deadline;
+  }
   protected addAllowedPointer(event: DownPointerEvent): void {
-    super.addAllowedPointer(event);
     if (this.deadline) {
       this.timer = setTimeout(() => {
+        if(!this.timer)return;
         this.didExceedDeadlineWithEvent(event);
       }, this.deadline.value);
     }
+    super.addAllowedPointer(event);
   }
   protected didExceedDeadlineWithEvent(event: PointerEvent) {
     this.didExceedDeadline();
   }
-  protected didExceedDeadline() {}
+  protected didExceedDeadline() {
+    this.deadline = null;
+  }
   handleEvent(event: PointerEvent): void {
     this.handlePrimaryPointerDown(event);
   }
   private stopTimer() {
     clearTimeout(this.timer);
+    this.timer=null;
   }
   rejectGesture(pointer: number): void {
     this.stopTimer();

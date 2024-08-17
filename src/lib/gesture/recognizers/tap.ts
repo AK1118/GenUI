@@ -1,3 +1,4 @@
+import { Duration } from "@/lib/core/duration";
 import { GestureDisposition } from "../arena-manager";
 import {
   CancelPointerEvent,
@@ -28,12 +29,19 @@ export default class TapGestureRecognizer
   onTapUp: VoidFunction;
   private sentDown: boolean = false;
   private up: UpPointerEvent;
+  constructor() {
+    super(
+      new Duration({
+        milliseconds: 180,
+      })
+    );
+  }
   protected addAllowedPointer(event: DownPointerEvent): void {
     this.reset();
     super.addAllowedPointer(event);
   }
   isAllowedPointer(): boolean {
-    return !!(this.onTap||this.onTapDown||this.onTapUp||this.onTapCancel);
+    return !!(this.onTap || this.onTapDown || this.onTapUp || this.onTapCancel);
   }
   handlePrimaryPointerDown(event: PointerEvent): void {
     if (event instanceof UpPointerEvent) {
@@ -47,15 +55,14 @@ export default class TapGestureRecognizer
       }
     }
   }
+  protected didExceedDeadline(): void {
+      this.checkDown();
+  }
   handleEventDown() {
     this.sentDown = true;
     this.invokeCallback("onTapDown", this.onTapDown);
   }
-  acceptGesture(pointer: number): void {
-    super.acceptGesture(pointer);
-    this.checkDown();
-    this.checkUp();
-  }
+  
   private checkDown() {
     if (this.sentDown) return;
     this.invokeCallback("onTapDown", this.onTapDown);
@@ -73,6 +80,11 @@ export default class TapGestureRecognizer
   private reset() {
     this.sentDown = false;
     this.up = null;
+  }
+  acceptGesture(pointer: number): void {
+    super.acceptGesture(pointer);
+    this.checkDown();
+    this.checkUp();
   }
   rejectGesture(pointer: number): void {
     super.rejectGesture(pointer);

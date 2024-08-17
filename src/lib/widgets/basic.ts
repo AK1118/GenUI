@@ -71,6 +71,9 @@ import TapGestureRecognizer, {
 import DoubleTapGestureRecognizer, {
   DoubleTapGestureRecognizerArguments,
 } from "../gesture/recognizers/double-tap";
+import LongPressGestureRecognizer, {
+  LongPressGestureRecognizerArguments,
+} from "../gesture/recognizers/long-press";
 export interface ColoredBoxOption {
   color: string;
 }
@@ -473,7 +476,8 @@ export class Transform extends SingleChildRenderObjectWidget {
 
 interface GestureDetectorArguments
   extends TapGestureRecognizerArguments,
-    DoubleTapGestureRecognizerArguments {}
+    DoubleTapGestureRecognizerArguments,
+    LongPressGestureRecognizerArguments {}
 
 export class GestureDetector
   extends StatelessWidget
@@ -486,6 +490,7 @@ export class GestureDetector
   onTapUp: VoidFunction;
   onDoubleTap: VoidFunction;
   onTapCancel: VoidFunction;
+  onLongPress: VoidFunction;
   constructor(
     option?: Partial<
       GestureDetectorArguments & SingleChildRenderObjectWidgetArguments
@@ -498,6 +503,7 @@ export class GestureDetector
     this.onTapUp = option?.onTapUp;
     this.onTapCancel = option?.onTapCancel;
     this.onDoubleTap = option?.onDoubleTap;
+    this.onLongPress = option?.onLongPress;
   }
 
   build(context: BuildContext): Widget {
@@ -522,11 +528,19 @@ export class GestureDetector
       new GestureRecognizerFactory(
         () => new DoubleTapGestureRecognizer(),
         (instance) => {
-          instance.onDoubleTap= this.onDoubleTap;
+          instance.onDoubleTap = this.onDoubleTap;
         }
       )
     );
-
+    // gestures.set(
+    //   LongPressGestureRecognizer,
+    //   new GestureRecognizerFactory(
+    //     () => new LongPressGestureRecognizer(),
+    //     (instance) => {
+    //       instance.onLongPress = this.onLongPress;
+    //     }
+    //   )
+    // );
     return new RawGestureDetector({
       gestures: gestures,
       child: this.child,

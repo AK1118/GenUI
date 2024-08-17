@@ -13,7 +13,7 @@ import {
 } from "./gesture-recognizer";
 import { GestureDisposition } from "../arena-manager";
 import { GestureBinding } from "../binding";
-const doubleTapMinTime: Duration = new Duration({ milliseconds:200 });
+const doubleTapMinTime: Duration = new Duration({ milliseconds: 300 });
 
 export interface DoubleTapGestureRecognizerArguments {
   onDoubleTap: VoidFunction;
@@ -25,25 +25,40 @@ class DoubleTapGestureRecognizer
 {
   onDoubleTap: VoidFunction;
   private doubleTapTimer: any;
-  private firstTap: DownPointerEvent;
-  private firstTaped: boolean = false;
+  private _firstTap: DownPointerEvent;
   private doubleTapTimeOut: boolean = false;
   protected addAllowedPointer(event: DownPointerEvent): void {
+    this.startTrack(event);
+  }
+  get firstTap(): DownPointerEvent {
+    return this._firstTap;
+  }
+  set firstTap(value: DownPointerEvent) {
+    this._firstTap = value;
+  }
+  private startTrack(event: DownPointerEvent) {
+    this.stopDoubleTimer();
     super.addAllowedPointer(event);
-    if (!this.doubleTapTimer) {
-      this.firstTap = event;
-      this.doubleTapTimer = setTimeout(() => {
-        this.reject();
-        GestureBinding.instance.gestureArena.release(event.pointer);
-        this.doubleTapTimeOut = true;
-        this.reset();
-      }, doubleTapMinTime.value);
-    }
-    else if(this.firstTaped&&!this.doubleTapTimeOut){
-        this.resolve(GestureDisposition.accepted);
-        GestureBinding.instance.gestureArena.release(event.pointer);
-        this.reset();
-    }
+  }
+
+  private registerSecondaryTap(event: DownPointerEvent) {
+    this.resolve(GestureDisposition.accepted);
+    this.reset();
+  }
+  private registerFirstTap(event: DownPointerEvent) {
+    GestureBinding.instance.gestureArena.hold(event.pointer);
+    this.firstTap = event;
+    this.startDoubleTimer();
+  }
+  private startDoubleTimer() {
+    this.doubleTapTimer = setTimeout(() => {
+      this.reset();
+      this.doubleTapTimeOut=true;
+      this.doubleTapTimer = null;
+    }, doubleTapMinTime.value);
+  }
+  private stopDoubleTimer() {
+    clearTimeout(this.doubleTapTimer);
   }
   isAllowedPointer(): boolean {
     return !!this.onDoubleTap;
@@ -54,44 +69,45 @@ class DoubleTapGestureRecognizer
 
   handleEvent(event: PointerEvent): void {
     if (event instanceof UpPointerEvent) {
-      if (this.firstTap && !this.firstTaped) {
-        GestureBinding.instance.gestureArena.hold(event.pointer);
-        this.firstTaped = true;
-      } else if (this.firstTaped && !this.doubleTapTimeOut) {
-        const distance = this.firstTap.position.dist(event.position);
-        if (distance < G_postAcceptSlopTolerance) {
-          this.resolve(GestureDisposition.accepted);
-          GestureBinding.instance.gestureArena.release(event.pointer);
-          this.reset();
-        }
-      } 
+      if (!this.firstTap) {
+        this.registerFirstTap(event);
+      } else {
+        this.registerSecondaryTap(event);
+      }
     }
-    if (
-      event instanceof CancelPointerEvent ||
-      event instanceof MovePointerEvent
-    ) {
+    if(event instanceof MovePointerEvent||event instanceof CancelPointerEvent){
       this.reject();
-      GestureBinding.instance.gestureArena.release(event.pointer);
       this.reset();
     }
   }
-  private reject(){
+  private reject() {
     this.resolve(GestureDisposition.rejected);
-    
   }
   private reset() {
-    this.firstTap = null;
-    this.doubleTapTimer = null;
-    this.doubleTapTimeOut = false;
-    this.firstTaped = false;
+    this.stopDoubleTimer();
+    if (this.firstTap) {
+      this.reject();
+      GestureBinding.instance.gestureArena.release(this.firstTap.pointer);
+      this.firstTap = null;
+      this.doubleTapTimer = null;
+      this.doubleTapTimeOut = false;
+    }
   }
   acceptGesture(pointer: number): void {
     this.stopTimer();
-    this.invokeCallback("onDoubleTap", this.onDoubleTap);
+    this.checkDoubleTap();
+    this.reset();
+    super.acceptGesture(pointer);
   }
-  rejectGesture(pointer: number): void {
-    this.stopTimer();
+  private checkDoubleTap() {
+    if (this.onDoubleTap) {
+      this.invokeCallback("onDoubleTap", this.onDoubleTap);
+    }
   }
+  // rejectGesture(pointer: number): void {
+  //   // this.stopTimer();
+  //   super.rejectGesture(pointer);
+  // }
 }
 
 export default DoubleTapGestureRecognizer;
