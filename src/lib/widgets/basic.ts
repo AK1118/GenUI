@@ -311,7 +311,6 @@ export class Positioned extends ParentDataWidget<StackParentData> {
     parentData.width = this.width;
     parentData.height = this.height;
     if (child?.parent instanceof RenderView) {
-      console.log("更新Position",this.top,this.left);
       child.parent.markNeedsLayout();
     }
   }

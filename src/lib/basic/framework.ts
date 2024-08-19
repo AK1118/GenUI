@@ -487,18 +487,27 @@ export class ParentDataElement<
   build(): Widget {
     return (this.widget as RenderObjectWidget).child;
   }
-  applyParentData(widget: ParentDataWidget): void {
+  /**
+   * 使用子节点的 @updateParentData 方法通过 @widget 更新 @parentData 属性,
+   * 此处的 @widget 属性是 @ParentDataWidget 的子类，例如 @Positioned 、 @Expanded 等。
+   * 
+   * @updateParentData 方法是 @RenderObjectElement 独有的方法，所以需要判断类型满足时才能直接调用，
+   * 如条件不满足时，即 child 为其他类型，则需要调用超类 @Element 的 @visitChildren 方法，通过向下查找子节点
+   * 遍历叶子节点，调用 @updateParentData 方法。
+   * 
+   */
+  applyParentData(widget: ParentDataWidget<T>): void {
     const applyParentDataToChild = (child: Element) => {
       if (child instanceof RenderObjectElement) {
         child.updateParentData(widget);
-      } else if (child instanceof ParentDataElement) {
+      } else {
         child.visitChildren(applyParentDataToChild);
       }
     };
     this.visitChildren(applyParentDataToChild);
   }
   notifyClients(oldWidget: ProxyWidget) {
-    this.applyParentData(this.widget as ParentDataWidget);
+    this.applyParentData(this.widget as ParentDataWidget<T>);
   }
 }
 
@@ -508,5 +517,10 @@ export abstract class ParentDataWidget<
   public createElement(): Element {
     return new ParentDataElement<T>(this);
   }
+  /**
+   * 更新 @parentData 属性，由于需要更新的是 @parentData 属性，传入 @child 是一个普通的 @RenderView 对象，
+   * 即所有 @RenderView 的派生类都有可能被传入，且它们都已经实现了 @createRenderView 方法。
+   * 详见 @RenderView 的 @parentData 属性
+   */
   abstract applyParentData(child: ParentDataRenderView<T>): void;
 }

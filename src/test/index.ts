@@ -175,7 +175,7 @@ class StateTest extends State {
       child: new Stack({
         children: [
           ...Array.from(new Array(1)).map((_) => {
-            return new Slider("#efefef");
+            return new Slider();
           }),
         ],
       }),
@@ -184,10 +184,8 @@ class StateTest extends State {
 }
 
 class Slider extends StatefulWidget {
-  public color: string;
-  constructor(color: string) {
+  constructor() {
     super();
-    this.color = color;
   }
   createState(): State {
     return new SliderState();
@@ -197,134 +195,70 @@ class Slider extends StatefulWidget {
 class SliderState extends State<Slider> {
   private position: Vector = new Vector(0, 0);
   private time: number = 0;
+  private color:string="#efefef";
   public initState(): void {
-    // setInterval(() => {
-    //   this.animation();
-    // }, 100);
-    this.animation();
+    setInterval(() => {
+      this.animation();
+    }, 100);
+    // this.animation();
   }
   private animation() {
     this.setState(() => {
       this.time += 0.01;
     });
-    // this.transform.rotateZ(this.time*45);
-
-    requestAnimationFrame(this.animation.bind(this));
   }
-  // build(context: BuildContext): Widget {
-  //   return new Positioned({
-  //     top: this.position.y,
-  //     left: this.position.x,
-  //     child: new GestureDetector({
-  //       onTapDown: () => {
-  //         // console.log("Down");
-  //       },
-  //       onTap: () => {
-  //         console.log("Tap");
-  //       },
-  //       onTapUp: () => {
-  //         // console.log("Up");
-  //       },
-  //       onTapCancel: () => {
-  //         console.log("Cancel");
-  //       },
-  //       onDoubleTap: () => {
-  //         console.log("DoubleTap");
-  //       },
-  //       onLongPress: () => {
-  //         console.log("LongPress");
-  //       },
-  //       onPanStart: (event) => {
-  //         console.log("开始拖动", event.position, this);
-  //       },
-  //       onPanUpdate: (event) => {
-  //         this.setState(() => {
-  //           this.position.add(
-  //             new Vector(event.delta.offsetX, event.delta.offsetY)
-  //           );
-  //         });
-  //       },
-  //       onPanEnd: (event) => {
-  //         console.log("结束拖动", event.position);
-  //       },
-  //       child: new ColoredBox({
-  //         color: "white",
-  //         child: new SizeBox({
-  //           width: 100,
-  //           height: 100,
-  //           child: new Align({
-  //             child: new ColoredBox({
-  //               color: this.widget.color,
-  //               child: new SizeBox({ width: 10, height: 100 }),
-  //             }),
-  //           }),
-  //         }),
-  //       }),
-  //     }),
-  //   });
-  // }
+  //只要时RenderObjectWidget的子类，就会自动刷新
+  //不是就不会刷新
   build(context: BuildContext): Widget {
     return new Positioned({
       top: this.position.y,
       left: this.position.x + this.time * 10,
-      child: new TestW(
-        new ColoredBox({
-          color: "white",
-          child: new SizeBox({
-            width: 100,
-            height: 100,
-            child: new Align({
-              child: new ColoredBox({
-                color: this.widget.color,
-                child: new SizeBox({
-                  width: 10 + sin(this.time) * 10,
-                  height: 100,
+      child:
+        new GestureDetector({
+          onTapDown: () => {
+            console.log("Down");
+          },
+          onTap: () => {
+            console.log("Tap");
+          },
+          onTapUp: () => {
+            console.log("Up");
+          },
+          onTapCancel: () => {
+            console.log("Cancel");
+          },
+          onDoubleTap: () => {
+            this.setState(()=>{
+              this.color = getRandomColor();
+            });
+          },
+          onLongPress: () => {
+            console.log("LongPress");
+          },
+          onPanUpdate: (event) => {
+            this.setState(() => {
+              this.position.add(
+                new Vector(event.delta.offsetX, event.delta.offsetY)
+              );
+            });
+          },
+          child: new ColoredBox({
+            color: "white",
+            child: new SizeBox({
+              width: 100,
+              height: 100,
+              child: new Align({
+                child: new ColoredBox({
+                  color: this.color,
+                  child: new SizeBox({
+                    width: 10 + sin(this.time) * 10,
+                    height: 100,
+                  }),
                 }),
               }),
             }),
           }),
-        })
-      ),
-      // child: new GestureDetector({
-      //   onTapDown: () => {
-      //     console.log("Down");
-      //   },
-      //   onTap: () => {
-      //     console.log("Tap");
-      //   },
-      //   onTapUp: () => {
-      //     console.log("Up");
-      //   },
-      //   onTapCancel: () => {
-      //     console.log("Cancel");
-      //   },
-      //   onDoubleTap: () => {
-      //     console.log("DoubleTap");
-      //   },
-      //   onLongPress: () => {
-      //     console.log("LongPress");
-      //   },
-      //   onPanUpdate: (event) => {
-      //     this.setState(() => {
-      //       this.position.add(
-      //         new Vector(event.delta.offsetX, event.delta.offsetY)
-      //       );
-      //     });
-      //   },
-      //   child: new ColoredBox({
-      //     color: "white",
-      //     child: new SizeBox({
-      //       width: 100,
-      //       height: 100,
-      //       child: new Align({
-      //         child: new ColoredBox({
-      //           color: this.widget.color,
-      //           child: new SizeBox({ width: 10+sin(this.time)*10, height: 100 }),
-      //         }),
-      //       }),
-      //     }),
-      //   }),
-      // }),
+        }),
     });
   }
 }
@@ -336,7 +270,7 @@ class A extends StatelessWidget {
     this.child = child;
   }
   build(context: BuildContext): Widget {
-    return this.child//new TestW();
+    return this.child; //new TestW();
   }
 }
 

@@ -252,6 +252,11 @@ export abstract class RenderView extends AbstractNode implements HitTestTarget {
   public layerHandler: LayerHandler<OffsetLayer>;
   private _child?: RenderView;
   private _firstChild?: RenderView;
+  /**
+   * 定义渲染伴随数据，即父节点数据，用于 @ParentDataElement 使用，被作为 @ParentDataElement 的 子节点时
+   * 会被定义类型，默认类型为 @ParentData ，在不同常见会被父节点的 @setupParentData 赋予不同的类型,达到自定义效果。
+   * 例如在 @Stack 内会被 @StackParentData 赋值，在 @Flex 内会被 @FlexParentData 赋值。
+   */
   public parentData: ParentData = null;
   public _size: Size = Size.zero;
   public needsRePaint: boolean = false;
