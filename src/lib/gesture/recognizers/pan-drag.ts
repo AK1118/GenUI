@@ -45,6 +45,7 @@ class PanDragGestureRecognizer
         this.resolve(GestureDisposition.rejected);
         this.handlePanDragEnd(event);
         this.reset();
+        this.stopTrackingPointer(event.pointer);
     }
   }
 
@@ -52,6 +53,7 @@ class PanDragGestureRecognizer
     this.startEvent = null;
     this.moved = false;
   }
+
 
   private handlePanDragEnd(event: PanZoomEndPointerEvent): void {
     this.invokeCallback("onPanEnd", () => {

@@ -18,6 +18,7 @@ import {
   Align,
   ClipRRect,
   ColoredBox,
+  DecoratedBox,
   Expanded,
   Flex,
   GestureDetector,
@@ -40,10 +41,21 @@ import Alignment from "@/lib/painting/alignment";
 import { BoxConstraints } from "@/lib/rendering/constraints";
 import Vector from "@/lib/math/vector";
 import runApp from "@/index";
-import { abs, cos, radiansPerDegree, random, sin } from "@/lib/math/math";
+import {
+  abs,
+  cos,
+  fract,
+  radiansPerDegree,
+  random,
+  sin,
+} from "@/lib/math/math";
 import { GlobalKey } from "@/lib/basic/key";
 import { getRandomColor } from "@/lib/utils/utils";
 import { Matrix4 } from "@/lib/math/matrix";
+import { BoxDecoration } from "@/lib/painting/decoration";
+import BorderRadius from "@/lib/painting/radius";
+import { Border, BorderSide } from "@/lib/painting/borders";
+import BoxShadow from "@/lib/painting/shadow";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
@@ -194,17 +206,21 @@ class Slider extends StatefulWidget {
 
 class SliderState extends State<Slider> {
   private position: Vector = new Vector(0, 0);
-  private time: number = 0;
-  private color:string="#efefef";
+  private time: number = 3;
+  private color: string = "#efefef";
   public initState(): void {
-    setInterval(() => {
-      this.animation();
-    }, 100);
+    // setInterval(() => {
+    //   this.animation();
+    // }, 100);
     // this.animation();
   }
   private animation() {
     this.setState(() => {
       this.time += 0.01;
+      g.clearRect(0, 0, canvas.width, canvas.height);
+    });
+    requestAnimationFrame(() => {
+      this.animation();
     });
   }
   //只要时RenderObjectWidget的子类，就会自动刷新
@@ -212,53 +228,93 @@ class SliderState extends State<Slider> {
   build(context: BuildContext): Widget {
     return new Positioned({
       top: this.position.y,
-      left: this.position.x + this.time * 10,
-      child:
-        new GestureDetector({
-          onTapDown: () => {
-            console.log("Down");
-          },
-          onTap: () => {
-            console.log("Tap");
-          },
-          onTapUp: () => {
-            console.log("Up");
-          },
-          onTapCancel: () => {
-            console.log("Cancel");
-          },
-          onDoubleTap: () => {
-            this.setState(()=>{
-              this.color = getRandomColor();
-            });
-          },
-          onLongPress: () => {
-            console.log("LongPress");
-          },
-          onPanUpdate: (event) => {
-            this.setState(() => {
-              this.position.add(
-                new Vector(event.delta.offsetX, event.delta.offsetY)
-              );
-            });
-          },
-          child: new ColoredBox({
-            color: "white",
-            child: new SizeBox({
-              width: 100,
-              height: 100,
-              child: new Align({
-                child: new ColoredBox({
-                  color: this.color,
-                  child: new SizeBox({
-                    width: 10 + sin(this.time) * 10,
-                    height: 100,
-                  }),
+      left: this.position.x,
+      child: new GestureDetector({
+        onTapDown: () => {
+          this.setState(() => {
+            this.time=1
+           });
+        },
+        onTap: () => {
+          console.log("Tap");
+        },
+        onTapUp: () => {
+         this.setState(() => {
+          this.time=3;
+         });
+        },
+        onTapCancel: () => {
+          console.log("Cancel");
+        },
+        onDoubleTap: () => {
+          this.setState(() => {
+            this.color = getRandomColor();
+          });
+        },
+        onLongPress: () => {
+          console.log("LongPress");
+        },
+        onPanUpdate: (event) => {
+          this.setState(() => {
+            this.position.add(
+              new Vector(event.delta.offsetX, event.delta.offsetY)
+            );
+          });
+        },
+        child:new DecoratedBox({
+          decoration: new BoxDecoration({
+            backgroundColor: "white",
+            borderRadius:BorderRadius.all(10),
+            shadows:[
+              new BoxShadow({
+                shadowColor:"#ccc",
+                shadowBlur:this.time,
+                shadowOffsetX:this.time,
+                shadowOffsetY:this.time,
+              }),
+            ],
+            // border: Border.all({
+            //   color: "orange",
+            //   width: 1,
+            // }),
+            // border: Border.only({
+            //   top: new BorderSide({
+            //     color: "orange",
+            //     // dashed:[3,3],
+            //     width: 10,
+            //   }),
+            //   right: new BorderSide({
+            //     color: "blue",
+            //     // dashed:[3,3],
+            //     width: 10,
+            //   }),
+            //   bottom: new BorderSide({
+            //     color: "orange",
+            //     // dashed:[3,3],
+            //     width: 10,
+            //   }),
+            //   left: new BorderSide({
+            //     color: "blue",
+            //     // dashed:[3,3],
+            //     width: 10,
+            //   }),
+            // }),
+          }),
+          child: new SizeBox({
+            width:100,
+            height: 30,
+            child: new Align({
+              child: new ColoredBox({
+                color: this.color,
+                child: new SizeBox({
+                  width: 10 + sin(this.time) * 10,
+                  height: 100,
                 }),
               }),
             }),
           }),
         }),
+      }),
     });
   }
 }
@@ -308,3 +364,10 @@ const view = //new V(new Size(100,100))//new ColoredBox("white",new SizeBox(200,
   new Ful();
 
 runApp(view);
+
+// new Painter().setShadow({
+//   shadowBlur:3,
+//   shadowColor:"black",
+//   shadowOffsetX:10,
+//   shadowOffsetY:10,
+// });

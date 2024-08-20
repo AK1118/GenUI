@@ -20,6 +20,7 @@ import {
 } from "../gesture/events";
 import { Matrix, Matrix4 } from "../math/matrix";
 import MatrixUtils from "../utils/matrixUtils";
+import { BoxDecoration } from "../painting/decoration";
 
 export enum Clip {
   none = "none",
@@ -118,7 +119,6 @@ export interface BoundsRRect extends BoundsRect {
 
 export interface ClipRectArguments {}
 
-export type Radius = number | Iterable<number>;
 export interface ClipRRectArguments extends ClipRectArguments {
   borderRadius: Radius;
 }
@@ -1970,7 +1970,7 @@ export class RenderPointerListener extends SingleChildRenderView {
   private _onPointerDown: onPointerDownCallback;
   private _onPointerMove: onPointerMoveCallback;
   private _onPointerUp: onPointerUpCallback;
-  private _onPointerCancel:onPointerCancelCallback;
+  private _onPointerCancel: onPointerCancelCallback;
   set onPointerDown(value: onPointerDownCallback) {
     this._onPointerDown = value;
   }
@@ -1980,7 +1980,7 @@ export class RenderPointerListener extends SingleChildRenderView {
   set onPointerUp(value: onPointerUpCallback) {
     this._onPointerUp = value;
   }
-  set onPointerCancel(value:onPointerCancelCallback){
+  set onPointerCancel(value: onPointerCancelCallback) {
     this._onPointerCancel = value;
   }
 
@@ -1993,7 +1993,7 @@ export class RenderPointerListener extends SingleChildRenderView {
     this._onPointerDown = option?.onPointerDown;
     this._onPointerMove = option?.onPointerMove;
     this._onPointerUp = option?.onPointerUp;
-    this._onPointerCancel=option?.onPointerCancel;
+    this._onPointerCancel = option?.onPointerCancel;
   }
   handleEvent(event: PointerEvent, entry: HitTestEntry): void {
     if (event instanceof DownPointerEvent) {
@@ -2002,7 +2002,7 @@ export class RenderPointerListener extends SingleChildRenderView {
       this._onPointerMove?.(event);
     } else if (event instanceof UpPointerEvent) {
       this._onPointerUp?.(event);
-    }else if(event instanceof CancelPointerEvent){
+    } else if (event instanceof CancelPointerEvent) {
       this._onPointerCancel?.(event);
     }
   }
@@ -2104,7 +2104,6 @@ export class RenderTransformBox extends SingleChildRenderView {
     const transform = Matrix4.zero.setMatrix([
       ...this.transform.matrix,
     ]) as Matrix4;
-   
 
     const alignment = this.alignment;
     const origin = this.origin;
@@ -2127,5 +2126,29 @@ export class RenderTransformBox extends SingleChildRenderView {
       result.translate(-origin.x, -origin.y);
     }
     return result;
+  }
+}
+
+export class BoxDecorationRenderView extends SingleChildRenderView {
+  private _decoration: BoxDecoration;
+  constructor(decoration: BoxDecoration) {
+    super();
+    this._decoration = decoration;
+  }
+  set decoration(value: BoxDecoration) {
+    this._decoration = value;
+    this.markNeedsPaint();
+  }
+  get decoration(): BoxDecoration {
+    return this._decoration;
+  }
+  render(context: PaintingContext, offset?: Vector): void {
+    const boxPainter = this.decoration?.createBoxPainter(
+      this.markNeedsPaint.bind(this)
+    );
+    if (boxPainter) {
+      boxPainter.paint(context.paint, offset, this.size);
+    }
+    super.render(context, offset);
   }
 }

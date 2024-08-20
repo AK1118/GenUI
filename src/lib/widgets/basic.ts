@@ -16,6 +16,7 @@ import {
   AlignArguments,
   AlignRenderView,
   Axis,
+  BoxDecorationRenderView,
   ClipRectRenderView,
   ClipRRectArguments,
   ClipRRectRenderView,
@@ -35,7 +36,6 @@ import {
   PaddingRenderView,
   ParentDataRenderView,
   PositionedArguments,
-  Radius,
   RenderPointerListener,
   RenderPointerListenerArguments,
   RenderTransformArguments,
@@ -77,7 +77,10 @@ import DoubleTapGestureRecognizer, {
 import LongPressGestureRecognizer, {
   LongPressGestureRecognizerArguments,
 } from "../gesture/recognizers/long-press";
-import PanDragGestureRecognizer, { PanDragGestureRecognizerArguments } from "../gesture/recognizers/pan-drag";
+import PanDragGestureRecognizer, {
+  PanDragGestureRecognizerArguments,
+} from "../gesture/recognizers/pan-drag";
+import { BoxDecoration } from "../painting/decoration";
 export interface ColoredBoxOption {
   color: string;
 }
@@ -516,7 +519,6 @@ export class GestureDetector
     this.onPanUpdate = option?.onPanUpdate;
     this.onPanEnd = option?.onPanEnd;
   }
- 
 
   build(context: BuildContext): Widget {
     const gestures: Map<
@@ -621,5 +623,30 @@ class _RawGestureDetectorState extends State<RawGestureDetector> {
       gesture._initializer(gesture_);
       this.gestureRecognizers.set(key, gesture_);
     }
+  }
+}
+
+interface DecoratedBoxArguments {
+  decoration: BoxDecoration;
+}
+
+export class DecoratedBox extends SingleChildRenderObjectWidget {
+  private decoration: BoxDecoration;
+  constructor(
+    option?: Partial<
+      DecoratedBoxArguments & SingleChildRenderObjectWidgetArguments
+    >
+  ) {
+    super(option?.child, option?.key);
+    this.decoration = option?.decoration;
+  }
+  createRenderObject(): RenderView {
+    return new BoxDecorationRenderView(this.decoration);
+  }
+  updateRenderObject(
+    context: BuildContext,
+    renderView: BoxDecorationRenderView
+  ): void {
+    renderView.decoration = this.decoration;
   }
 }
