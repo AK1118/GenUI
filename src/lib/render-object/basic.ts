@@ -4,7 +4,7 @@ import { Size } from "@/lib/basic/rect";
 import { BoxConstraints } from "@/lib/rendering/constraints";
 import Vector from "@/lib/math/vector";
 import { TextOverflow, TextPainter, TextSpan } from "../text-painter";
-import { PipelineOwner } from "../basic/binding";
+import { PipelineOwner, RendererBinding } from "../basic/binding";
 import { Widget } from "../basic/framework";
 import {
   HitTestEntry,
@@ -366,6 +366,9 @@ export abstract class RenderView extends AbstractNode implements HitTestTarget {
     if (!this.needsRePaint) return;
     this.needsRePaint = false;
     this.render(context, offset);
+    if (RendererBinding.instance.debug) {
+      this.debugRender(context, offset);
+    }
   }
   abstract performResize(): void;
   abstract computeDryLayout(constrains: BoxConstraints): Size;
@@ -476,6 +479,7 @@ export abstract class ParentDataRenderView<
   }
   debugRender(context: PaintingContext, offset?: Vector): void {
     context.paintChildDebug(this.child!, offset);
+    context.paintDefaultDebugBoundary(offset, this.child?.size ?? Size.zero);
   }
 }
 
@@ -674,6 +678,10 @@ export class ConstrainedBoxRender extends SingleChildRenderView {
   performLayout(): void {
     this.size = this.computeDryLayout(this.constraints);
   }
+  debugRender(context: PaintingContext, offset?: Vector): void {
+    context.paintDefaultDebugBoundary(offset, this.size);
+    super.debugRender(context, offset);
+  }
 }
 
 export class PaddingRenderView extends SingleChildRenderView {
@@ -768,6 +776,10 @@ export class AlignRenderView extends SingleChildRenderView {
   }
   render(context: PaintingContext, offset?: Vector): void {
     super.render(context, offset);
+  }
+  debugRender(context: PaintingContext, offset?: Vector): void {
+    context.paintEmptyDebugBoundary(offset, this.size);
+    super.debugRender(context, offset);
   }
 }
 
@@ -916,6 +928,22 @@ export class PaintingContext extends ClipContext {
     render();
     this.paint.closePath();
     this.paint.restore();
+  }
+  paintDefaultDebugBoundary(offset: Vector, size: Size) {
+    this.paint.strokeStyle = "orange";
+    this.paint.strokeRect(offset.x, offset.y, size.width, size.height);
+  }
+  paintEmptyDebugBoundary(offset: Vector, size: Size) {
+    const space = 30;
+    const count = ~~(size.width / space);
+    for (let i = 0; i < count + 1; i++) {
+      this.paint.strokeStyle = "rgba(31, 137, 219,.01)";
+      this.paint.moveTo(i * space, offset.y);
+      this.paint.lineTo(i * space, offset.y + size.height);
+      this.paint.moveTo(offset.x, i * space);
+      this.paint.lineTo(offset.x + size.width, i * space);
+      this.paint.stroke();
+    }
   }
 }
 
@@ -2150,5 +2178,14 @@ export class BoxDecorationRenderView extends SingleChildRenderView {
       boxPainter.paint(context.paint, offset, this.size);
     }
     super.render(context, offset);
+  }
+  debugRender(context: PaintingContext, offset?: Vector): void {
+    const boxPainter = this.decoration?.createBoxPainter(
+      this.markNeedsPaint.bind(this)
+    );
+    if (boxPainter) {
+      boxPainter.debugPaint(context.paint, offset, this.size);
+    }
+    super.debugRender(context, offset);
   }
 }

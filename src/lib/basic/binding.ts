@@ -212,6 +212,7 @@ class FrameUpdater {
 export class RendererBinding extends GestureBinding {
   private _pipelineOwner: PipelineOwner;
   public static instance: RendererBinding;
+  public debug:boolean=false;
   get renderView(): RenderView {
     return this._pipelineOwner.renderView;
   }

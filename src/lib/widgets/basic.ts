@@ -34,6 +34,7 @@ import {
   onPointerUpCallback,
   PaddingOption,
   PaddingRenderView,
+  ParagraphView,
   ParentDataRenderView,
   PositionedArguments,
   RenderPointerListener,
@@ -81,6 +82,7 @@ import PanDragGestureRecognizer, {
   PanDragGestureRecognizerArguments,
 } from "../gesture/recognizers/pan-drag";
 import { BoxDecoration } from "../painting/decoration";
+import { TextSpan, TextStyle } from "../text-painter";
 export interface ColoredBoxOption {
   color: string;
 }
@@ -648,5 +650,36 @@ export class DecoratedBox extends SingleChildRenderObjectWidget {
     renderView: BoxDecorationRenderView
   ): void {
     renderView.decoration = this.decoration;
+  }
+}
+
+interface TextArguments {
+  text: string;
+  style: TextStyle;
+}
+
+export class Text extends SingleChildRenderObjectWidget {
+  private text: string;
+  private style: TextStyle = new TextStyle();
+  constructor(
+    option: Partial<TextArguments & SingleChildRenderObjectWidgetArguments>
+  ) {
+    super(option?.child, option?.key);
+    this.text = option?.text;
+    this.style = option?.style;
+  }
+  createRenderObject(): RenderView {
+    return new ParagraphView({
+      text:new TextSpan({
+        text: this.text,
+        textStyle: this.style,
+      })
+    });
+  }
+  updateRenderObject(context: BuildContext, renderView: ParagraphView): void {
+    renderView.text = new TextSpan({
+      text: this.text,
+      textStyle: this.style,
+    });
   }
 }

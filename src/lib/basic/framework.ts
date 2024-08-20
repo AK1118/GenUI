@@ -460,7 +460,6 @@ export class RootRenderObjectElement extends SingleChildRenderObjectElement {
       // this.renderView.layout(null, false);
       // this.root.reassemble();
       (this.renderView as RootRenderView).scheduleFirstFrame();
-
       this.owner.buildScope(this);
     } else {
       this.markNeedsBuild();

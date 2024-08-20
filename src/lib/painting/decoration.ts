@@ -18,6 +18,7 @@ export abstract class BoxPainter {
     this.onChanged = onChanged;
   }
   abstract paint(paint: Painter, offset: Vector, size: Size): void;
+  abstract debugPaint(paint: Painter, offset: Vector, size: Size): void;
   dispose(): void {}
 }
 
@@ -65,15 +66,18 @@ class BoxDecorationPainter extends BoxPainter {
       for (let i = 0; i < this.decoration.shadows.length; i++) {
         const shadow = this.decoration.shadows[i];
         shadow.paint(paint);
-        paint.fillStyle="rgba(255,255,255,1)";
-        if (this.decoration.borderRadius?.isNone()) {
-          paint.fillRect(offset.x, offset.y, size.width-1, size.height-1);
+        paint.fillStyle = "white";
+        if (
+          !this.decoration.borderRadius ||
+          this.decoration.borderRadius?.isNone()
+        ) {
+          paint.fillRect(offset.x, offset.y, size.width - 1, size.height - 1);
         } else {
           paint.roundRect(
             offset.x,
             offset.y,
-            size.width-1,
-            size.height-1,
+            size.width - 1,
+            size.height - 1,
             this.decoration.borderRadius?.radius
           );
           paint.fill();
@@ -116,5 +120,11 @@ class BoxDecorationPainter extends BoxPainter {
       this.decoration.borderRadius
     );
     paint.restore();
+  }
+
+  debugPaint(paint: Painter, offset: Vector, size: Size): void {
+    this.paint(paint, offset, size);
+    paint.fillStyle="rgba(162, 118, 196,.5)";
+    paint.fillRect(offset.x, offset.y, size.width - 1, size.height - 1);
   }
 }
