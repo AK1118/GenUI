@@ -321,7 +321,7 @@ class TextPoint {
   private isSpace: boolean = false;
   private _hidden: boolean = true;
   public hiddenTextPoint(): void {
-    this._hidden = false;
+    this._hidden = true;
   }
   disable() {
     this._hidden = true;
@@ -396,7 +396,7 @@ export class Paragraph {
     paint: Painter,
     startOffset: Vector = Vector.zero
   ) {
-    // console.log("文字布局",startOffset)
+    //初始化切割文字
     this.performLayoutTextOffset(paint, startOffset);
     //合成单词
     this.handleCompileWord();
@@ -465,32 +465,33 @@ export class Paragraph {
       paint.restore();
     }
   }
+  /**
+   * 将字母合成为一个单词，并将整个单词宽度的和存储在首个字母
+   */
   public handleCompileWord() {
     let current = this.firstTextPoint;
     let currentHead = this.firstTextPoint;
     let wordCount = 0;
     while (current != null) {
       const parentData = current.parentData;
-      const nextBroTextPoint = parentData.nextNode;
       const currentTextCodePoint = current?.charCodePoint;
       //遇到空格中文跳过
       if (
-        currentTextCodePoint > 256 ||
-        TextPainter.isSpace(currentTextCodePoint) ||
-        TextPainter.isNewline(currentTextCodePoint)
+        TextPainter.isNewline(currentTextCodePoint)||TextPainter.isSpace(currentTextCodePoint)||currentTextCodePoint > 256 
       ) {
-        current = nextBroTextPoint;
+        current = parentData.nextNode;
         currentHead = current;
         wordCount = 0;
         continue;
+      }else{
+        current = parentData.nextNode;
+        currentHead.parentData.broCount = ++wordCount;
+        //词缀无实际broCount
+        if (wordCount >= 1 && current?.isWord) {
+          current.parentData.broCount = 0;
+        }
+        currentHead.parentData.wordCountWidth += parentData.box.width;
       }
-      current = nextBroTextPoint;
-      currentHead.parentData.broCount = ++wordCount;
-      //词缀无实际broCount
-      if (wordCount >= 1 && current?.isWord) {
-        current.parentData.broCount = 0;
-      }
-      currentHead.parentData.wordCountWidth += parentData.box.width;
     }
   }
   public getRowByColumn(rowIndex: number): Rowed {
@@ -578,6 +579,12 @@ export class Paragraph {
     lastColumn: number = 1,
     maxLine: number = Infinity
   ) {
+    let current=this.firstTextPoint;
+    while (current != null) {
+      const parentData = current.parentData;
+      const currentTextCodePoint = current?.charCodePoint;
+      current=parentData.nextNode;
+    }
     if (lastColumn > maxLine)
       return {
         column: lastColumn,
@@ -614,10 +621,13 @@ export class Paragraph {
       }
       const deltaY = 0;
       let deltaX = subDeltaX + offset.x;
+     
       offset.setXY(deltaX, deltaY);
       parentData.column = lastColumn;
       index += broCount || 1;
-      this.performLayoutRow(textPoint, offset, broCount);
+      if(broCount!==0){
+        this.performLayoutRow(textPoint, offset, broCount);
+      }
       textPoint.parentData = parentData;
     }
 
@@ -826,7 +836,7 @@ export class Paragraph {
         currentY - (lineHeight - height) * 0.5 + parentData.baseLineOffsetY;
 
       if (paint.style === PaintingStyle.fill) {
-        console.log(child.text, currentX, baselineY);
+        // console.log(child.text, currentX, baselineY);
         paint.fillText(child.text, currentX, baselineY);
       } else {
         paint.strokeText(child.text, currentX, baselineY);

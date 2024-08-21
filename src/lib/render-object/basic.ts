@@ -641,9 +641,7 @@ export class ConstrainedBoxRender extends SingleChildRenderView {
   computeDryLayout(constrains: BoxConstraints): Size {
     if (this.child) {
       this.child.layout(this.additionalConstraints.enforce(constrains), true);
-      return this.additionalConstraints
-        .enforce(this.constraints)
-        .constrain(Size.zero);
+      return  this.child.size;
     } else {
       return this.additionalConstraints
         .enforce(this.constraints)

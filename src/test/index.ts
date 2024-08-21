@@ -57,7 +57,7 @@ import { BoxDecoration } from "@/lib/painting/decoration";
 import BorderRadius from "@/lib/painting/radius";
 import { Border, BorderSide } from "@/lib/painting/borders";
 import BoxShadow from "@/lib/painting/shadow";
-import { FontWeight, TextAlign, TextStyle } from "@/lib/text-painter";
+import { FontWeight, TextAlign, TextDecoration, TextDecorationStyle, TextStyle } from "@/lib/text-painter";
 import { Container } from "@/lib/widgets/widgets";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
@@ -84,7 +84,7 @@ class Scaffold extends StatefulWidget {
 }
 
 class ScaffoldState extends State<Scaffold> {
-  private time: number = 0;
+  private time: number = 1;
   public initState(): void {
     super.initState();
     // this.animate();
@@ -124,15 +124,74 @@ class ScaffoldState extends State<Scaffold> {
               }),
             }),
             new Text(
-              `Python 的 for 语句与 C 或 Pascal 中的不同。Python 的 for 语句不迭代算术递增数值如 Pascal如（这不是有意要暗指什么）：`
-              ,{
-              style: new TextStyle({
-                fontSize: 14,
-                color:'orange',
-                // textAlign:TextAlign.justify,
-                // fontWeight: FontWeight.bold,
+              `Python 的 for 语句与 C 或 Pascal 中的不同。Python 的 for 语句不迭代算术递增数值（如 Pascal），或是给予用户定义迭代步骤和结束条件的能力（如 C），而是在列表或字符串等任意序列的元素上迭代，按它们在序列中出现的顺序。 例如（这不是有意要暗指什么）：`,
+              {
+                style: new TextStyle({
+                  fontSize: 14,
+                  // color:'orange',
+                  textAlign: TextAlign.justify,
+                }),
+              }
+            ),
+            Transform.scale({
+              alignment: Alignment.center,
+              scale: this.time,
+              child: new GestureDetector({
+                onTap: () => {
+                  this.setState(() => {
+                    this.time += 0.1;
+                  });
+                },
+                child: new Padding({
+                  child: new Container({
+                    decoration: new BoxDecoration({
+                      backgroundColor: "#ccc",
+                      border: Border.all({
+                        color: "#58b6f0",
+                      }),
+                      borderRadius: BorderRadius.all(20),
+                    }),
+                    child: new Padding({
+                      padding: {
+                        top: 20,
+                        left: 20,
+                        right: 20,
+                        bottom: 20,
+                      },
+                      child: new Text(
+                        `Python 的 for 语句与 C 或 Pascal 中的不同。Python 的 for 语句不迭代算术递增数值（如 Pascal），或是给予用户定义迭代步骤和结束条件的能力（如 C），而是在列表或字符串等任意序列的元素上迭代，按它们在序列中出现的顺序。 例如（这不是有意要暗指什么）：`,
+                        {
+                          style: new TextStyle({
+                            fontSize: 20,
+                            // color:'orange',
+                            textAlign: TextAlign.justify,
+                            decorationStyle:TextDecorationStyle.solid,
+                            decorationColor:"orange",
+                            decoration:TextDecoration.underline,
+                          }),
+                        }
+                      ),
+                    }),
+                  }),
+                  padding: {
+                    top: 20,
+                    left: 20,
+                    right: 20,
+                    bottom: 20,
+                  },
+                }),
               }),
-            })
+            }),
+            new Text(
+              `The Non-Uniform Border package provides a custom border class for Flutter that allows different widths for each side of a border with a single color. This can be useful for creating custom UI elements that require non-uniform border styling.`,
+              {
+                style: new TextStyle({
+                  fontSize: 10,
+                  // color:'orange',
+                  textAlign: TextAlign.justify,
+                }),
+              }
+            ),
             // new Container({
             //   width: 10,
             //   height: 10,

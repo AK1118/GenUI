@@ -51,14 +51,10 @@ export class Container extends StatelessWidget implements ContainerArguments {
    
   build(context: BuildContext): Widget {
     if (!this.constraints) {
-      if (this.width || this.height) {
-        this.constraints = BoxConstraints.tightFor(
-          this.width ?? null,
-          this.height ?? null
-        );
-      } else {
-        this.constraints = BoxConstraints.zero.loosen();
-      }
+      this.constraints = BoxConstraints.tightFor(
+        this.width ?? null,
+        this.height ?? null
+      );
     }
 
     let result: Widget = new ConstrainedBox({
