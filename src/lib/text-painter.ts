@@ -321,7 +321,7 @@ class TextPoint {
   private isSpace: boolean = false;
   private _hidden: boolean = true;
   public hiddenTextPoint(): void {
-    this._hidden = true;
+    this._hidden = false;
   }
   disable() {
     this._hidden = true;
@@ -398,6 +398,7 @@ export class Paragraph {
   ) {
     // console.log("文字布局",startOffset)
     this.performLayoutTextOffset(paint, startOffset);
+    //合成单词
     this.handleCompileWord();
     this.performConstraintsWidth(constraints, 0, 1, this.textStyle.maxLines);
     this.performLayoutOffsetYByColumn();
@@ -825,6 +826,7 @@ export class Paragraph {
         currentY - (lineHeight - height) * 0.5 + parentData.baseLineOffsetY;
 
       if (paint.style === PaintingStyle.fill) {
+        console.log(child.text, currentX, baselineY);
         paint.fillText(child.text, currentX, baselineY);
       } else {
         paint.strokeText(child.text, currentX, baselineY);
@@ -1147,6 +1149,7 @@ export class TextSpan extends InlineSpan {
 
 export class TextPainter {
   private text: TextSpan;
+  private preTextSpan: TextSpan;
   private paragraph: Paragraph;
   private painter: Painter;
   public size: Size = Size.zero;
@@ -1168,15 +1171,40 @@ export class TextPainter {
     this.paragraph = builder.build();
   }
   layout(minWidth: number = 0, maxWidth: number = Infinity) {
+    if (this.isEqualsTextSpan()) {
+      return;
+    }
     if (!this.paragraph) {
       this.createParagraph();
     }
     this.paragraph.layout(new ParagraphConstraints(maxWidth), this.painter);
     this.size.setWidth(this.paragraph.width);
     this.size.setHeight(this.paragraph.height);
+    this.preTextSpan = this.text;
   }
   paint(paint: Painter, offset: Vector = Vector.zero, debug: boolean = false) {
     this.paragraph.paint(paint, offset, debug);
+  }
+  private isEqualsTextSpan(): boolean {
+    if(this.preTextSpan == null)return false;
+    if (this.text === this.preTextSpan) {
+      return true;
+    }
+    if (this.text.text === this.preTextSpan.text) {
+      const preTextStyle = this.preTextSpan.style;
+      const textStyle = this.text.style;
+      return (
+        preTextStyle.fontFamily === textStyle.fontFamily &&
+        preTextStyle.fontSize === textStyle.fontSize &&
+        preTextStyle.fontWeight === textStyle.fontWeight &&
+        preTextStyle.fontStyle === textStyle.fontStyle &&
+        preTextStyle.letterSpacing === textStyle.letterSpacing &&
+        preTextStyle.wordSpacing === textStyle.wordSpacing &&
+        preTextStyle.shadow === textStyle.shadow &&
+        preTextStyle.decoration === textStyle.decoration
+      );
+    }
+    return false;
   }
   static isSpace(codePoint: number): boolean {
     return codePoint === 32;

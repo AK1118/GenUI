@@ -35,7 +35,6 @@ import {
   ColoredBox,
   Flex,
   Padding,
-  SizeBox,
   Wrap,
 } from "./lib/widgets/basic";
 
@@ -57,8 +56,6 @@ export {
   Align,
   Wrap,
   Flex,
-  SizeBox,
-  SizeBox as SizedBox,
   //Basic
   Alignment,
   WrapAlignment,

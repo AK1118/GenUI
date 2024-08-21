@@ -361,6 +361,21 @@ e 和 f 控制上下文的水平和垂直平移。
     height: number,
     radii?: number | Iterable<number>
   ) {
+    // if (Array.isArray(radii)) {
+    //   const invite = radii.findIndex((r) => {
+    //     return r < 0 || r > Math.min(width, height) / 2;
+    //   });
+    //   if (invite !== -1) {
+    //     //throw new Error("radii must be greater than 0");
+    //     return;
+    //   }
+    // } else {
+    //   if ((radii as number) < Math.min(width,height)) {
+    //     //throw new Error("radii must be greater than 0");
+    //     return;
+    //   }
+    // }
+
     const r2d = Math.PI / 180;
     let r: Array<number>;
     if (Array.isArray(radii)) {

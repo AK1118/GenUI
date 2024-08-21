@@ -25,7 +25,6 @@ import {
   Listener,
   Padding,
   Positioned,
-  SizeBox,
   SizedBox,
   Stack,
   Text,
@@ -58,7 +57,8 @@ import { BoxDecoration } from "@/lib/painting/decoration";
 import BorderRadius from "@/lib/painting/radius";
 import { Border, BorderSide } from "@/lib/painting/borders";
 import BoxShadow from "@/lib/painting/shadow";
-import { FontWeight, TextStyle } from "@/lib/text-painter";
+import { FontWeight, TextAlign, TextStyle } from "@/lib/text-painter";
+import { Container } from "@/lib/widgets/widgets";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
@@ -84,125 +84,161 @@ class Scaffold extends StatefulWidget {
 }
 
 class ScaffoldState extends State<Scaffold> {
-  private time:number=0;
+  private time: number = 0;
   public initState(): void {
-      super.initState();
-      // this.animate();
-      setInterval(()=>{
-        this.setState(()=>{
-          this.time+=1;
-        });
-      },1000);
-    }
-  private animate(){
-    this.setState(()=>{
-      this.time+=1;
+    super.initState();
+    // this.animate();
+    // setInterval(()=>{
+    //   this.setState(()=>{
+    //     this.time+=1;
+    //   });
+    // },1000);
+  }
+  private animate() {
+    this.setState(() => {
+      this.time += 1;
     });
-    requestAnimationFrame(()=>{
+    requestAnimationFrame(() => {
       this.animate();
-    })
+    });
   }
   build(context: BuildContext): Widget {
     return new SizedBox({
       width: canvas.width,
       height: canvas.height,
-      child: new Flex({
-        direction: Axis.vertical,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          new DecoratedBox({
-            decoration: new BoxDecoration({
-              backgroundColor: "#2196f3",
-              shadows: [
-                new BoxShadow({
-                  shadowBlur: 3,
-                  shadowColor: "#ccc",
-                  shadowOffsetX: 0,
-                  shadowOffsetY: 3,
-                }),
-              ],
-            }),
-            child: new Padding({
-              padding: {
-                top: 15,
-                left: 15,
-                right: 15,
-                bottom: 15,
-              },
-              child: new Flex({
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  new Text({
-                    text: "Flutter 圆角描边示例",
-                    style: new TextStyle({
-                      color: "white",
-                      fontWeight: FontWeight.bold,
-                    }),
-                  }),
-                  new SizedBox({}),
-                ],
+      child: new ColoredBox({
+        color: "white",
+        child: new Flex({
+          direction: Axis.vertical,
+          children: [
+            new Text("123", {
+              style: new TextStyle({
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
               }),
             }),
-          }),
-          new Expanded({
-            flex: 1,
-            child: new Padding({
-              padding: {
-                top: 15,
-                left: 15,
-                right: 15,
-                bottom: 15,
-              },
-              child: Transform.rotate({
-                angle:Math.PI/180*this.time,
-                alignment: Alignment.center,
-                child: new DecoratedBox({
-                  decoration: new BoxDecoration({
-                    backgroundColor: "white",
-                    border: Border.all({
-                      color: "#ccc",
-                      width: 1,
-                    }),
-                    borderRadius: BorderRadius.all(10),
-                    shadows: [
-                      new BoxShadow({
-                        shadowBlur: 3,
-                        shadowColor: "#ccc",
-                        shadowOffsetX: 0,
-                        shadowOffsetY: 3,
-                      }),
-                    ],
-                  }),
-                  child: new Flex({
-                    direction: Axis.vertical,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      new Text({
-                        text: "   使用仅限位置形参，可以让用户无法使用形参名。形参名没有实际意义时，强制调用函数的实参顺序时，或同时接收位置形参和关键字时，这种方式很有用。",
-                        style: new TextStyle({
-                          fontSize: 14,
-                          color: "#b6b6b6",
-                        }),
-                      }),
-                      new Text({
-                        text: "   使用仅限位置形参，可以让用户无法使用形参名。形参名没有实际意义时，强制调用函数的实参顺序时，或同时接收位置形参和关键字时，这种方式很有用。",
-                        style: new TextStyle({
-                          fontSize: 14,
-                          color: "#b6b6b6",
-                        }),
-                      }),
-                    ],
-                  }),
-                }),
+            new Text("123", {
+              style: new TextStyle({
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
               }),
             }),
-          }),
-        ],
+            new Text(
+              `Python 的 for 语句与 C 或 Pascal 中的不同。Python 的 for 语句不迭代算术递增数值如 Pascal如（这不是有意要暗指什么）：`
+              ,{
+              style: new TextStyle({
+                fontSize: 14,
+                color:'orange',
+                // textAlign:TextAlign.justify,
+                // fontWeight: FontWeight.bold,
+              }),
+            })
+            // new Container({
+            //   width: 10,
+            //   height: 10,
+            //   color: "white",
+            //   padding:{
+            //     top:10,
+            //     left:10,
+            //     right:10,
+            //     bottom:10,
+            //   },
+            //   child: new Container({
+            //     width: 100,
+            //     height: 100,
+            //     decoration:new BoxDecoration(
+            //       {
+            //         backgroundColor:"orange",
+            //         borderRadius:BorderRadius.all(10),
+            //         border:Border.all({
+            //           color:"white",
+            //           width:1,
+            //         }),
+
+            //       }
+            //     )
+            //   }),
+            // }),
+          ],
+        }),
       }),
     });
   }
+  //   return new SizedBox({
+  //     width: canvas.width,
+  //     height: canvas.height,
+  //     child: new Flex({
+  //       direction: Axis.vertical,
+  //       mainAxisAlignment: MainAxisAlignment.start,
+  //       children: [
+  //         new DecoratedBox({
+  //           decoration: new BoxDecoration({
+  //             backgroundColor: "#2196f3",
+  //             shadows: [
+  //               new BoxShadow({
+  //                 shadowBlur: 3,
+  //                 shadowColor: "#ccc",
+  //                 shadowOffsetX: 0,
+  //                 shadowOffsetY: 3,
+  //               }),
+  //             ],
+  //           }),
+  //           child: new Padding({
+  //             padding: {
+  //               top: 15,
+  //               left: 15,
+  //               right: 15,
+  //               bottom: 15,
+  //             },
+  //             child: new Flex({
+  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //               crossAxisAlignment: CrossAxisAlignment.center,
+  //               children: [
+  //                 new Text({
+  //                   text: "Flutter 圆角描边示例",
+  //                   style: new TextStyle({
+  //                     color: "white",
+  //                     fontWeight: FontWeight.bold,
+  //                   }),
+  //                 }),
+  //                 new SizedBox({}),
+  //               ],
+  //             }),
+  //           }),
+  //         }),
+  //         new Expanded({
+  //           flex: 2,
+  //           child: new ColoredBox({
+  //             color: "white",
+  //             child:new SizedBox({
+  //               // width:100,
+  //               child:new Flex({
+  //                 direction:Axis.vertical,
+  //                 crossAxisAlignment:CrossAxisAlignment.stretch,
+  //                 children:[
+  //                   new ColoredBox({
+  //                     color:"orange",
+  //                     child:new SizedBox({
+  //                       width:10,
+  //                       height:10,
+  //                     })
+  //                   }),
+  //                   new ColoredBox({
+  //                     color:"blue",
+  //                     child:new SizedBox({
+  //                       width:20,
+  //                       height:20,
+  //                     })
+  //                   }),
+  //                 ]
+  //               })
+  //             })
+  //           })
+  //         }),
+  //       ],
+  //     }),
+  //   });
+  // }
 }
 
 const app = new Scaffold();

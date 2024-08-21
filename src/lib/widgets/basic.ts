@@ -22,6 +22,7 @@ import {
   ClipRRectRenderView,
   ColoredRender,
   ConstrainedBoxRender,
+  ConstrainedBoxRenderArguments,
   CrossAxisAlignment,
   ExpandedArguments,
   FlexOption,
@@ -43,7 +44,6 @@ import {
   RenderTransformBox,
   RenderView,
   RootRenderView,
-  SizedBoxOption,
   StackFit,
   StackOption,
   StackParentData,
@@ -83,6 +83,7 @@ import PanDragGestureRecognizer, {
 } from "../gesture/recognizers/pan-drag";
 import { BoxDecoration } from "../painting/decoration";
 import { TextSpan, TextStyle } from "../text-painter";
+import { BoxConstraints } from "../rendering/constraints";
 export interface ColoredBoxOption {
   color: string;
 }
@@ -102,26 +103,56 @@ export class ColoredBox extends SingleChildRenderObjectWidget {
   }
 }
 
-export class SizeBox extends SingleChildRenderObjectWidget {
+export interface SizedBoxOption {
+  width: number;
+  height: number;
+}
+
+export class SizedBox extends SingleChildRenderObjectWidget {
   protected width: number;
   protected height: number;
+  protected additionalConstraints: BoxConstraints = BoxConstraints.zero;
   constructor(option: Partial<SizedBoxOption & SingleChildRenderObjectWidget>) {
     super(option?.child, option.key);
     const { width, height } = option;
     this.width = width;
     this.height = height;
+    this.additionalConstraints = BoxConstraints.tightFor(width, height);
   }
   createRenderObject(): RenderView {
     return new ConstrainedBoxRender({
-      width: this.width,
-      height: this.height,
+      additionalConstraints: this.additionalConstraints,
     });
   }
-  updateRenderObject(context: BuildContext, renderView: RenderView) {
-    (renderView as ConstrainedBoxRender).setSize(this.width, this.height);
+  updateRenderObject(context: BuildContext, renderView: ConstrainedBoxRender) {
+    renderView.additionalConstraints = this.additionalConstraints;
   }
 }
-export { SizeBox as SizedBox };
+
+export class ConstrainedBox extends SingleChildRenderObjectWidget {
+  private additionalConstraints: BoxConstraints;
+  constructor(
+    option: Partial<
+      ConstrainedBoxRenderArguments & SingleChildRenderObjectWidgetArguments
+    >
+  ) {
+    super(option?.child, option.key);
+    this.additionalConstraints =
+      option?.additionalConstraints ?? BoxConstraints.tightFor();
+  }
+
+  createRenderObject(): RenderView {
+    return new ConstrainedBoxRender({
+      additionalConstraints: this.additionalConstraints,
+    });
+  }
+  updateRenderObject(
+    context: BuildContext,
+    renderView: ConstrainedBoxRender
+  ): void {
+    renderView.additionalConstraints = this.additionalConstraints;
+  }
+}
 
 export class Padding extends SingleChildRenderObjectWidget {
   private option: Partial<PaddingOption>;
@@ -253,11 +284,10 @@ export class Wrap extends MultiChildRenderObjectWidget {
   }
 }
 
-export class ClipRect extends SizeBox {
+export class ClipRect extends SizedBox {
   createRenderObject(): RenderView {
     return new ClipRectRenderView({
-      width: this.width,
-      height: this.height,
+      additionalConstraints: this.additionalConstraints,
     });
   }
 }
@@ -654,26 +684,28 @@ export class DecoratedBox extends SingleChildRenderObjectWidget {
 }
 
 interface TextArguments {
-  text: string;
   style: TextStyle;
 }
 
 export class Text extends SingleChildRenderObjectWidget {
   private text: string;
-  private style: TextStyle = new TextStyle();
+  private style: TextStyle = new TextStyle({
+    fontSize: 14,
+  });
   constructor(
-    option: Partial<TextArguments & SingleChildRenderObjectWidgetArguments>
+    text: string,
+    option?: Partial<TextArguments & SingleChildRenderObjectWidgetArguments>
   ) {
     super(option?.child, option?.key);
-    this.text = option?.text;
-    this.style = option?.style;
+    this.text = text;
+    this.style = option?.style ?? this.style;
   }
   createRenderObject(): RenderView {
     return new ParagraphView({
-      text:new TextSpan({
+      text: new TextSpan({
         text: this.text,
         textStyle: this.style,
-      })
+      }),
     });
   }
   updateRenderObject(context: BuildContext, renderView: ParagraphView): void {

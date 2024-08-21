@@ -580,15 +580,14 @@ export class ColoredRender extends SingleChildRenderView {
   }
   performLayout(): void {
     super.performLayout();
+    this.child?.layout(this.constraints.loosen());
     if (!this.child) {
       this.size = Size.zero;
     }
+    this.size = this.child.size;
   }
   performResize(): void {
     this.size = this.child?.getDryLayout(this.constraints);
-  }
-  debugRender(context: PaintingContext, offset?: Vector): void {
-    this.render(context, offset);
   }
   render(context: PaintingContext, offset?: Vector): void {
     const paint = context.paint;
@@ -607,35 +606,37 @@ export class ColoredRender extends SingleChildRenderView {
   }
 }
 
-export interface SizedBoxOption {
-  width: number;
-  height: number;
+export interface ConstrainedBoxRenderArguments {
+  additionalConstraints: BoxConstraints;
 }
 
 //尺寸约束 不负责渲染
 export class ConstrainedBoxRender extends SingleChildRenderView {
   public _width: number;
   public _height: number;
-  private additionalConstraints: BoxConstraints;
+  private _additionalConstraints: BoxConstraints;
   constructor(
-    option: Partial<SizedBoxOption & SingleChildRenderViewArguments>
+    option: Partial<
+      ConstrainedBoxRenderArguments & SingleChildRenderViewArguments
+    >
   ) {
     super(option?.child);
-    const { width, height } = option;
-    this.width = width;
-    this.height = height;
-    this.additionalConstraints = new BoxConstraints({
-      maxWidth: width,
-      maxHeight: height,
-      minWidth: width,
-      minHeight: height,
-    });
+    this.additionalConstraints =
+      option?.additionalConstraints || BoxConstraints.zero;
   }
   //宽高不能各自都拥有标记，由于单次标记限制会导致某一方失效
-  public setSize(width: number = this.width, height: number = this.height) {
-    this.width = width;
-    this.height = height;
-    this.performUpdateAdditional(width, height);
+  // public setSize(width: number = this.width, height: number = this.height) {
+  //   this.width = width;
+  //   this.height = height;
+  //   this.performUpdateAdditional(width, height);
+  // }
+  get additionalConstraints(): BoxConstraints {
+    return this._additionalConstraints;
+  }
+  set additionalConstraints(constraints: BoxConstraints) {
+    if (this._additionalConstraints === constraints) return;
+    this._additionalConstraints = constraints;
+    this.markNeedsLayout();
   }
   computeDryLayout(constrains: BoxConstraints): Size {
     if (this.child) {
@@ -807,6 +808,11 @@ export class ClipRectRenderView extends ConstrainedBoxRender {
       }
     );
   }
+}
+
+export interface SizedBoxOption{
+  width:number,
+  height:number
 }
 
 export class ClipRRectRenderView extends ClipRectRenderView {
@@ -1555,10 +1561,14 @@ export class ParagraphView extends SingleChildRenderView {
     this.text = text;
   }
   set text(text: TextSpan) {
+    if (this._text === text) return;
+    if (this._text?.text === text?.text) return;
+
     this._text = text;
     this.markNeedsLayout();
     this.markNeedsPaint();
   }
+
   get text(): TextSpan {
     return this._text;
   }
@@ -1617,6 +1627,7 @@ export class ParagraphView extends SingleChildRenderView {
     } else {
       this.textPainter.paint(context.paint, offset, true);
     }
+    super.debugRender(context, offset);
   }
 }
 
