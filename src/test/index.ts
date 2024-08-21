@@ -57,7 +57,13 @@ import { BoxDecoration } from "@/lib/painting/decoration";
 import BorderRadius from "@/lib/painting/radius";
 import { Border, BorderSide } from "@/lib/painting/borders";
 import BoxShadow from "@/lib/painting/shadow";
-import { FontWeight, TextAlign, TextDecoration, TextDecorationStyle, TextStyle } from "@/lib/text-painter";
+import {
+  FontWeight,
+  TextAlign,
+  TextDecoration,
+  TextDecorationStyle,
+  TextStyle,
+} from "@/lib/text-painter";
 import { Container } from "@/lib/widgets/widgets";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
@@ -104,12 +110,13 @@ class ScaffoldState extends State<Scaffold> {
   }
   build(context: BuildContext): Widget {
     return new SizedBox({
-      width: canvas.width,
+      width: 600, // canvas.width,
       height: canvas.height,
       child: new ColoredBox({
         color: "white",
         child: new Flex({
           direction: Axis.vertical,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             new Text("123", {
               style: new TextStyle({
@@ -133,53 +140,41 @@ class ScaffoldState extends State<Scaffold> {
                 }),
               }
             ),
-            Transform.scale({
-              alignment: Alignment.center,
-              scale: this.time,
-              child: new GestureDetector({
-                onTap: () => {
-                  this.setState(() => {
-                    this.time += 0.1;
-                  });
-                },
-                child: new Padding({
-                  child: new Container({
-                    decoration: new BoxDecoration({
-                      backgroundColor: "#ccc",
-                      border: Border.all({
-                        color: "#58b6f0",
-                      }),
-                      borderRadius: BorderRadius.all(20),
+            new GestureDetector({
+              onTap: () => {
+                this.setState(() => {
+                  this.time += 0.1;
+                });
+              },
+              child: new Padding({
+                child: new Container({
+                  decoration: new BoxDecoration({
+                    backgroundColor: "#ccc",
+                    border: Border.all({
+                      color: "#58b6f0",
                     }),
-                    child: new Padding({
-                      padding: {
-                        top: 20,
-                        left: 20,
-                        right: 20,
-                        bottom: 20,
-                      },
-                      child: new Text(
-                        `Python 的 for 语句与 C 或 Pascal 中的不同。Python 的 for 语句不迭代算术递增数值（如 Pascal），或是给予用户定义迭代步骤和结束条件的能力（如 C），而是在列表或字符串等任意序列的元素上迭代，按它们在序列中出现的顺序。 例如（这不是有意要暗指什么）：`,
-                        {
-                          style: new TextStyle({
-                            fontSize: 20,
-                            // color:'orange',
-                            textAlign: TextAlign.justify,
-                            decorationStyle:TextDecorationStyle.solid,
-                            decorationColor:"orange",
-                            decoration:TextDecoration.underline,
-                          }),
-                        }
-                      ),
-                    }),
+                    borderRadius: BorderRadius.all(20),
                   }),
-                  padding: {
-                    top: 20,
-                    left: 20,
-                    right: 20,
-                    bottom: 20,
-                  },
+                  child: new Text(
+                    `Python 的 for 语句与 C 或 Pascal 中的不同。Python 的 for 语句不迭代算术递增数值（如 Pascal），或是给予用户定义迭代步骤和结束条件的能力（如 C），而是在列表或字符串等任意序列的元素上迭代，按它们在序列中出现的顺序。 例如（这不是有意要暗指什么）：`,
+                    {
+                      style: new TextStyle({
+                        fontSize: 20,
+                        // color:'orange',
+                        textAlign: TextAlign.justify,
+                        decorationStyle: TextDecorationStyle.solid,
+                        decorationColor: "orange",
+                        decoration: TextDecoration.underline,
+                      }),
+                    }
+                  ),
                 }),
+                padding: {
+                  top: 20,
+                  left: 20,
+                  right: 20,
+                  bottom: 20,
+                },
               }),
             }),
             new Text(
@@ -192,112 +187,68 @@ class ScaffoldState extends State<Scaffold> {
                 }),
               }
             ),
-            // new Container({
-            //   width: 10,
-            //   height: 10,
-            //   color: "white",
-            //   padding:{
-            //     top:10,
-            //     left:10,
-            //     right:10,
-            //     bottom:10,
-            //   },
-            //   child: new Container({
-            //     width: 100,
-            //     height: 100,
-            //     decoration:new BoxDecoration(
-            //       {
-            //         backgroundColor:"orange",
-            //         borderRadius:BorderRadius.all(10),
-            //         border:Border.all({
-            //           color:"white",
-            //           width:1,
-            //         }),
-
-            //       }
-            //     )
-            //   }),
-            // }),
+            new Button(),
           ],
         }),
       }),
     });
   }
-  //   return new SizedBox({
-  //     width: canvas.width,
-  //     height: canvas.height,
-  //     child: new Flex({
-  //       direction: Axis.vertical,
-  //       mainAxisAlignment: MainAxisAlignment.start,
-  //       children: [
-  //         new DecoratedBox({
-  //           decoration: new BoxDecoration({
-  //             backgroundColor: "#2196f3",
-  //             shadows: [
-  //               new BoxShadow({
-  //                 shadowBlur: 3,
-  //                 shadowColor: "#ccc",
-  //                 shadowOffsetX: 0,
-  //                 shadowOffsetY: 3,
-  //               }),
-  //             ],
-  //           }),
-  //           child: new Padding({
-  //             padding: {
-  //               top: 15,
-  //               left: 15,
-  //               right: 15,
-  //               bottom: 15,
-  //             },
-  //             child: new Flex({
-  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //               crossAxisAlignment: CrossAxisAlignment.center,
-  //               children: [
-  //                 new Text({
-  //                   text: "Flutter 圆角描边示例",
-  //                   style: new TextStyle({
-  //                     color: "white",
-  //                     fontWeight: FontWeight.bold,
-  //                   }),
-  //                 }),
-  //                 new SizedBox({}),
-  //               ],
-  //             }),
-  //           }),
-  //         }),
-  //         new Expanded({
-  //           flex: 2,
-  //           child: new ColoredBox({
-  //             color: "white",
-  //             child:new SizedBox({
-  //               // width:100,
-  //               child:new Flex({
-  //                 direction:Axis.vertical,
-  //                 crossAxisAlignment:CrossAxisAlignment.stretch,
-  //                 children:[
-  //                   new ColoredBox({
-  //                     color:"orange",
-  //                     child:new SizedBox({
-  //                       width:10,
-  //                       height:10,
-  //                     })
-  //                   }),
-  //                   new ColoredBox({
-  //                     color:"blue",
-  //                     child:new SizedBox({
-  //                       width:20,
-  //                       height:20,
-  //                     })
-  //                   }),
-  //                 ]
-  //               })
-  //             })
-  //           })
-  //         }),
-  //       ],
-  //     }),
-  //   });
-  // }
+}
+
+class Button extends StatefulWidget {
+  createState(): State {
+    return new _ButtonState();
+  }
+}
+
+class _ButtonState extends State<Button> {
+  private time: number = 0;
+  public initState(): void {
+    super.initState();
+    //  this.animate();
+    // setInterval(()=>{
+    //   this.setState(()=>{
+    //     this.time+=1;
+    //   });
+    // },1000);
+  }
+  private animate() {
+    this.setState(() => {
+      this.time += 1;
+    });
+    requestAnimationFrame(() => {
+      this.animate();
+    });
+  }
+  build(context: BuildContext): Widget {
+    return new GestureDetector({
+      onTap: () => {
+        this.setState(() => {
+          this.time += 1;
+          this.animate();
+        });
+      },
+      child: new Container({
+        decoration: new BoxDecoration({
+          backgroundColor: "#2196f3",
+          borderRadius: BorderRadius.all(10),
+        }),
+        child: new Padding({
+          padding: {
+            top: 10,
+            bottom: 10,
+            left: abs(sin((Math.PI / 180) * this.time) * 100),
+            right: abs(sin((Math.PI / 180) * this.time) * 100),
+          },
+          child: new Text("Button" + this.time, {
+            style: new TextStyle({
+              color: "white",
+            }),
+          }),
+        }),
+      }),
+    });
+  }
 }
 
 const app = new Scaffold();

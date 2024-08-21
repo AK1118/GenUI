@@ -38,6 +38,7 @@ import {
   ParagraphView,
   ParentDataRenderView,
   PositionedArguments,
+  RectTLRB,
   RenderPointerListener,
   RenderPointerListenerArguments,
   RenderTransformArguments,
@@ -155,20 +156,20 @@ export class ConstrainedBox extends SingleChildRenderObjectWidget {
 }
 
 export class Padding extends SingleChildRenderObjectWidget {
-  private option: Partial<PaddingOption>;
+  private padding:Partial<RectTLRB>;
   constructor(
     option: Partial<PaddingOption & SingleChildRenderObjectWidgetArguments>
   ) {
     super(option.child, option.key);
-    this.option = option;
+    this.padding = option?.padding||{};
   }
   createRenderObject(): RenderView {
     return new PaddingRenderView({
-      padding: this.option.padding,
+      padding: this.padding,
     });
   }
-  updateRenderObject(context: BuildContext, renderView: RenderView): void {
-    (renderView as PaddingRenderView).padding = this.option.padding;
+  updateRenderObject(context: BuildContext, renderView: PaddingRenderView): void {
+    renderView.padding = this.padding;
   }
 }
 

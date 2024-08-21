@@ -309,7 +309,6 @@ export abstract class RenderView extends AbstractNode implements HitTestTarget {
     }
   }
   public markNeedsPaint() {
-    //console.log("被调用标记渲染", this);
     if (!this.owner) return;
     if (this.needsRePaint) return;
     const owner: PipelineOwner = this.owner as PipelineOwner;
@@ -317,18 +316,23 @@ export abstract class RenderView extends AbstractNode implements HitTestTarget {
     if (this.isRepaintBoundary) {
       owner.pushNeedingPaint(this);
       owner.requestVisualUpdate();
-      //console.log("边界", this);
     } else if (this.parent instanceof RenderView) {
-      //console.log("标记父", this);
       this.parent?.markNeedsPaint();
     }
+    /**
+     * 通知Child的重绘，@needsRePaint 在此之前已经被赋值true 
+     * child 在 @markNeedsPaint 时会调用父 @markNeedsPaint ，但是会判断 @needsRePaint 达到阻止循环调用，
+     * 持续向下通知
+     */
+    this.visitChildren((child)=>{
+      child.markNeedsPaint();
+    })
   }
   public markNeedsLayout() {
     if (!this.owner) return;
     if (this.needsReLayout) return;
     const owner: PipelineOwner = this.owner as PipelineOwner;
     this.needsReLayout = true;
-    // owner.pushNeedingLayout(this);
     if (this.isRepaintBoundary) {
       owner.pushNeedingLayout(this);
       owner?.requestVisualUpdate();
@@ -340,7 +344,6 @@ export abstract class RenderView extends AbstractNode implements HitTestTarget {
   }
   public layoutWithoutResize() {
     this.performResize();
-    // this.performResize();
     this.needsReLayout = false;
     this.markNeedsPaint();
   }
@@ -624,12 +627,6 @@ export class ConstrainedBoxRender extends SingleChildRenderView {
     this.additionalConstraints =
       option?.additionalConstraints || BoxConstraints.zero;
   }
-  //宽高不能各自都拥有标记，由于单次标记限制会导致某一方失效
-  // public setSize(width: number = this.width, height: number = this.height) {
-  //   this.width = width;
-  //   this.height = height;
-  //   this.performUpdateAdditional(width, height);
-  // }
   get additionalConstraints(): BoxConstraints {
     return this._additionalConstraints;
   }
@@ -683,6 +680,28 @@ export class ConstrainedBoxRender extends SingleChildRenderView {
   }
 }
 
+// export class PaddingRenderView extends SingleChildRenderView{
+//   private _padding: Partial<RectTLRB> = {
+//         left: 0,
+//         right: 0,
+//         top: 0,
+//         bottom: 0,
+//       };
+//       get padding() {
+//         return this._padding;
+//       }
+//       set padding(padding) {
+//         this._padding = padding;
+//         this.markNeedsLayout();
+//       }
+//       constructor(
+//         option?: Partial<PaddingOption & SingleChildRenderViewArguments>
+//       ) {
+//         super(option?.child);
+//         this.padding = option?.padding;
+//       }
+// }
+
 export class PaddingRenderView extends SingleChildRenderView {
   private _padding: Partial<RectTLRB> = {
     left: 0,
@@ -696,7 +715,6 @@ export class PaddingRenderView extends SingleChildRenderView {
   set padding(padding) {
     this._padding = padding;
     this.markNeedsLayout();
-    this.markNeedsPaint();
   }
   constructor(
     option?: Partial<PaddingOption & SingleChildRenderViewArguments>
@@ -732,6 +750,12 @@ export class PaddingRenderView extends SingleChildRenderView {
         vertical + this.child.size.height
       )
     );
+  }
+  computeDryLayout(constrains: BoxConstraints): Size {
+      return this.size;
+  }
+  render(context: PaintingContext, offset?: Vector): void {
+      super.render(context,offset);
   }
 }
 export interface AlignArguments {
