@@ -68,6 +68,7 @@ import {
 import { Container } from "@/lib/widgets/widgets";
 import { ImageSource } from "@/lib/painting/image";
 import { BoxFit } from "@/lib/painting/box-fit";
+import { ChangeNotifier } from "@/lib/core/change-notifier";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
@@ -92,6 +93,19 @@ class Scaffold extends StatefulWidget {
   }
 }
 
+class MyListener extends ChangeNotifier{
+  public counter:number=0;
+  trigger(){
+    this.notifyListeners();
+  }
+  add(){
+    this.counter+=1;
+    this.notifyListeners();
+  }
+}
+
+const notifier=new MyListener();
+
 class ScaffoldState extends State<Scaffold> {
   private time: number = 1;
   public initState(): void {
@@ -102,6 +116,11 @@ class ScaffoldState extends State<Scaffold> {
     //     this.time+=1;
     //   });
     // },1000);
+    notifier.addListener(()=>{
+     this.setState(()=>{
+      this.time=notifier.counter;
+     });
+    });
   }
   private animate() {
     this.setState(() => {
@@ -110,6 +129,7 @@ class ScaffoldState extends State<Scaffold> {
     requestAnimationFrame(() => {
       this.animate();
     });
+
   }
   build(context: BuildContext): Widget {
     return new SizedBox({
@@ -121,7 +141,7 @@ class ScaffoldState extends State<Scaffold> {
           direction: Axis.vertical,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            new Text("123", {
+            new Text("123"+this.time, {
               style: new TextStyle({
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
@@ -246,7 +266,8 @@ class _ButtonState extends State<Button> {
       onTap: () => {
         this.setState(() => {
           this.time += 1;
-          this.animate();
+          // this.animate();
+          notifier.add();
         });
       },
       child: new Container({
@@ -274,3 +295,20 @@ class _ButtonState extends State<Button> {
 
 const app = new Scaffold();
 runApp(app);
+
+
+
+
+// notifier.addListener(()=>{
+//   console.log("change1");
+// });
+
+
+// notifier.addListener(()=>{
+//   console.log("change2");
+//   notifier.trigger();
+// });
+
+// notifier.addListener(()=>{
+//   console.log("change3");
+// });

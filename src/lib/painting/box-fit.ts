@@ -68,6 +68,5 @@ export const applyBoxFit = (
         fittedSize=outputSize;
     case BoxFit.scaleDown:
   }
-  console.log(fit, inputSize, outputSize, fittedSize);
   return fittedSize;
 };
