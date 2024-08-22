@@ -773,7 +773,7 @@ export class Paragraph {
     const isFirstChar = this.textPoints.length == 0;
     return TextBox.fromLTRBD(
       textMetrics.width + letterSpacing, //(isFirstChar ? 0 : letterSpacing),
-      textMetrics.hangingBaseline,
+      textMetrics.hangingBaseline??textMetrics.width,
       textMetrics.actualBoundingBoxLeft,
       textMetrics.actualBoundingBoxRight,
       textMetrics.actualBoundingBoxDescent,

@@ -215,39 +215,8 @@ class Painter implements Painter {
   }
   drawImage(
     image:
-      | HTMLOrSVGImageElement
-      | HTMLVideoElement
-      | HTMLCanvasElement
-      | ImageBitmap
-      | OffscreenCanvas,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    dx?: number,
-    dy?: number,
-    dw?: number,
-    dh?: number
-  ) {
-    if (dx && dy) {
-      this.paint.drawImage(
-        image,
-        -width / 2,
-        -height / 2,
-        width,
-        height,
-        dx,
-        dy,
-        dw,
-        dh
-      );
-    } else {
-      this.paint.drawImage(image, -width / 2, -height / 2, width, height);
-    }
-  }
-  deepDrawImage(
-    image:
-      | HTMLOrSVGImageElement
+      | HTMLImageElement
+      | SVGImageElement
       | HTMLVideoElement
       | HTMLCanvasElement
       | ImageBitmap

@@ -76,7 +76,7 @@ export class Container extends StatelessWidget implements ContainerArguments {
       });
     }
 
-    if (!this.color && this.decoration) {
+    if (this.decoration) {
       result = new DecoratedBox({
         decoration: this.decoration,
         child: result,

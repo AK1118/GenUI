@@ -22,6 +22,7 @@ import {
   Expanded,
   Flex,
   GestureDetector,
+  Image,
   Listener,
   Padding,
   Positioned,
@@ -65,6 +66,8 @@ import {
   TextStyle,
 } from "@/lib/text-painter";
 import { Container } from "@/lib/widgets/widgets";
+import { ImageSource } from "@/lib/painting/image";
+import { BoxFit } from "@/lib/painting/box-fit";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
@@ -110,7 +113,7 @@ class ScaffoldState extends State<Scaffold> {
   }
   build(context: BuildContext): Widget {
     return new SizedBox({
-      width: 600, // canvas.width,
+      width: 300, // canvas.width,
       height: canvas.height,
       child: new ColoredBox({
         color: "white",
@@ -130,16 +133,34 @@ class ScaffoldState extends State<Scaffold> {
                 fontWeight: FontWeight.bold,
               }),
             }),
-            new Text(
-              `Python 的 for 语句与 C 或 Pascal 中的不同。Python 的 for 语句不迭代算术递增数值（如 Pascal），或是给予用户定义迭代步骤和结束条件的能力（如 C），而是在列表或字符串等任意序列的元素上迭代，按它们在序列中出现的顺序。 例如（这不是有意要暗指什么）：`,
-              {
-                style: new TextStyle({
-                  fontSize: 14,
-                  // color:'orange',
-                  textAlign: TextAlign.justify,
+            new Container({
+              width: 100,
+              height: 100,
+              child: new DecoratedBox({
+                decoration: new BoxDecoration({
+                  backgroundColor:'orange'
                 }),
-              }
-            ),
+                child: new Image({
+                  imageSource: new ImageSource({
+                    image: img2,
+                    width: img2.width,
+                    height: img2.height,
+                  }),
+                  fit: BoxFit.fitHeight,
+                  align: Alignment.center,
+                }),
+              }),
+            }),
+            // new Text(
+            //   `Python 的 for 语句与 C 或 Pascal 中的不同。Python 的 for 语句不迭代算术递增数值（如 Pascal），或是给予用户定义迭代步骤和结束条件的能力（如 C），而是在列表或字符串等任意序列的元素上迭代，按它们在序列中出现的顺序。 例如（这不是有意要暗指什么）：`,
+            //   {
+            //     style: new TextStyle({
+            //       fontSize: 10,
+            //       // color:'orange',
+            //       textAlign: TextAlign.justify,
+            //     }),
+            //   }
+            // ),
             new GestureDetector({
               onTap: () => {
                 this.setState(() => {
@@ -159,7 +180,7 @@ class ScaffoldState extends State<Scaffold> {
                     `Python 的 for 语句与 C 或 Pascal 中的不同。Python 的 for 语句不迭代算术递增数值（如 Pascal），或是给予用户定义迭代步骤和结束条件的能力（如 C），而是在列表或字符串等任意序列的元素上迭代，按它们在序列中出现的顺序。 例如（这不是有意要暗指什么）：`,
                     {
                       style: new TextStyle({
-                        fontSize: 20,
+                        fontSize: 10,
                         // color:'orange',
                         textAlign: TextAlign.justify,
                         decorationStyle: TextDecorationStyle.solid,
@@ -177,16 +198,16 @@ class ScaffoldState extends State<Scaffold> {
                 },
               }),
             }),
-            new Text(
-              `The Non-Uniform Border package provides a custom border class for Flutter that allows different widths for each side of a border with a single color. This can be useful for creating custom UI elements that require non-uniform border styling.`,
-              {
-                style: new TextStyle({
-                  fontSize: 10,
-                  // color:'orange',
-                  textAlign: TextAlign.justify,
-                }),
-              }
-            ),
+            // new Text(
+            //   `The Non-Uniform Border package provides a custom border class for Flutter that allows different widths for each side of a border with a single color. This can be useful for creating custom UI elements that require non-uniform border styling.`,
+            //   {
+            //     style: new TextStyle({
+            //       fontSize: 10,
+            //       // color:'orange',
+            //       textAlign: TextAlign.justify,
+            //     }),
+            //   }
+            // ),
             new Button(),
           ],
         }),

@@ -28,6 +28,7 @@ import {
   FlexOption,
   FlexParentData,
   FlexRenderView,
+  ImageRenderView,
   MainAxisAlignment,
   onPointerCancelCallback,
   onPointerDownCallback,
@@ -85,6 +86,9 @@ import PanDragGestureRecognizer, {
 import { BoxDecoration } from "../painting/decoration";
 import { TextSpan, TextStyle } from "../text-painter";
 import { BoxConstraints } from "../rendering/constraints";
+import { ImageDecorationArguments, ImageSource } from "../painting/image";
+import { Key } from "../basic/key";
+import { BoxFit } from "../painting/box-fit";
 export interface ColoredBoxOption {
   color: string;
 }
@@ -156,19 +160,22 @@ export class ConstrainedBox extends SingleChildRenderObjectWidget {
 }
 
 export class Padding extends SingleChildRenderObjectWidget {
-  private padding:Partial<RectTLRB>;
+  private padding: Partial<RectTLRB>;
   constructor(
     option: Partial<PaddingOption & SingleChildRenderObjectWidgetArguments>
   ) {
     super(option.child, option.key);
-    this.padding = option?.padding||{};
+    this.padding = option?.padding || {};
   }
   createRenderObject(): RenderView {
     return new PaddingRenderView({
       padding: this.padding,
     });
   }
-  updateRenderObject(context: BuildContext, renderView: PaddingRenderView): void {
+  updateRenderObject(
+    context: BuildContext,
+    renderView: PaddingRenderView
+  ): void {
     renderView.padding = this.padding;
   }
 }
@@ -714,5 +721,34 @@ export class Text extends SingleChildRenderObjectWidget {
       text: this.text,
       textStyle: this.style,
     });
+  }
+}
+
+export class Image
+  extends SingleChildRenderObjectWidget
+  implements ImageDecorationArguments
+{
+  imageSource: ImageSource;
+  fit: BoxFit;
+  align: Alignment;
+  constructor(option: Partial<ImageDecorationArguments & { key: Key }>) {
+    super(null, option?.key);
+    this.imageSource = option?.imageSource;
+    this.fit = option?.fit ?? BoxFit.none;
+    this.align = option?.align ?? Alignment.center;
+  }
+
+  createRenderObject(): RenderView {
+    return new ImageRenderView(this.imageDecorationArgs);
+  }
+  get imageDecorationArgs(): Partial<ImageDecorationArguments> {
+    return {
+      imageSource: this.imageSource,
+      fit: this.fit,
+      align: this.align,
+    };
+  }
+  updateRenderObject(context: BuildContext, renderView: ImageRenderView): void {
+    renderView.imageSource = this.imageDecorationArgs;
   }
 }

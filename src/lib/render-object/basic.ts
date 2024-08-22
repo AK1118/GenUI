@@ -21,6 +21,12 @@ import {
 import { Matrix, Matrix4 } from "../math/matrix";
 import MatrixUtils from "../utils/matrixUtils";
 import { BoxDecoration } from "../painting/decoration";
+import {
+  ImageDecoration,
+  ImageDecorationArguments,
+  ImageDecorationPainter,
+  ImageSource,
+} from "../painting/image";
 
 export enum Clip {
   none = "none",
@@ -320,13 +326,13 @@ export abstract class RenderView extends AbstractNode implements HitTestTarget {
       this.parent?.markNeedsPaint();
     }
     /**
-     * 通知Child的重绘，@needsRePaint 在此之前已经被赋值true 
+     * 通知Child的重绘，@needsRePaint 在此之前已经被赋值true
      * child 在 @markNeedsPaint 时会调用父 @markNeedsPaint ，但是会判断 @needsRePaint 达到阻止循环调用，
      * 持续向下通知
      */
-    this.visitChildren((child)=>{
+    this.visitChildren((child) => {
       child.markNeedsPaint();
-    })
+    });
   }
   public markNeedsLayout() {
     if (!this.owner) return;
@@ -368,9 +374,10 @@ export abstract class RenderView extends AbstractNode implements HitTestTarget {
   paintWidthContext(context: PaintingContext, offset?: Vector): void {
     if (!this.needsRePaint) return;
     this.needsRePaint = false;
-    this.render(context, offset);
     if (RendererBinding.instance.debug) {
       this.debugRender(context, offset);
+    }else{
+      this.render(context, offset);
     }
   }
   abstract performResize(): void;
@@ -607,6 +614,9 @@ export class ColoredRender extends SingleChildRenderView {
     paint.restore();
     super.render(context, offset);
   }
+  debugRender(context: PaintingContext, offset?: Vector): void {
+      super.debugRender(context, offset);
+  }
 }
 
 export interface ConstrainedBoxRenderArguments {
@@ -638,7 +648,7 @@ export class ConstrainedBoxRender extends SingleChildRenderView {
   computeDryLayout(constrains: BoxConstraints): Size {
     if (this.child) {
       this.child.layout(this.additionalConstraints.enforce(constrains), true);
-      return  this.child.size;
+      return this.child.size;
     } else {
       return this.additionalConstraints
         .enforce(this.constraints)
@@ -752,10 +762,10 @@ export class PaddingRenderView extends SingleChildRenderView {
     );
   }
   computeDryLayout(constrains: BoxConstraints): Size {
-      return this.size;
+    return this.size;
   }
   render(context: PaintingContext, offset?: Vector): void {
-      super.render(context,offset);
+    super.render(context, offset);
   }
 }
 export interface AlignArguments {
@@ -832,9 +842,9 @@ export class ClipRectRenderView extends ConstrainedBoxRender {
   }
 }
 
-export interface SizedBoxOption{
-  width:number,
-  height:number
+export interface SizedBoxOption {
+  width: number;
+  height: number;
 }
 
 export class ClipRRectRenderView extends ClipRectRenderView {
@@ -875,7 +885,7 @@ export class ClipRRectRenderView extends ClipRectRenderView {
   }
 }
 
-abstract class ClipContext {
+export abstract class ClipContext {
   private _paint: Painter;
   constructor(paint: Painter) {
     this._paint = paint;
@@ -2220,5 +2230,39 @@ export class BoxDecorationRenderView extends SingleChildRenderView {
       boxPainter.debugPaint(context.paint, offset, this.size);
     }
     super.debugRender(context, offset);
+  }
+}
+
+export class ImageRenderView extends SingleChildRenderView {
+  private decoration: ImageDecoration;
+  private decorationPainter: ImageDecorationPainter;
+  constructor(option: Partial<ImageDecorationArguments>) {
+    super();
+    this.decoration = new ImageDecoration(option);
+  }
+
+  set imageSource(value: Partial<ImageDecorationArguments>) {
+    this.decoration = new ImageDecoration(value);
+    this.decorationPainter = this.decoration.createBoxPainter(
+      this.markNeedsPaint.bind(this)
+    );
+    this.markNeedsPaint();
+  }
+  performLayout(): void {
+    super.performLayout();
+    const imageSize = new Size(
+      this.decoration?.imageSource.width,
+      this.decoration?.imageSource.height
+    );
+    this.size = this.constraints.constrain(imageSize);
+    this.decorationPainter.layout(this.size);
+  }
+  render(context: PaintingContext, offset?: Vector): void {
+    this.decorationPainter.paint(context.paint, offset, this.size);
+    super.render(context,offset);
+  }
+  debugRender(context: PaintingContext, offset?: Vector): void {
+    this.decorationPainter.debugPaint(context.paint, offset, this.size);
+    super.debugRender(context,offset);
   }
 }
