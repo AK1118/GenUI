@@ -1,8 +1,12 @@
 import { Offset, Size } from "../basic/rect";
 import { ChangeNotifier } from "../core/change-notifier";
+import { abs } from "../math/math";
+import Vector from "../math/vector";
 import Constraints, { BoxConstraints } from "../rendering/constraints";
 import {
   Axis,
+  PaintingContext,
+  SliverPhysicalParentData,
   // MultiChildRenderView,
 } from "./basic";
 import { ParentData, RenderView } from "./render-object";
@@ -33,6 +37,21 @@ export const axisDirectionToAxis = (axisDirection: AxisDirection): Axis => {
     case AxisDirection.left:
     case AxisDirection.right:
       return Axis.horizontal;
+  }
+};
+
+export const flipAxisDirection = (
+  axisDirection: AxisDirection
+): AxisDirection => {
+  switch (axisDirection) {
+    case AxisDirection.up:
+      return AxisDirection.down;
+    case AxisDirection.down:
+      return AxisDirection.up;
+    case AxisDirection.left:
+      return AxisDirection.right;
+    case AxisDirection.right:
+      return AxisDirection.left;
   }
 };
 
@@ -146,7 +165,7 @@ export class SliverConstraints
   asBoxConstraints(
     minExtent: number = 0,
     maxExtent: number = Infinity,
-    crossAxisExtent: number = 0
+    crossAxisExtent: number = null
   ): BoxConstraints {
     if (this.axis === Axis.vertical) {
       return new BoxConstraints({
@@ -234,7 +253,6 @@ export interface SliverGeometryArguments {
   cacheExtent: number;
 }
 
-
 export class SliverGeometry implements SliverGeometryArguments {
   scrollExtent: number = 0;
   paintExtent: number = 0;
@@ -243,7 +261,7 @@ export class SliverGeometry implements SliverGeometryArguments {
   maxPaintExtent: number = 0;
   maxScrollObstructionExtent: number = 0;
   hitTestExtent: number;
-  visible: boolean;
+  visible: boolean=true;
   hasVisualOverflow: boolean = false;
   scrollOffsetCorrection: number;
   cacheExtent: number;
@@ -290,20 +308,133 @@ export abstract class RenderSliver extends RenderView {
   /**
    * 在 Sliver 中表示当前子节点的索引。这个字段在 SliverList 和 SliverGrid 等实现中尤为重要，用于跟踪当前布局的子节点。
    */
-  index:number;
+  index: number;
   /**
    * 这个字段定义了在视口之外应保留多少内容以便快速滚动。RenderSliver 会使用这个字段来确定哪些子元素应该保留在内存中，哪些可以丢弃。
    */
-  cacheExtent:number;
+  cacheExtent: number;
   get geometry(): SliverGeometry {
     return this._geometry;
   }
   set geometry(value: SliverGeometry) {
     this._geometry = value;
   }
-  performLayout(): void {
-    this.performSliverLayout();
-    this.child.layout(this.constraints.asBoxConstraints());
+  attach(owner: Object): void {
+    super.attach(owner);
+    if (!owner) return;
+    this.needsReLayout = false;
+    this.markNeedsLayout();
   }
-  private performSliverLayout() {}
+  render(context: PaintingContext, offset?: Vector): void {
+    context.paintChild(this.child, offset);
+  }
+  debugRender(context: PaintingContext, offset?: Vector): void {
+    context.paintChildDebug(this.child, offset);
+  }
+  layout(constraints: Constraints, parentUseSize?: boolean): void {
+    if (this.needsReLayout || parentUseSize) {
+      this.constraints = constraints as SliverConstraints;
+      this.performLayout();
+    }
+    this.needsReLayout = false;
+    this.markNeedsPaint();
+  }
+  performLayout(): void {}
+  performResize(): void {
+    this.performLayout();
+  }
+  computeDryLayout(constrains: BoxConstraints): Size {
+    return this.size;
+  }
+  getDryLayout(constrains: BoxConstraints): Size {
+    return this.size;
+  }
+}
+
+export abstract class RenderSliverToSingleBoxAdapter extends RenderSliver {
+  protected setupParentData(child: RenderView): void {
+    if (!(child.parentData instanceof SliverPhysicalParentData)) {
+      child.parentData = new SliverPhysicalParentData();
+    }
+  }
+  protected setChildParentData(
+    child: RenderView,
+    constraints: SliverConstraints,
+    geometry: SliverGeometry
+  ) {
+    const parentData = child.parentData as SliverPhysicalParentData;
+    const correctedAxisDirection = (): AxisDirection => {
+      if (constraints.growthDirection === GrowthDirection.forward) {
+        return constraints.axisDirection;
+      } else if (constraints.growthDirection === GrowthDirection.reverse) {
+        return flipAxisDirection(constraints.axisDirection);
+      }
+    };
+   
+    switch (correctedAxisDirection()) {
+      case AxisDirection.up:
+        parentData.paintOffset = new Offset(
+          0.0,
+          -(
+            geometry.scrollExtent -
+            (geometry.paintExtent + constraints.scrollOffset)
+          )
+        );
+        break;
+      case AxisDirection.right:
+        parentData.paintOffset = new Offset(-constraints.scrollOffset, 0.0);
+        break;
+      case AxisDirection.down:
+        parentData.paintOffset = new Offset(0.0, -constraints.scrollOffset);
+        break;
+      case AxisDirection.left:
+        parentData.paintOffset = new Offset(
+          -(
+            geometry.scrollExtent -
+            (geometry.paintExtent + constraints.scrollOffset)
+          ),
+          0.0
+        );
+    }
+  }
+  render(context: PaintingContext, offset?: Vector): void {
+      const child=this.child as RenderSliver;
+      if(child&&this.geometry?.visible){
+        const parentData: SliverPhysicalParentData =
+          child.parentData as SliverPhysicalParentData;
+        child.render(context,offset.add(parentData.paintOffset.toVector()));
+      }
+  }
+}
+
+export class RenderSliverBoxAdapter extends RenderSliverToSingleBoxAdapter {
+  performLayout(): void {
+    if (!this.child) {
+      this.geometry = SliverGeometry.zero();
+    }
+    this.child.layout(this.constraints.asBoxConstraints(), true);
+    
+    const constraints = this.constraints as SliverConstraints;
+    let childMainExtent: number = 0;
+    const size = this.child.size;
+    if (constraints.axis == Axis.vertical) {
+      childMainExtent = size.height;
+    } else if (constraints.axis == Axis.horizontal) {
+      childMainExtent = size.width;
+    }
+
+    const geometry = new SliverGeometry({
+      paintExtent: childMainExtent,
+      maxPaintExtent: childMainExtent,
+      layoutExtent: childMainExtent,
+      scrollExtent: 0,
+      hasVisualOverflow:
+        childMainExtent > constraints.remainingPaintExtent ||
+        constraints.scrollOffset < 0,
+        
+    });
+
+    this.geometry = geometry;
+    this.setChildParentData(this.child, constraints, geometry);
+  }
 }

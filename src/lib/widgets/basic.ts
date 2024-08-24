@@ -90,6 +90,7 @@ import { ImageDecorationArguments, ImageSource } from "../painting/image";
 import { Key } from "../basic/key";
 import { BoxFit } from "../painting/box-fit";
 import { RenderView } from "../render-object/render-object";
+import { RenderSliverBoxAdapter } from "../render-object/slivers";
 export interface ColoredBoxOption {
   color: string;
 }
@@ -754,11 +755,24 @@ export class Image
   }
 }
 
-export class ViewPort extends SingleChildRenderObjectWidget{
-  updateRenderObject(context: BuildContext, renderView: RenderView): void {
-
+export class ViewPort extends MultiChildRenderObjectWidget {
+  constructor(option: Partial<MultiChildRenderObjectWidgetArguments>) {
+    super(option?.children, option?.key);
   }
+
+  updateRenderObject(context: BuildContext, renderView: RenderView): void {}
   createRenderObject(): RenderView {
-      return new RenderViewPort();
+    return new RenderViewPort();
+  }
+}
+
+export class WidgetToSliverAdapter extends SingleChildRenderObjectWidget {
+  constructor(option: Partial<SingleChildRenderObjectWidgetArguments>) {
+    super(option?.child, option?.key);
+  }
+  updateRenderObject(context: BuildContext, renderView: RenderView): void {}
+
+  createRenderObject(): RenderView {
+    return new RenderSliverBoxAdapter();
   }
 }

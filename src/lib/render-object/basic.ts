@@ -34,7 +34,14 @@ import {
   ParentData,
   RenderView,
 } from "./render-object";
-import { AxisDirection, axisDirectionToAxis, RenderSliver } from "./slivers";
+import {
+  AxisDirection,
+  axisDirectionToAxis,
+  GrowthDirection,
+  RenderSliver,
+  SliverConstraints,
+} from "./slivers";
+import { ScrollPosition, ViewPortOffset } from "../rendering/viewport";
 
 export enum Clip {
   none = "none",
@@ -2072,41 +2079,40 @@ export class ImageRenderView extends SingleChildRenderView {
   }
 }
 
-export abstract class ViewPortOffset extends ChangeNotifier {
-  private _offset: Offset = Offset.zero;
-  get offset(): Offset {
-    return this._offset;
-  }
-  set offset(value: Offset) {
-    this._offset = value;
-    this.notifyListeners();
-  }
-  abstract applyViewportDimension(viewportDimension: number): boolean;
-  abstract applyContentDimension(
-    minDimension: number,
-    maxDimension: number
-  ): boolean;
-}
-
-export class SliverPhysicalParentData extends ParentData {
+export class SliverPhysicalParentData extends ContainerRenderViewParentData<RenderSliver> {
   paintOffset: Offset = Offset.zero;
 }
 
+export interface ViewPortArguments{
+  center:RenderSliver;
+  axisDirection:AxisDirection;
+  crossDirection:AxisDirection;
+}
+
 export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
-  private _offset: ViewPortOffset;
+  private _offset: ViewPortOffset = new ScrollPosition();
   private center: RenderSliver;
-  private _axisDirection: AxisDirection;
+  private _axisDirection: AxisDirection=AxisDirection.down;
+  private _crossDirection: AxisDirection=AxisDirection.right;
+  private anchor: number=0.5;
   private markNeedsLayoutBind: VoidFunction;
   constructor() {
     super();
     this.markNeedsLayoutBind = this.markNeedsLayout.bind(this);
-    this.firstChild;
+   
   }
   get axisDirection(): AxisDirection {
     return this._axisDirection;
   }
   get axis(): Axis {
     return axisDirectionToAxis(this.axisDirection);
+  }
+  get crossDirection(): AxisDirection {
+    return this._crossDirection;
+  }
+  set axisDirection(value: AxisDirection) {
+    this._axisDirection = value;
+    this.markNeedsLayout();
   }
   set offset(value: ViewPortOffset) {
     this.offset = value;
@@ -2125,11 +2131,13 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
     child.parentData = new SliverPhysicalParentData();
   }
   performLayout(): void {
+    if(!this.center){
+      this.center=this.firstChild;
+    }
     this.size = this.constraints.constrain(Size.zero);
 
     let mainAxisExtent: number = 0;
     let crossAxisExtent: number = 0;
-    
 
     if (this.axis === Axis.horizontal) {
       this.offset.applyViewportDimension(this.size.width);
@@ -2141,13 +2149,100 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
       crossAxisExtent = this.size.width;
     }
 
-    if(this.size.width === 0 && this.size.height === 0){
-      this.offset.applyContentDimension(mainAxisExtent, crossAxisExtent);
+    if ((this.size.width === 0 && this.size.height === 0) || !this.center) {
+      this.offset.applyContentDimension(0, 0);
     }
 
-    
+    const scrollOffset = this.anchor * mainAxisExtent;
 
-    console.log("布局Viewport", this.size);
+    const nextChild=(child: RenderSliver) => {
+      const parentData: SliverPhysicalParentData =
+        child.parentData as SliverPhysicalParentData;
+      return parentData?.nextSibling;
+    };
+
+    this.performLayoutSliverChild(
+      this.center,
+      scrollOffset,
+      0,
+      mainAxisExtent,
+      mainAxisExtent,
+      crossAxisExtent,
+      GrowthDirection.forward,
+      nextChild,
+      mainAxisExtent,
+      this.axisDirection,
+      0
+    );
+
   }
-  performLayoutChild(child: RenderView, constraints: BoxConstraints): void {}
+
+  private performLayoutSliverChild(
+    child: RenderSliver,
+    scrollOffset: number,
+    layoutOffset: number,
+    remainingPaintExtent: number,
+    mainAxisExtent: number,
+    crossAxisExtent: number,
+    growthDirection: GrowthDirection,
+    another: (child: RenderSliver) => NonNullable<RenderSliver>,
+    remainingCacheExtent: number,
+    axisDirection: AxisDirection,
+    cacheOrigin: number
+  ): number {
+    let current: RenderSliver = child;
+    let precedingScrollExtent: number = 0;
+    const initialLayoutOffset: number = layoutOffset;
+    
+    // this.performLayoutSliverChild(this.center,)
+
+    while (current) {
+      const sliverScrollOffset = scrollOffset <= 0.0 ? 0.0 : scrollOffset;
+      const correctedCacheOrigin = Math.max(cacheOrigin, -sliverScrollOffset);
+      const cacheExtentCorrection: number = cacheOrigin - correctedCacheOrigin;
+
+      const constraints = new SliverConstraints({
+        axisDirection: axisDirection,
+        growthDirection: growthDirection,
+        userScrollDirection: this.offset.userScrollDirection,
+        scrollOffset: scrollOffset,
+        precedingScrollExtent: precedingScrollExtent,
+        overlap: 0,
+        remainingPaintExtent: Math.max(
+          0.0,
+          remainingPaintExtent - layoutOffset + initialLayoutOffset
+        ),
+        crossAxisExtent: crossAxisExtent,
+        crossAxisDirection: this.crossDirection,
+        viewportMainAxisExtent: mainAxisExtent,
+        remainingCacheExtent: Math.max(
+          0.0,
+          remainingCacheExtent + cacheExtentCorrection
+        ),
+        cacheOrigin: correctedCacheOrigin,
+       
+      });
+    
+      current.layout(constraints);
+     
+      const childLayoutGeometry = current.geometry;
+     
+      precedingScrollExtent += childLayoutGeometry.scrollExtent;
+
+      current = another(child);
+    }
+
+    return 0;
+  }
+
+  render(context: PaintingContext, offset?: Vector): void {
+      this.visitChildren((child:RenderSliver)=>{
+        if(child?.geometry?.visible){
+          const parentData: SliverPhysicalParentData =
+          child.parentData as SliverPhysicalParentData;
+          child.render(context,offset);
+        }
+      })
+      super.render(context,offset);
+  }
 }
