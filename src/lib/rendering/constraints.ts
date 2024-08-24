@@ -1,11 +1,17 @@
+/*
+ * @Author: AK1118 
+ * @Date: 2024-08-23 17:22:27 
+ * @Last Modified by:   AK1118 
+ * @Last Modified time: 2024-08-23 17:22:27 
+ */
 import { Size } from "@/lib/basic/rect";
 import Vector from "../math/vector";
 
-abstract class Constraints {}
+export abstract class Constraints {}
 
 /// [RenderBox] 布局的不可变布局约束。
 ///
-/// 当且仅当满足以下所有条件时，[Size] 尊重 [BoxConstraints]
+/// 当且仅当满足以下所有条件时，[Size] 从 [BoxConstraints]
 /// 关系成立：
 ///
 /// * [minWidth] <= [Size.width] <= [maxWidth]

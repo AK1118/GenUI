@@ -3,11 +3,10 @@ import {
   ColoredRender,
   ConstrainedBoxRender,
   MultiChildRenderView,
-  ParentData,
   ParentDataRenderView,
-  RenderView,
   RootRenderView,
 } from "../render-object/basic";
+import { ParentData, RenderView } from "../render-object/render-object";
 import { PipelineOwner, RendererBinding } from "./binding";
 import { BuildContext, BuildOwner, Element } from "./elements";
 import { Key } from "./key";

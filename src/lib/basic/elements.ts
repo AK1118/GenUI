@@ -1,8 +1,9 @@
-import { PlaceholderRenderView, RenderView } from "@/lib/render-object/basic";
+import { PlaceholderRenderView } from "@/lib/render-object/basic";
 import { Size } from "./rect";
 import { RenderObjectElement, Widget } from "./framework";
 import { ElementBinding, SchedulerBinding } from "./binding";
 import { GlobalKey, Key } from "./key";
+import { RenderView } from "../render-object/render-object";
 
 export class InactiveElement {
   private _elements: Set<Element> = new Set();

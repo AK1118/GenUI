@@ -44,7 +44,7 @@ import {
   RenderPointerListenerArguments,
   RenderTransformArguments,
   RenderTransformBox,
-  RenderView,
+  RenderViewPort,
   RootRenderView,
   StackFit,
   StackOption,
@@ -89,6 +89,7 @@ import { BoxConstraints } from "../rendering/constraints";
 import { ImageDecorationArguments, ImageSource } from "../painting/image";
 import { Key } from "../basic/key";
 import { BoxFit } from "../painting/box-fit";
+import { RenderView } from "../render-object/render-object";
 export interface ColoredBoxOption {
   color: string;
 }
@@ -750,5 +751,14 @@ export class Image
   }
   updateRenderObject(context: BuildContext, renderView: ImageRenderView): void {
     renderView.imageSource = this.imageDecorationArgs;
+  }
+}
+
+export class ViewPort extends SingleChildRenderObjectWidget{
+  updateRenderObject(context: BuildContext, renderView: RenderView): void {
+
+  }
+  createRenderObject(): RenderView {
+      return new RenderViewPort();
   }
 }

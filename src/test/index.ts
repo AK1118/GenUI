@@ -9,7 +9,6 @@ import {
   MainAxisAlignment,
   MultiChildRenderView,
   PlaceholderRenderView,
-  RenderView,
   StackFit,
   WrapAlignment,
   WrapCrossAlignment,
@@ -30,6 +29,8 @@ import {
   Stack,
   Text,
   Transform,
+  ViewPort,
+  // ViewPort,
   Wrap,
 } from "@/lib/widgets/basic";
 import {
@@ -131,6 +132,13 @@ class ScaffoldState extends State<Scaffold> {
     });
 
   }
+  // build(context: BuildContext): Widget {
+  //     return new Container({
+  //       width:canvas.width,
+  //       height:canvas.height,
+  //       child:new ViewPort(),
+  //     });
+  // }
   build(context: BuildContext): Widget {
     return new SizedBox({
       width: 300, // canvas.width,
@@ -147,7 +155,7 @@ class ScaffoldState extends State<Scaffold> {
                 fontWeight: FontWeight.bold,
               }),
             }),
-            new Text("123", {
+            new Text("12312", {
               style: new TextStyle({
                 fontSize: 10,
                 fontWeight: FontWeight.bold,

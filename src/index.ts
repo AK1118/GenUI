@@ -24,7 +24,6 @@ import {
   MultiChildRenderView,
   PaintingContext,
   RenderBox,
-  RenderView,
   SingleChildRenderView,
   WrapAlignment,
   WrapCrossAlignment,
@@ -67,7 +66,6 @@ export {
   BuildContext,
   BuildOwner,
   //RenderView
-  RenderView,
   RenderBox,
   SingleChildRenderView,
   MultiChildRenderView,

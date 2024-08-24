@@ -1,7 +1,7 @@
 import Painter from "@/lib/painting/painter";
 import Alignment from "@/lib/painting/alignment";
-import { Size } from "@/lib/basic/rect";
-import { BoxConstraints } from "@/lib/rendering/constraints";
+import { Offset, Size } from "@/lib/basic/rect";
+import Constraints, { BoxConstraints } from "@/lib/rendering/constraints";
 import Vector from "@/lib/math/vector";
 import { TextOverflow, TextPainter, TextSpan } from "../text-painter";
 import { PipelineOwner, RendererBinding } from "../basic/binding";
@@ -27,6 +27,14 @@ import {
   ImageDecorationPainter,
   ImageSource,
 } from "../painting/image";
+import { ChangeNotifier } from "../core/change-notifier";
+import {
+  LayerHandler,
+  OffsetLayer,
+  ParentData,
+  RenderView,
+} from "./render-object";
+import { AxisDirection, axisDirectionToAxis, RenderSliver } from "./slivers";
 
 export enum Clip {
   none = "none",
@@ -167,20 +175,6 @@ export interface WrapOption {
   crossAxisAlignment: WrapCrossAlignment;
 }
 
-class Layer {}
-class OffsetLayer {
-  constructor(offset: Vector) {
-    this.offset = offset;
-  }
-  offset: Vector;
-}
-class LayerHandler<T extends Layer> {
-  layer: T;
-}
-
-// 存储父节点的某些数据
-export class ParentData {}
-
 export class BoxParentData extends ParentData {
   offset: Vector = Vector.zero;
 }
@@ -197,196 +191,6 @@ export class FlexParentData extends ContainerRenderViewParentData<RenderView> {
     super();
   }
   flex: number;
-}
-
-export abstract class AbstractNode {
-  public key: string = Math.random().toString(16).substring(3);
-  private _owner: Object;
-  private _parent: AbstractNode;
-  private _depth: number = 0;
-  get owner() {
-    return this._owner;
-  }
-  get parent() {
-    return this._parent;
-  }
-  set parent(value: AbstractNode) {
-    this._parent = value;
-  }
-  get depth(): number {
-    return this._depth;
-  }
-  set depth(value: number) {
-    this._depth = value;
-  }
-  protected reDepthChild(child: AbstractNode) {
-    if (!child) return;
-    child.depth = this.depth + 1;
-    child?.reDepthChildren?.();
-  }
-  protected reDepthChildren() {}
-  protected dropChild(child: AbstractNode) {
-    if (!child) return;
-    child!.parent = null;
-    if (this.owner) {
-      child?.detach();
-    }
-  }
-  protected adoptChild(child: AbstractNode) {
-    if (!child) return;
-    child!.parent = this;
-    if (this.owner) {
-      child?.attach(this.owner);
-    }
-    this.reDepthChild(child);
-  }
-  get attached(): boolean {
-    return !!this.owner;
-  }
-  attach(owner: Object) {
-    if (this._owner) return;
-    this._owner = owner;
-  }
-  detach() {
-    if (!this.owner) return;
-    this._owner = null;
-  }
-}
-type ChildVisitorCallback = (child: RenderView) => void;
-//原子渲染对象，可以有层级渲染，没有renderbox，依赖于context传输的大小来渲染
-export abstract class RenderView extends AbstractNode implements HitTestTarget {
-  public layerHandler: LayerHandler<OffsetLayer>;
-  private _child?: RenderView;
-  private _firstChild?: RenderView;
-  /**
-   * 定义渲染伴随数据，即父节点数据，用于 @ParentDataElement 使用，被作为 @ParentDataElement 的 子节点时
-   * 会被定义类型，默认类型为 @ParentData ，在不同常见会被父节点的 @setupParentData 赋予不同的类型,达到自定义效果。
-   * 例如在 @Stack 内会被 @StackParentData 赋值，在 @Flex 内会被 @FlexParentData 赋值。
-   */
-  public parentData: ParentData = null;
-  public _size: Size = Size.zero;
-  public needsRePaint: boolean = false;
-  public needsReLayout: boolean = false;
-  get size(): Size {
-    return this._size;
-  }
-  set size(size: Size) {
-    this._size = size;
-  }
-  get mounted(): boolean {
-    return true;
-  }
-  get view(): RenderView {
-    return this;
-  }
-  get isRepaintBoundary(): boolean {
-    return false;
-  }
-  abstract render(context: PaintingContext, offset?: Vector): void;
-  abstract debugRender(context: PaintingContext, offset?: Vector): void;
-  //默认大小等于子大小，被子撑开
-  abstract layout(constraints: BoxConstraints, parentUseSize?: boolean): void;
-  abstract performLayout(): void;
-  protected dropChild(child: AbstractNode): void {
-    super.dropChild(child);
-  }
-  protected adoptChild(child: AbstractNode): void {
-    if (!child) return;
-    this.setupParentData(child as RenderView);
-    super.adoptChild(child);
-  }
-  get child(): RenderView {
-    return this._child;
-  }
-  set child(value: RenderView) {
-    this.dropChild(value);
-    this._child = value;
-    this.adoptChild(value);
-    this._firstChild = this._child;
-  }
-  /**
-   * 为child设置parentData类型，子类可重写该方法便于自定义。
-   * 默认parentData
-   * @param child
-   */
-  protected setupParentData(child: RenderView) {
-    if (child.parentData instanceof ParentData) {
-      child.parentData = new ParentData();
-    }
-  }
-  public markNeedsPaint() {
-    if (!this.owner) return;
-    if (this.needsRePaint) return;
-    const owner: PipelineOwner = this.owner as PipelineOwner;
-    this.needsRePaint = true;
-    if (this.isRepaintBoundary) {
-      owner.pushNeedingPaint(this);
-      owner.requestVisualUpdate();
-    } else if (this.parent instanceof RenderView) {
-      this.parent?.markNeedsPaint();
-    }
-    /**
-     * 通知Child的重绘，@needsRePaint 在此之前已经被赋值true
-     * child 在 @markNeedsPaint 时会调用父 @markNeedsPaint ，但是会判断 @needsRePaint 达到阻止循环调用，
-     * 持续向下通知
-     */
-    this.visitChildren((child) => {
-      child.markNeedsPaint();
-    });
-  }
-  public markNeedsLayout() {
-    if (!this.owner) return;
-    if (this.needsReLayout) return;
-    const owner: PipelineOwner = this.owner as PipelineOwner;
-    this.needsReLayout = true;
-    if (this.isRepaintBoundary) {
-      owner.pushNeedingLayout(this);
-      owner?.requestVisualUpdate();
-    } else if (this.parent instanceof RenderView) {
-      this.parent.markNeedsLayout();
-    } else {
-      owner.pushNeedingLayout(this);
-    }
-  }
-  public layoutWithoutResize() {
-    this.performResize();
-    this.needsReLayout = false;
-    this.markNeedsPaint();
-  }
-  public reassemble() {
-    this.markNeedsLayout();
-    this.markNeedsPaint();
-    this.visitChildren((child) => {
-      if (child) {
-        child.reassemble();
-      }
-    });
-  }
-  visitChildren(visitor: ChildVisitorCallback) {
-    let child = this._firstChild;
-    while (child) {
-      const parentData =
-        child?.parentData as ContainerRenderViewParentData<RenderView>;
-      visitor(child);
-      child = parentData?.nextSibling;
-    }
-  }
-  paintWidthContext(context: PaintingContext, offset?: Vector): void {
-    if (!this.needsRePaint) return;
-    this.needsRePaint = false;
-    if (RendererBinding.instance.debug) {
-      this.debugRender(context, offset);
-    }else{
-      this.render(context, offset);
-    }
-  }
-  abstract performResize(): void;
-  abstract computeDryLayout(constrains: BoxConstraints): Size;
-  abstract getDryLayout(constrains: BoxConstraints): Size;
-  public hitTest(result: HitTestResult, position: Vector): boolean {
-    return;
-  }
-  handleEvent(event: PointerEvent, entry: HitTestEntry): void {}
 }
 
 export abstract class RenderBox extends RenderView {
@@ -615,7 +419,7 @@ export class ColoredRender extends SingleChildRenderView {
     super.render(context, offset);
   }
   debugRender(context: PaintingContext, offset?: Vector): void {
-      super.debugRender(context, offset);
+    super.debugRender(context, offset);
   }
 }
 
@@ -985,11 +789,13 @@ export class PaintingContext extends ClipContext {
   }
 }
 
-export abstract class MultiChildRenderView extends RenderBox {
-  protected lastChild: RenderView;
-  protected firstChild: RenderView;
+export abstract class MultiChildRenderView<
+  ChildType extends RenderView = RenderView
+> extends RenderBox {
+  protected lastChild: ChildType;
+  protected firstChild: ChildType;
   protected childCount: number = 0;
-  constructor(children?: RenderView[]) {
+  constructor(children?: ChildType[]) {
     super();
     if (children) {
       this.addAll(children);
@@ -1002,7 +808,7 @@ export abstract class MultiChildRenderView extends RenderBox {
     let child = this.lastChild;
     while (child != null) {
       const parentData =
-        child.parentData as ContainerRenderViewParentData<RenderView>;
+        child.parentData as ContainerRenderViewParentData<ChildType>;
       const transformed = Vector.sub(position, parentData.offset);
       const isHit = child.hitTest(result, transformed);
       if (isHit) {
@@ -1013,10 +819,10 @@ export abstract class MultiChildRenderView extends RenderBox {
     }
     return false;
   }
-  public addAll(value: RenderView[]) {
+  public addAll(value: ChildType[]) {
     value?.forEach((_) => this.insert(_, this.lastChild));
   }
-  public insert(renderView: RenderView, after?: RenderView) {
+  public insert(renderView: ChildType, after?: ChildType) {
     //设置父节点
     this.adoptChild(renderView);
     //插入兄弟列表
@@ -1032,20 +838,20 @@ export abstract class MultiChildRenderView extends RenderBox {
   }
   private removeFromChildList(child: RenderView) {
     const childParentData =
-      child.parentData! as ContainerRenderViewParentData<RenderView>;
+      child.parentData! as ContainerRenderViewParentData<ChildType>;
     if (this.childCount <= 0) return;
     if (childParentData.previousSibling == null) {
       this.firstChild = childParentData.nextSibling;
     } else {
       const childPreviousSiblingParentData = childParentData.previousSibling!
-        .parentData! as ContainerRenderViewParentData<RenderView>;
+        .parentData! as ContainerRenderViewParentData<ChildType>;
       childPreviousSiblingParentData.nextSibling = childParentData.nextSibling;
     }
     if (childParentData.nextSibling == null) {
       this.lastChild = childParentData.previousSibling;
     } else {
       const childNextSiblingParentData = childParentData.nextSibling!
-        .parentData! as ContainerRenderViewParentData<RenderView>;
+        .parentData! as ContainerRenderViewParentData<ChildType>;
       childNextSiblingParentData.previousSibling =
         childParentData.previousSibling;
     }
@@ -1053,13 +859,13 @@ export abstract class MultiChildRenderView extends RenderBox {
     childParentData.nextSibling = null;
     this.childCount -= 1;
   }
-  private insertIntoList(child: RenderView, after?: RenderView) {
+  private insertIntoList(child: ChildType, after?: ChildType) {
     let currentParentData =
-      child.parentData as ContainerRenderViewParentData<RenderView>;
+      child.parentData as ContainerRenderViewParentData<ChildType>;
     let firstChildParentData = this.firstChild
-      ?.parentData as ContainerRenderViewParentData<RenderView>;
+      ?.parentData as ContainerRenderViewParentData<ChildType>;
     let afterParentData =
-      after?.parentData as ContainerRenderViewParentData<RenderView>;
+      after?.parentData as ContainerRenderViewParentData<ChildType>;
     if (after == null) {
       this.firstChild = child;
       this.lastChild = child;
@@ -1091,7 +897,7 @@ export abstract class MultiChildRenderView extends RenderBox {
     let child = this.firstChild;
     while (child != null) {
       const parentData =
-        child.parentData as ContainerRenderViewParentData<RenderView>;
+        child.parentData as ContainerRenderViewParentData<ChildType>;
       this.performLayoutChild(child, this.constraints);
       child = parentData?.nextSibling;
     }
@@ -1104,7 +910,7 @@ export abstract class MultiChildRenderView extends RenderBox {
     let child = this.firstChild;
     while (child != null) {
       const parentData =
-        child.parentData as ContainerRenderViewParentData<RenderView>;
+        child.parentData as ContainerRenderViewParentData<ChildType>;
       children.push(child);
       child = parentData?.nextSibling;
     }
@@ -1114,7 +920,7 @@ export abstract class MultiChildRenderView extends RenderBox {
     let child = this.firstChild;
     while (child != null) {
       const parentData =
-        child.parentData as ContainerRenderViewParentData<RenderView>;
+        child.parentData as ContainerRenderViewParentData<ChildType>;
       context.paintChild(
         child,
         Vector.add(parentData.offset ?? Vector.zero, offset ?? Vector.zero)
@@ -1126,7 +932,7 @@ export abstract class MultiChildRenderView extends RenderBox {
     let child = this.firstChild;
     while (child != null) {
       const parentData =
-        child.parentData as ContainerRenderViewParentData<RenderView>;
+        child.parentData as ContainerRenderViewParentData<ChildType>;
       context.paintChildDebug(
         child,
         Vector.add(parentData.offset ?? Vector.zero, offset ?? Vector.zero)
@@ -1224,8 +1030,7 @@ export class FlexRenderView extends MultiChildRenderView {
       childCrossPosition: number = 0;
     let childCount = 0;
     while (child != null) {
-      const parentData =
-        child.parentData as ContainerRenderViewParentData<RenderView>;
+      const parentData = child.parentData as ContainerRenderViewParentData;
       childCount += 1;
       const childMainSize = this.getMainSize(child.size),
         childCrossSize = this.getCrossSize(child.size);
@@ -2259,10 +2064,90 @@ export class ImageRenderView extends SingleChildRenderView {
   }
   render(context: PaintingContext, offset?: Vector): void {
     this.decorationPainter.paint(context.paint, offset, this.size);
-    super.render(context,offset);
+    super.render(context, offset);
   }
   debugRender(context: PaintingContext, offset?: Vector): void {
     this.decorationPainter.debugPaint(context.paint, offset, this.size);
-    super.debugRender(context,offset);
+    super.debugRender(context, offset);
   }
+}
+
+export abstract class ViewPortOffset extends ChangeNotifier {
+  private _offset: Offset = Offset.zero;
+  get offset(): Offset {
+    return this._offset;
+  }
+  set offset(value: Offset) {
+    this._offset = value;
+    this.notifyListeners();
+  }
+  abstract applyViewportDimension(viewportDimension: number): boolean;
+  abstract applyContentDimension(
+    minDimension: number,
+    maxDimension: number
+  ): boolean;
+}
+
+export class SliverPhysicalParentData extends ParentData {
+  paintOffset: Offset = Offset.zero;
+}
+
+export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
+  private _offset: ViewPortOffset;
+  private center: RenderSliver;
+  private _axisDirection: AxisDirection;
+  private markNeedsLayoutBind: VoidFunction;
+  constructor() {
+    super();
+    this.markNeedsLayoutBind = this.markNeedsLayout.bind(this);
+    this.firstChild;
+  }
+  get axisDirection(): AxisDirection {
+    return this._axisDirection;
+  }
+  get axis(): Axis {
+    return axisDirectionToAxis(this.axisDirection);
+  }
+  set offset(value: ViewPortOffset) {
+    this.offset = value;
+    if (this.attached) {
+      this.offset.removeListener(this.markNeedsLayoutBind);
+    }
+    if (this.attached) {
+      this.offset.addListener(this.markNeedsLayoutBind);
+    }
+    this.markNeedsLayout();
+  }
+  get offset(): ViewPortOffset {
+    return this._offset;
+  }
+  protected setupParentData(child: RenderView): void {
+    child.parentData = new SliverPhysicalParentData();
+  }
+  performLayout(): void {
+    this.size = this.constraints.constrain(Size.zero);
+
+    let mainAxisExtent: number = 0;
+    let crossAxisExtent: number = 0;
+    
+
+    if (this.axis === Axis.horizontal) {
+      this.offset.applyViewportDimension(this.size.width);
+      mainAxisExtent = this.size.width;
+      crossAxisExtent = this.size.height;
+    } else if (this.axis === Axis.vertical) {
+      this.offset.applyViewportDimension(this.size.height);
+      mainAxisExtent = this.size.height;
+      crossAxisExtent = this.size.width;
+    }
+
+    if(this.size.width === 0 && this.size.height === 0){
+      this.offset.applyContentDimension(mainAxisExtent, crossAxisExtent);
+    }
+
+    
+
+    console.log("布局Viewport", this.size);
+  }
+  performLayoutChild(child: RenderView, constraints: BoxConstraints): void {}
 }
