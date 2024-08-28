@@ -45,6 +45,7 @@ import {
   RenderTransformArguments,
   RenderTransformBox,
   RenderViewPort,
+  RenderViewPortArguments,
   RootRenderView,
   StackFit,
   StackOption,
@@ -91,6 +92,7 @@ import { Key } from "../basic/key";
 import { BoxFit } from "../painting/box-fit";
 import { RenderView } from "../render-object/render-object";
 import { RenderSliverBoxAdapter } from "../render-object/slivers";
+import { ViewPortOffset } from "../rendering/viewport";
 export interface ColoredBoxOption {
   color: string;
 }
@@ -756,13 +758,23 @@ export class Image
 }
 
 export class ViewPort extends MultiChildRenderObjectWidget {
-  constructor(option: Partial<MultiChildRenderObjectWidgetArguments>) {
+  private offset: ViewPortOffset;
+  constructor(
+    option: Partial<
+      RenderViewPortArguments & MultiChildRenderObjectWidgetArguments
+    >
+  ) {
     super(option?.children, option?.key);
+    this.offset = option?.offset;
   }
 
-  updateRenderObject(context: BuildContext, renderView: RenderView): void {}
+  updateRenderObject(context: BuildContext, renderView: RenderViewPort): void {
+    renderView.offset = this.offset;
+  }
   createRenderObject(): RenderView {
-    return new RenderViewPort();
+    return new RenderViewPort({
+      offset: this.offset,
+    });
   }
 }
 

@@ -935,6 +935,15 @@ export abstract class MultiChildRenderView<
       child = parentData?.nextSibling;
     }
   }
+  visitChildren(visitor: (child: RenderView) => void): void {
+    let child = this.firstChild;
+    while (child != null) {
+      const parentData =
+        child.parentData as ContainerRenderViewParentData<ChildType>;
+      visitor(child);
+      child = parentData?.nextSibling;
+    }
+  }
   protected defaultRenderChildDebug(context: PaintingContext, offset?: Vector) {
     let child = this.firstChild;
     while (child != null) {
@@ -2083,23 +2092,25 @@ export class SliverPhysicalParentData extends ContainerRenderViewParentData<Rend
   paintOffset: Offset = Offset.zero;
 }
 
-export interface ViewPortArguments{
-  center:RenderSliver;
-  axisDirection:AxisDirection;
-  crossDirection:AxisDirection;
+export interface ViewPortArguments {
+  center: RenderSliver;
+  axisDirection: AxisDirection;
+  crossDirection: AxisDirection;
+}
+
+export interface RenderViewPortArguments {
+  offset: ViewPortOffset;
 }
 
 export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
   private _offset: ViewPortOffset = new ScrollPosition();
   private center: RenderSliver;
-  private _axisDirection: AxisDirection=AxisDirection.down;
-  private _crossDirection: AxisDirection=AxisDirection.right;
-  private anchor: number=0.5;
-  private markNeedsLayoutBind: VoidFunction;
-  constructor() {
+  private _axisDirection: AxisDirection = AxisDirection.down;
+  private _crossDirection: AxisDirection = AxisDirection.right;
+  private anchor: number = 0;
+  constructor(args: Partial<RenderViewPortArguments>) {
     super();
-    this.markNeedsLayoutBind = this.markNeedsLayout.bind(this);
-   
+    this.offset = args?.offset;
   }
   get axisDirection(): AxisDirection {
     return this._axisDirection;
@@ -2115,13 +2126,10 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
     this.markNeedsLayout();
   }
   set offset(value: ViewPortOffset) {
-    this.offset = value;
-    if (this.attached) {
-      this.offset.removeListener(this.markNeedsLayoutBind);
-    }
-    if (this.attached) {
-      this.offset.addListener(this.markNeedsLayoutBind);
-    }
+    this._offset = value;
+    this.offset?.addListener(() => {
+      this.markNeedsLayout();
+    });
     this.markNeedsLayout();
   }
   get offset(): ViewPortOffset {
@@ -2131,8 +2139,8 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
     child.parentData = new SliverPhysicalParentData();
   }
   performLayout(): void {
-    if(!this.center){
-      this.center=this.firstChild;
+    if (!this.center) {
+      this.center = this.firstChild;
     }
     this.size = this.constraints.constrain(Size.zero);
 
@@ -2153,19 +2161,19 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
       this.offset.applyContentDimension(0, 0);
     }
 
-    const scrollOffset = this.anchor * mainAxisExtent;
+    const scrollOffset = this.offset.pixels;
 
-    const nextChild=(child: RenderSliver) => {
+    const nextChild = (child: RenderSliver) => {
       const parentData: SliverPhysicalParentData =
         child.parentData as SliverPhysicalParentData;
       return parentData?.nextSibling;
     };
-
+    // console.log("布局")
     this.performLayoutSliverChild(
       this.center,
-      scrollOffset,
+      Math.max(scrollOffset, 0),
       0,
-      mainAxisExtent,
+      mainAxisExtent * 2,
       mainAxisExtent,
       crossAxisExtent,
       GrowthDirection.forward,
@@ -2174,11 +2182,11 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
       this.axisDirection,
       0
     );
-
   }
 
   private performLayoutSliverChild(
     child: RenderSliver,
+    //可滚动偏移量
     scrollOffset: number,
     layoutOffset: number,
     remainingPaintExtent: number,
@@ -2192,10 +2200,8 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
   ): number {
     let current: RenderSliver = child;
     let precedingScrollExtent: number = 0;
-    const initialLayoutOffset: number = layoutOffset;
-    
-    // this.performLayoutSliverChild(this.center,)
-
+    const initialLayoutOffset: number = 0; //layoutOffset;
+    let count = 0;
     while (current) {
       const sliverScrollOffset = scrollOffset <= 0.0 ? 0.0 : scrollOffset;
       const correctedCacheOrigin = Math.max(cacheOrigin, -sliverScrollOffset);
@@ -2208,10 +2214,8 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
         scrollOffset: scrollOffset,
         precedingScrollExtent: precedingScrollExtent,
         overlap: 0,
-        remainingPaintExtent: Math.max(
-          0.0,
-          remainingPaintExtent - layoutOffset + initialLayoutOffset
-        ),
+        remainingPaintExtent:
+          remainingPaintExtent - layoutOffset + initialLayoutOffset,
         crossAxisExtent: crossAxisExtent,
         crossAxisDirection: this.crossDirection,
         viewportMainAxisExtent: mainAxisExtent,
@@ -2220,29 +2224,62 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
           remainingCacheExtent + cacheExtentCorrection
         ),
         cacheOrigin: correctedCacheOrigin,
-       
       });
-    
-      current.layout(constraints);
-     
-      const childLayoutGeometry = current.geometry;
-     
-      precedingScrollExtent += childLayoutGeometry.scrollExtent;
 
-      current = another(child);
+      const a = constraints.scrollOffset;
+      const b = constraints.scrollOffset + constraints.remainingPaintExtent;
+      // 计算子节点在视口内的可见范围
+      const paintStart = Math.max(0, a);
+      const paintEnd = Math.min(0, b);
+      const paintedChildSize =
+        paintEnd > paintStart ? paintEnd - paintStart : 0;
+
+
+      // if (
+      //     remainingPaintExtent - layoutOffset + initialLayoutOffset >
+      //    mainAxisExtent
+      // ) {
+      //   current.layout(constraints, true);
+      //   const childLayoutGeometry = current.geometry;
+
+      //   scrollOffset -= childLayoutGeometry.scrollExtent;
+      //   layoutOffset += childLayoutGeometry.layoutExtent;
+      //   precedingScrollExtent += childLayoutGeometry.scrollExtent;
+      //   count += 1;
+      // }
+
+      current.layout(constraints, true);
+        const childLayoutGeometry = current.geometry;
+
+        scrollOffset -= childLayoutGeometry.scrollExtent;
+        layoutOffset += childLayoutGeometry.layoutExtent;
+        precedingScrollExtent += childLayoutGeometry.scrollExtent;
+        count += 1;
+
+      current = another(current);
     }
-
+    console.log(
+      "布局" + count + "个",
+      scrollOffset,
+      precedingScrollExtent - mainAxisExtent + scrollOffset
+    );
     return 0;
   }
 
   render(context: PaintingContext, offset?: Vector): void {
-      this.visitChildren((child:RenderSliver)=>{
-        if(child?.geometry?.visible){
-          const parentData: SliverPhysicalParentData =
+    let count = 0;
+    this.visitChildren((child: RenderSliver) => {
+      if (child?.geometry?.visible) {
+        count += 1;
+        const parentData: SliverPhysicalParentData =
           child.parentData as SliverPhysicalParentData;
-          child.render(context,offset);
-        }
-      })
-      super.render(context,offset);
+        context.paintChild(
+          child,
+          Vector.add(parentData.offset ?? Vector.zero, offset ?? Vector.zero)
+        );
+      }
+    });
+    console.log("渲染" + count + "个");
+    // super.render(context, offset);
   }
 }

@@ -73,3 +73,10 @@ export const rotate2D = (
   const newY = x * sinA + y * cosA;
   return [newX, newY];
 };
+
+export const clamp = (x: number, min: number, max: number) => {
+  if (x < min) return min;
+  if (x > max) return max;
+  if(isNaN(x)) return max;
+  return x;
+};

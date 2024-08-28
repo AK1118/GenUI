@@ -1,6 +1,6 @@
 import { Offset, Size } from "../basic/rect";
 import { ChangeNotifier } from "../core/change-notifier";
-import { abs } from "../math/math";
+import { abs, clamp } from "../math/math";
 import Vector from "../math/vector";
 import Constraints, { BoxConstraints } from "../rendering/constraints";
 import {
@@ -156,6 +156,9 @@ export class SliverConstraints
     this.overlap = args.overlap;
     this.remainingPaintExtent = args.remainingPaintExtent;
     this.crossAxisExtent = args.crossAxisExtent;
+    this.viewportMainAxisExtent=args.viewportMainAxisExtent;
+    this.remainingCacheExtent = args.remainingCacheExtent;
+    this.cacheOrigin = args.cacheOrigin;
   }
 
   get axis(): Axis {
@@ -261,7 +264,7 @@ export class SliverGeometry implements SliverGeometryArguments {
   maxPaintExtent: number = 0;
   maxScrollObstructionExtent: number = 0;
   hitTestExtent: number;
-  visible: boolean=true;
+  visible: boolean = true;
   hasVisualOverflow: boolean = false;
   scrollOffsetCorrection: number;
   cacheExtent: number;
@@ -274,7 +277,7 @@ export class SliverGeometry implements SliverGeometryArguments {
     this.maxScrollObstructionExtent =
       args?.maxScrollObstructionExtent ?? this.maxScrollObstructionExtent;
     this.hitTestExtent = args?.hitTestExtent ?? this.hitTestExtent;
-    this.visible = args?.visible ?? this.visible;
+    this.visible = args?.visible ?? this.paintExtent > 0;
     this.hasVisualOverflow = args?.hasVisualOverflow ?? this.hasVisualOverflow;
     this.scrollOffsetCorrection =
       args?.scrollOffsetCorrection ?? this.scrollOffsetCorrection;
@@ -288,7 +291,7 @@ export class SliverGeometry implements SliverGeometryArguments {
 
 export abstract class RenderSliver extends RenderView {
   protected constraints: SliverConstraints;
-  private _geometry: SliverGeometry = SliverGeometry.zero();
+  private _geometry: SliverGeometry;
   /**
    * 返回该 RenderSliver 在视口中实际绘制的高度或宽度，具体取决于滚动方向。这是计算 Sliver 在视口中的可见部分时的重要值。
    */
@@ -370,7 +373,7 @@ export abstract class RenderSliverToSingleBoxAdapter extends RenderSliver {
         return flipAxisDirection(constraints.axisDirection);
       }
     };
-   
+
     switch (correctedAxisDirection()) {
       case AxisDirection.up:
         parentData.paintOffset = new Offset(
@@ -398,12 +401,12 @@ export abstract class RenderSliverToSingleBoxAdapter extends RenderSliver {
     }
   }
   render(context: PaintingContext, offset?: Vector): void {
-      const child=this.child as RenderSliver;
-      if(child&&this.geometry?.visible){
-        const parentData: SliverPhysicalParentData =
-          child.parentData as SliverPhysicalParentData;
-        child.render(context,offset.add(parentData.paintOffset.toVector()));
-      }
+    const child = this.child as RenderSliver;
+    if (child && this.geometry?.visible) {
+      const parentData: SliverPhysicalParentData =
+        child.parentData as SliverPhysicalParentData;
+      child.render(context, offset.add(parentData.paintOffset.toVector()));
+    }
   }
 }
 
@@ -411,30 +414,44 @@ export class RenderSliverBoxAdapter extends RenderSliverToSingleBoxAdapter {
   performLayout(): void {
     if (!this.child) {
       this.geometry = SliverGeometry.zero();
+      return; // 没有子节点，提前返回
     }
+
+    // 布局子节点
     this.child.layout(this.constraints.asBoxConstraints(), true);
     
     const constraints = this.constraints as SliverConstraints;
     let childMainExtent: number = 0;
     const size = this.child.size;
+
+    // 根据轴方向计算子节点的主轴尺寸
     if (constraints.axis == Axis.vertical) {
       childMainExtent = size.height;
     } else if (constraints.axis == Axis.horizontal) {
       childMainExtent = size.width;
     }
 
-    const geometry = new SliverGeometry({
-      paintExtent: childMainExtent,
-      maxPaintExtent: childMainExtent,
-      layoutExtent: childMainExtent,
-      scrollExtent: 0,
+    // 滚动偏移量与可见区域的计算
+    const a = constraints.scrollOffset;
+    const b = constraints.scrollOffset + constraints.remainingPaintExtent;
+
+    // 计算子节点在视口内的可见范围
+    const paintStart = Math.max(0, a);
+    const paintEnd = Math.min(childMainExtent, b);
+    const paintedChildSize = paintEnd > paintStart ? paintEnd - paintStart : 0;
+
+    // 设置几何信息
+    this.geometry = new SliverGeometry({
+      paintExtent: paintedChildSize,  // 子节点在视口内的绘制大小
+      maxPaintExtent: childMainExtent, // 子节点的最大绘制范围
+      layoutExtent: paintedChildSize,  // 布局范围，影响滚动行为
+      scrollExtent: childMainExtent,   // 滚动范围
       hasVisualOverflow:
         childMainExtent > constraints.remainingPaintExtent ||
-        constraints.scrollOffset < 0,
-        
+        constraints.scrollOffset < 0,  // 视觉溢出判断
     });
 
-    this.geometry = geometry;
-    this.setChildParentData(this.child, constraints, geometry);
+    // 设置子节点的父级数据
+    this.setChildParentData(this.child, constraints, this.geometry);
   }
 }

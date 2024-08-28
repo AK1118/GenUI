@@ -71,6 +71,7 @@ import { Container } from "@/lib/widgets/widgets";
 import { ImageSource } from "@/lib/painting/image";
 import { BoxFit } from "@/lib/painting/box-fit";
 import { ChangeNotifier } from "@/lib/core/change-notifier";
+import { ScrollPosition } from "@/lib/rendering/viewport";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
@@ -95,60 +96,104 @@ class Scaffold extends StatefulWidget {
   }
 }
 
-class MyListener extends ChangeNotifier{
-  public counter:number=0;
-  trigger(){
+class MyListener extends ChangeNotifier {
+  public counter: number = 0;
+  trigger() {
     this.notifyListeners();
   }
-  add(){
-    this.counter+=1;
+  add() {
+    this.counter += 1;
     this.notifyListeners();
   }
 }
 
-const notifier=new MyListener();
+const notifier = new MyListener();
 
 class ScaffoldState extends State<Scaffold> {
   private time: number = 1;
+  private offset: ScrollPosition = new ScrollPosition();
+  private dy: number = 0;
+  private preDeltaY:number=0;
   public initState(): void {
     super.initState();
-    // this.animate();
+    this.animate();
     // setInterval(()=>{
     //   this.setState(()=>{
     //     this.time+=1;
     //   });
     // },1000);
-    notifier.addListener(()=>{
-     this.setState(()=>{
-      this.time=notifier.counter;
-     });
-    });
+    // notifier.addListener(() => {
+    //   this.setState(() => {
+    //     this.time = notifier.counter;
+    //   });
+    // });
   }
   private animate() {
     this.setState(() => {
-      this.time += 1;
+      //this.time += 1;
     });
     requestAnimationFrame(() => {
-      this.animate();
+      this.offset.pixels -= this.dy;
+      this.offset.pixels=Math.max(0,this.offset.pixels )
+      this.dy *= 0.98;
+      if (abs(this.dy) >= 0.01&&this.offset.pixels>0) this.animate();
     });
-
   }
   build(context: BuildContext): Widget {
-      return new Container({
-        width:canvas.width,
-        height:canvas.height,
-        child:new ViewPort({
-          children:[
-            new WidgetToSliverAdapter({
-              child:new Container({
-                width:100,
-                height:100,
-                color:'white',
-              }),
+    return new Container({
+      padding:{
+        top:100,
+      },
+      width: canvas.width,
+      height:100,
+      decoration:new BoxDecoration(
+        {
+          border:Border.all({
+            color:'orange'
+          })
+        }
+      ),
+      child: new GestureDetector({
+        onPanUpdate: (event) => {
+          this.offset.pixels -= event.delta.offsetY;
+          this.offset.pixels=Math.max(0,this.offset.pixels )
+          this.preDeltaY=event.delta.offsetY;
+        },
+        onPanEnd: (event) => {
+          this.dy = this.preDeltaY;
+          this.animate();
+          console.log( this.dy );
+        },
+        onTapDown: () => {
+          this.dy = 0;
+        },
+        // onTap:()=>{
+        //   this.offset.pixels += 10;
+        //     //notifier.add();
+
+        //   },
+        child: new ViewPort({
+          offset: this.offset,
+          children: [
+            ...Array.from(Array(30)).map((_, ndx) => {
+              return new WidgetToSliverAdapter({
+                child: new Container({
+                  width: canvas.width,
+                  height: 30,
+                  color: ndx % 2 === 0 ? "white" : "#edf2fa",
+                  align: Alignment.center,
+                  child: new Text("item" + ndx, {
+                    style: new TextStyle({
+                      textAlign: TextAlign.center,
+                    }),
+                  }),
+                }),
+              });
             }),
-          ]
+          ],
         }),
-      });
+      }),
+    });
   }
   // build(context: BuildContext): Widget {
   //   return new SizedBox({
@@ -315,13 +360,9 @@ class _ButtonState extends State<Button> {
 const app = new Scaffold();
 runApp(app);
 
-
-
-
 // notifier.addListener(()=>{
 //   console.log("change1");
 // });
-
 
 // notifier.addListener(()=>{
 //   console.log("change2");
