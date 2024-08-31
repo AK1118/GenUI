@@ -77,6 +77,10 @@ export const rotate2D = (
 export const clamp = (x: number, min: number, max: number) => {
   if (x < min) return min;
   if (x > max) return max;
-  if(isNaN(x)) return max;
+  if (isNaN(x)) return max;
   return x;
+};
+
+export const lerpNumber = (from: number, to: number, t: number):number => {
+  return from + (to - from) * t;
 };

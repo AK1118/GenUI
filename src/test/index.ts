@@ -72,6 +72,8 @@ import { ImageSource } from "@/lib/painting/image";
 import { BoxFit } from "@/lib/painting/box-fit";
 import { ChangeNotifier } from "@/lib/core/change-notifier";
 import { ScrollPosition } from "@/lib/rendering/viewport";
+import { BouncingScrollPhysics } from "@/lib/core/scroll-physics";
+import { AnimationController } from "@/lib/core/animation";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
@@ -108,12 +110,13 @@ class MyListener extends ChangeNotifier {
 }
 
 const notifier = new MyListener();
-
 class ScaffoldState extends State<Scaffold> {
   private time: number = 1;
-  private offset: ScrollPosition = new ScrollPosition();
+  private offset: ScrollPosition = new ScrollPosition({
+    physics: new BouncingScrollPhysics(),
+  });
   private dy: number = 0;
-  private preDeltaY:number=0;
+  private preDeltaY: number = 0;
   public initState(): void {
     super.initState();
     this.animate();
@@ -133,36 +136,32 @@ class ScaffoldState extends State<Scaffold> {
       //this.time += 1;
     });
     requestAnimationFrame(() => {
-      this.offset.pixels -= this.dy;
-      this.offset.pixels=Math.max(0,this.offset.pixels )
-      this.dy *= 0.98;
-      if (abs(this.dy) >= 0.01&&this.offset.pixels>0) this.animate();
+      this.offset.setPixels(this.offset.pixels - this.dy);
+      this.dy *= 0.95;
+      if (abs(this.dy) >= 0.01 && this.offset.pixels > 0) this.animate();
     });
   }
   build(context: BuildContext): Widget {
     return new Container({
-      padding:{
-        top:100,
+      padding: {
+        top: 100,
       },
-      width: canvas.width,
-      height:100,
-      decoration:new BoxDecoration(
-        {
-          border:Border.all({
-            color:'orange'
-          })
-        }
-      ),
+      width: canvas.width * 0.5,
+      height: 100,
+      decoration: new BoxDecoration({
+        border: Border.all({
+          color: "orange",
+        }),
+      }),
       child: new GestureDetector({
         onPanUpdate: (event) => {
-          this.offset.pixels -= event.delta.offsetY;
-          this.offset.pixels=Math.max(0,this.offset.pixels )
-          this.preDeltaY=event.delta.offsetY;
+          this.offset.setPixels(this.offset.pixels - event.delta.offsetY);
+          this.preDeltaY = event.delta.offsetY;
         },
         onPanEnd: (event) => {
           this.dy = this.preDeltaY;
           this.animate();
-          console.log( this.dy );
+          // console.log( this.dy );
         },
         onTapDown: () => {
           this.dy = 0;
@@ -175,17 +174,15 @@ class ScaffoldState extends State<Scaffold> {
         child: new ViewPort({
           offset: this.offset,
           children: [
-            ...Array.from(Array(30)).map((_, ndx) => {
+            ...Array.from(Array(9)).map((_, ndx) => {
               return new WidgetToSliverAdapter({
                 child: new Container({
-                  width: canvas.width,
+                  width: canvas.width * 0.5,
                   height: 30,
                   color: ndx % 2 === 0 ? "white" : "#edf2fa",
-                  align: Alignment.center,
-                  child: new Text("item" + ndx, {
-                    style: new TextStyle({
-                      textAlign: TextAlign.center,
-                    }),
+                  child: new Align({
+                    alignment: Alignment.center,
+                    child: new Text("item" + ndx),
                   }),
                 }),
               });
@@ -301,6 +298,11 @@ class ScaffoldState extends State<Scaffold> {
 }
 
 class Button extends StatefulWidget {
+  index: number;
+  constructor(index: number) {
+    super();
+    this.index = index;
+  }
   createState(): State {
     return new _ButtonState();
   }
@@ -308,8 +310,21 @@ class Button extends StatefulWidget {
 
 class _ButtonState extends State<Button> {
   private time: number = 0;
+  private animationController = new AnimationController();
   public initState(): void {
     super.initState();
+    this.animationController.addListener(() => {
+      this.setState(() => {
+        this.time = canvas.height * this.animationController.value;
+      });
+      // console.log(this.time);
+    });
+    this.animationController.addStatusListener(() => {
+      console.log("改变状态", this.animationController.status);
+    });
+    setTimeout(() => {
+      this.animationController.reverse();
+    }, 100 * this.widget.index);
     //  this.animate();
     // setInterval(()=>{
     //   this.setState(()=>{
@@ -328,36 +343,43 @@ class _ButtonState extends State<Button> {
   build(context: BuildContext): Widget {
     return new GestureDetector({
       onTap: () => {
-        this.setState(() => {
-          this.time += 1;
-          // this.animate();
-          notifier.add();
-        });
+        // this.animate();
+        this.animationController.forward();
       },
       child: new Container({
         decoration: new BoxDecoration({
           backgroundColor: "#2196f3",
           borderRadius: BorderRadius.all(10),
         }),
-        child: new Padding({
-          padding: {
-            top: 10,
-            bottom: 10,
-            left: abs(sin((Math.PI / 180) * this.time) * 100),
-            right: abs(sin((Math.PI / 180) * this.time) * 100),
-          },
-          child: new Text("Button" + this.time, {
-            style: new TextStyle({
-              color: "white",
-            }),
-          }),
-        }),
+        width: 30,
+        height: Math.max(90, this.time),
+        // child: new Padding({
+        //   padding: {
+        //     top: 10,
+        //     bottom: 10,
+        //     left: abs(sin((Math.PI / 180) * this.time) * 100),
+        //     right: abs(sin((Math.PI / 180) * this.time) * 100),
+        //   },
+        //   // child: new Text("Button" + this.time.toFixed(1), {
+        //   //   style: new TextStyle({
+        //   //     color: "white",
+        //   //   }),
+        //   // }),
+        // }),
       }),
     });
   }
 }
 
-const app = new Scaffold();
+const app = new Container({
+  width: canvas.width,
+  height: canvas.height,
+  child: new Flex({
+    children: Array.from(new Array(30).fill(0)).map((_, ndx) => {
+      return new Button(ndx);
+    }),
+  }),
+}); // new Scaffold();
 runApp(app);
 
 // notifier.addListener(()=>{

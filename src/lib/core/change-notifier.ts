@@ -63,5 +63,12 @@ export abstract class ChangeNotifier extends Listenable {
         this.needsRemoveListener = 0;
       }
     }
+
+    dispose(): void {
+      this.listeners = null;
+      this.count=0;
+      this.notificationCallStackDepth=0;
+      this.needsRemoveListener=0;
+    }
   }
   

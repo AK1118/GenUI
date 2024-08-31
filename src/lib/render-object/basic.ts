@@ -2103,10 +2103,12 @@ export interface RenderViewPortArguments {
 }
 
 export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
-  private _offset: ViewPortOffset = new ScrollPosition();
+  private _offset: ViewPortOffset;
   private center: RenderSliver;
   private _axisDirection: AxisDirection = AxisDirection.down;
-  private _crossDirection: AxisDirection = AxisDirection.right;
+  private _crossDirection: AxisDirection = AxisDirection.left;
+  private maxScrollExtent: number = 0;
+  private minScrollExtent: number = 0;
   private anchor: number = 0;
   constructor(args: Partial<RenderViewPortArguments>) {
     super();
@@ -2168,12 +2170,13 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
         child.parentData as SliverPhysicalParentData;
       return parentData?.nextSibling;
     };
-    // console.log("布局")
+
+
     this.performLayoutSliverChild(
       this.center,
-      Math.max(scrollOffset, 0),
-      0,
-      mainAxisExtent * 2,
+      scrollOffset,
+      Math.max(0,-scrollOffset),
+      mainAxisExtent,
       mainAxisExtent,
       crossAxisExtent,
       GrowthDirection.forward,
@@ -2182,12 +2185,18 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
       this.axisDirection,
       0
     );
+    /**
+     * 设置滚动器的滚动范围，滚动最小为0，最大为滚动元素的最大高度减去视口高度
+     * 必须在 @performLayoutSliverChild 执行完毕后再调用，且 @maxScrollExtent 不为 0
+     */
+    this.offset.applyContentDimension(0, Math.max(0,this.maxScrollExtent-mainAxisExtent));
   }
 
   private performLayoutSliverChild(
     child: RenderSliver,
-    //可滚动偏移量
+    //已滚动偏移量,视口top到滚动元素第一个的距离
     scrollOffset: number,
+    //布局开始偏移量
     layoutOffset: number,
     remainingPaintExtent: number,
     mainAxisExtent: number,
@@ -2200,10 +2209,11 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
   ): number {
     let current: RenderSliver = child;
     let precedingScrollExtent: number = 0;
-    const initialLayoutOffset: number = 0; //layoutOffset;
+    const initialLayoutOffset: number = layoutOffset; 
+    this.maxScrollExtent = 0;
     let count = 0;
     while (current) {
-      const sliverScrollOffset = scrollOffset <= 0.0 ? 0.0 : scrollOffset;
+      const sliverScrollOffset = scrollOffset<= 0.0 ? 0.0 : scrollOffset;
       const correctedCacheOrigin = Math.max(cacheOrigin, -sliverScrollOffset);
       const cacheExtentCorrection: number = cacheOrigin - correctedCacheOrigin;
 
@@ -2211,7 +2221,7 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
         axisDirection: axisDirection,
         growthDirection: growthDirection,
         userScrollDirection: this.offset.userScrollDirection,
-        scrollOffset: scrollOffset,
+        scrollOffset: sliverScrollOffset,
         precedingScrollExtent: precedingScrollExtent,
         overlap: 0,
         remainingPaintExtent:
@@ -2226,47 +2236,58 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
         cacheOrigin: correctedCacheOrigin,
       });
 
-      const a = constraints.scrollOffset;
-      const b = constraints.scrollOffset + constraints.remainingPaintExtent;
-      // 计算子节点在视口内的可见范围
-      const paintStart = Math.max(0, a);
-      const paintEnd = Math.min(0, b);
-      const paintedChildSize =
-        paintEnd > paintStart ? paintEnd - paintStart : 0;
-
-
-      // if (
-      //     remainingPaintExtent - layoutOffset + initialLayoutOffset >
-      //    mainAxisExtent
-      // ) {
-      //   current.layout(constraints, true);
-      //   const childLayoutGeometry = current.geometry;
-
-      //   scrollOffset -= childLayoutGeometry.scrollExtent;
-      //   layoutOffset += childLayoutGeometry.layoutExtent;
-      //   precedingScrollExtent += childLayoutGeometry.scrollExtent;
-      //   count += 1;
-      // }
-
       current.layout(constraints, true);
-        const childLayoutGeometry = current.geometry;
+      const childLayoutGeometry = current.geometry;
 
-        scrollOffset -= childLayoutGeometry.scrollExtent;
-        layoutOffset += childLayoutGeometry.layoutExtent;
-        precedingScrollExtent += childLayoutGeometry.scrollExtent;
-        count += 1;
+      const effectiveLayoutOffset = layoutOffset;
 
+      if (childLayoutGeometry.visible || scrollOffset > 0) {
+        this.updateChildLayoutOffset(
+          current,
+          effectiveLayoutOffset,
+          growthDirection
+        );
+      }
+
+      scrollOffset -= childLayoutGeometry.scrollExtent;
+      layoutOffset += childLayoutGeometry.layoutExtent;
+      precedingScrollExtent += childLayoutGeometry.scrollExtent;
+
+      count += 1;
+      this.maxScrollExtent += childLayoutGeometry.scrollExtent;
       current = another(current);
     }
-    console.log(
-      "布局" + count + "个",
-      scrollOffset,
-      precedingScrollExtent - mainAxisExtent + scrollOffset
-    );
+
     return 0;
   }
 
-  render(context: PaintingContext, offset?: Vector): void {
+  private updateChildLayoutOffset(
+    child: RenderSliver,
+    layoutOffset: number,
+    growthDirection: GrowthDirection,
+  ) {
+    const parentData: SliverPhysicalParentData =
+      child.parentData as SliverPhysicalParentData;
+    if (parentData) {
+      parentData.paintOffset = this.computeAbsolutePaintOffset(child,layoutOffset,growthDirection);
+    }
+  }
+  private computeAbsolutePaintOffset( child: RenderSliver,
+    layoutOffset: number,
+    growthDirection: GrowthDirection):Offset{
+    switch (this.axisDirection) {
+      case AxisDirection.up:
+        return new Offset(0.0, this.size.height - (layoutOffset + child.geometry!.paintExtent));
+      case AxisDirection.right:
+        return new Offset(layoutOffset, 0.0);
+      case AxisDirection.down:
+        return new Offset(0.0, layoutOffset);
+      case AxisDirection.left:
+        return new Offset(this.size.width - (layoutOffset + child.geometry!.paintExtent), 0.0);
+    }
+  }
+
+  private paintContents(context: PaintingContext, offset?: Vector) {
     let count = 0;
     this.visitChildren((child: RenderSliver) => {
       if (child?.geometry?.visible) {
@@ -2275,11 +2296,17 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
           child.parentData as SliverPhysicalParentData;
         context.paintChild(
           child,
-          Vector.add(parentData.offset ?? Vector.zero, offset ?? Vector.zero)
+          new Vector(
+            offset.x + parentData.paintOffset.offsetX,
+            offset.y + parentData.paintOffset.offsetY
+          )
         );
       }
     });
-    console.log("渲染" + count + "个");
-    // super.render(context, offset);
+  }
+
+  render(context: PaintingContext, offset?: Vector): void {
+    this.paintContents(context, offset);
+    context.paintDefaultDebugBoundary(offset, this.size);
   }
 }

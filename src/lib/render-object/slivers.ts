@@ -421,14 +421,14 @@ export class RenderSliverBoxAdapter extends RenderSliverToSingleBoxAdapter {
     this.child.layout(this.constraints.asBoxConstraints(), true);
     
     const constraints = this.constraints as SliverConstraints;
-    let childMainExtent: number = 0;
+    let childExtent: number = 0;
     const size = this.child.size;
 
     // 根据轴方向计算子节点的主轴尺寸
     if (constraints.axis == Axis.vertical) {
-      childMainExtent = size.height;
+      childExtent = size.height;
     } else if (constraints.axis == Axis.horizontal) {
-      childMainExtent = size.width;
+      childExtent = size.width;
     }
 
     // 滚动偏移量与可见区域的计算
@@ -437,17 +437,17 @@ export class RenderSliverBoxAdapter extends RenderSliverToSingleBoxAdapter {
 
     // 计算子节点在视口内的可见范围
     const paintStart = Math.max(0, a);
-    const paintEnd = Math.min(childMainExtent, b);
+    const paintEnd = Math.min(childExtent, b);
     const paintedChildSize = paintEnd > paintStart ? paintEnd - paintStart : 0;
 
     // 设置几何信息
     this.geometry = new SliverGeometry({
       paintExtent: paintedChildSize,  // 子节点在视口内的绘制大小
-      maxPaintExtent: childMainExtent, // 子节点的最大绘制范围
+      maxPaintExtent: childExtent, // 子节点的最大绘制范围
       layoutExtent: paintedChildSize,  // 布局范围，影响滚动行为
-      scrollExtent: childMainExtent,   // 滚动范围
+      scrollExtent: childExtent,   // 滚动范围
       hasVisualOverflow:
-        childMainExtent > constraints.remainingPaintExtent ||
+        childExtent > constraints.remainingPaintExtent ||
         constraints.scrollOffset < 0,  // 视觉溢出判断
     });
 
