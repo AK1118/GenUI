@@ -55,6 +55,28 @@ export const flipAxisDirection = (
   }
 };
 
+/**
+ * 判断滚动方向是否反向
+ * up -> down
+ * left -> right
+ * 
+ * 例如：当一个列表的滚动方向是 AxisDirection.down 时，如果用户向上滚动，则
+ * 用户手指的deltaY 必定为正值。不加以处理就参与滚动计算会导致滚动向下
+ * 滚动（滚动值为正数向上滚动，详见 @RenderViewPort.performLayoutSliverChild 和 @RenderSliverToSingleBoxAdapter.setChildParentData)
+
+ */
+export const axisDirectionIsReversed = (
+  axisDirection: AxisDirection
+): boolean => {
+  if (
+    axisDirection == AxisDirection.up ||
+    axisDirection == AxisDirection.left
+  ) {
+    return false;
+  }
+  return true;
+};
+
 interface SliverConstraintsArguments {
   /**
    * 滚动视图的主轴方向（例如，垂直或水平）。
@@ -156,7 +178,7 @@ export class SliverConstraints
     this.overlap = args.overlap;
     this.remainingPaintExtent = args.remainingPaintExtent;
     this.crossAxisExtent = args.crossAxisExtent;
-    this.viewportMainAxisExtent=args.viewportMainAxisExtent;
+    this.viewportMainAxisExtent = args.viewportMainAxisExtent;
     this.remainingCacheExtent = args.remainingCacheExtent;
     this.cacheOrigin = args.cacheOrigin;
   }
@@ -419,7 +441,7 @@ export class RenderSliverBoxAdapter extends RenderSliverToSingleBoxAdapter {
 
     // 布局子节点
     this.child.layout(this.constraints.asBoxConstraints(), true);
-    
+
     const constraints = this.constraints as SliverConstraints;
     let childExtent: number = 0;
     const size = this.child.size;
@@ -442,13 +464,13 @@ export class RenderSliverBoxAdapter extends RenderSliverToSingleBoxAdapter {
 
     // 设置几何信息
     this.geometry = new SliverGeometry({
-      paintExtent: paintedChildSize,  // 子节点在视口内的绘制大小
+      paintExtent: paintedChildSize, // 子节点在视口内的绘制大小
       maxPaintExtent: childExtent, // 子节点的最大绘制范围
-      layoutExtent: paintedChildSize,  // 布局范围，影响滚动行为
-      scrollExtent: childExtent,   // 滚动范围
+      layoutExtent: paintedChildSize, // 布局范围，影响滚动行为
+      scrollExtent: childExtent, // 滚动范围
       hasVisualOverflow:
         childExtent > constraints.remainingPaintExtent ||
-        constraints.scrollOffset < 0,  // 视觉溢出判断
+        constraints.scrollOffset < 0, // 视觉溢出判断
     });
 
     // 设置子节点的父级数据

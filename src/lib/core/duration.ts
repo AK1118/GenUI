@@ -29,6 +29,39 @@ export class Duration {
       this._duration += duration.microsecond / 1000;
     }
   }
+  /**
+   * 获取单位是`天`的值
+   */
+  get valueWithDays(): number {
+    return this.valueWithHours / 24;
+  }
+  /**
+   * 获取单位是`秒`的值
+   */
+  get valueWithSeconds(): number {
+    return this._duration / 1000;
+  }
+  /**
+   * 获取单位是`毫秒`的值，与value相同
+   */
+  get valueWithMilliseconds(): number {
+    return this._duration;
+  }
+  /**
+   * 获取单位是`时`的值
+   */
+  get valueWithHours(): number {
+    return this.valueWithMinutes / 60;
+  }
+  /**
+   * 获取单位是`分`的值
+   */
+  get valueWithMinutes(): number {
+    return this.valueWithSeconds/60;
+  }
+  /**
+   * 获取默认值，单位毫秒
+   */
   get value(): number {
     return this._duration;
   }

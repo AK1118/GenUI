@@ -67,13 +67,15 @@ import {
   TextDecorationStyle,
   TextStyle,
 } from "@/lib/text-painter";
-import { Container } from "@/lib/widgets/widgets";
+import { Container, Scrollable } from "@/lib/widgets/widgets";
 import { ImageSource } from "@/lib/painting/image";
 import { BoxFit } from "@/lib/painting/box-fit";
 import { ChangeNotifier } from "@/lib/core/change-notifier";
 import { ScrollPosition } from "@/lib/rendering/viewport";
-import { BouncingScrollPhysics } from "@/lib/core/scroll-physics";
-import { AnimationController } from "@/lib/core/animation";
+import { SimpleScrollPhysics } from "@/lib/core/scroll-physics";
+import { AnimationController, AnimationStatus } from "@/lib/core/animation";
+import { AxisDirection } from "@/lib/render-object/slivers";
+import { Duration } from "@/lib/core/duration";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
@@ -113,7 +115,7 @@ const notifier = new MyListener();
 class ScaffoldState extends State<Scaffold> {
   private time: number = 1;
   private offset: ScrollPosition = new ScrollPosition({
-    physics: new BouncingScrollPhysics(),
+    physics: new SimpleScrollPhysics(),
   });
   private dy: number = 0;
   private preDeltaY: number = 0;
@@ -144,51 +146,38 @@ class ScaffoldState extends State<Scaffold> {
   build(context: BuildContext): Widget {
     return new Container({
       padding: {
-        top: 100,
+        top: 0,
       },
-      width: canvas.width * 0.5,
-      height: 100,
+      width: canvas.width,
+      height: canvas.height,
       decoration: new BoxDecoration({
         border: Border.all({
           color: "orange",
         }),
       }),
-      child: new GestureDetector({
-        onPanUpdate: (event) => {
-          this.offset.setPixels(this.offset.pixels - event.delta.offsetY);
-          this.preDeltaY = event.delta.offsetY;
-        },
-        onPanEnd: (event) => {
-          this.dy = this.preDeltaY;
-          this.animate();
-          // console.log( this.dy );
-        },
-        onTapDown: () => {
-          this.dy = 0;
-        },
-        // onTap:()=>{
-        //   this.offset.pixels += 10;
-        //     //notifier.add();
-
-        //   },
-        child: new ViewPort({
-          offset: this.offset,
-          children: [
-            ...Array.from(Array(9)).map((_, ndx) => {
-              return new WidgetToSliverAdapter({
-                child: new Container({
-                  width: canvas.width * 0.5,
-                  height: 30,
-                  color: ndx % 2 === 0 ? "white" : "#edf2fa",
-                  child: new Align({
-                    alignment: Alignment.center,
-                    child: new Text("item" + ndx),
+      child: new Scrollable({
+        axisDirection: AxisDirection.down,
+        viewportBuilder(context, position) {
+          return new ViewPort({
+            offset: position,
+            axisDirection: position.axisDirection,
+            children: [
+              ...Array.from(Array(30)).map((_, ndx) => {
+                return new WidgetToSliverAdapter({
+                  child: new Container({
+                    width: canvas.width,
+                    height: 150,
+                    color: ndx % 2 === 0 ? "white" : "#edf2fa",
+                    child: new Align({
+                      alignment: Alignment.center,
+                      child: new Text("item" + ndx),
+                    }),
                   }),
-                }),
-              });
-            }),
-          ],
-        }),
+                });
+              }),
+            ],
+          });
+        },
       }),
     });
   }
@@ -310,27 +299,41 @@ class Button extends StatefulWidget {
 
 class _ButtonState extends State<Button> {
   private time: number = 0;
-  private animationController = new AnimationController();
+  private width: number = 30;
+  private animationController = new AnimationController({
+    begin: 90,
+    end: canvas.height,
+    duration: new Duration({
+      second: 1,
+    }),
+    reverseDuration: new Duration({
+      second: 0.9,
+    }),
+  });
   public initState(): void {
     super.initState();
     this.animationController.addListener(() => {
       this.setState(() => {
-        this.time = canvas.height * this.animationController.value;
+        this.time = this.animationController.value; //*canvas.height;
       });
       // console.log(this.time);
     });
     this.animationController.addStatusListener(() => {
-      console.log("改变状态", this.animationController.status);
+      if (
+        this.animationController.status == AnimationStatus.completed &&
+        !this.animationController.isAnimating
+      ) {
+        this.animationController.reverse();
+      } else if (
+        this.animationController.status === AnimationStatus.dismissed &&
+        !this.animationController.isAnimating
+      ) {
+        this.animationController.forward();
+      }
     });
     setTimeout(() => {
-      this.animationController.reverse();
+      this.animationController.forward();
     }, 100 * this.widget.index);
-    //  this.animate();
-    // setInterval(()=>{
-    //   this.setState(()=>{
-    //     this.time+=1;
-    //   });
-    // },1000);
   }
   private animate() {
     this.setState(() => {
@@ -345,13 +348,16 @@ class _ButtonState extends State<Button> {
       onTap: () => {
         // this.animate();
         this.animationController.forward();
+        // setTimeout(() => {
+        //   this.animationController.reverse();
+        // }, 1000);
       },
       child: new Container({
         decoration: new BoxDecoration({
-          backgroundColor: "#2196f3",
+          backgroundColor: "#edf2fa",
           borderRadius: BorderRadius.all(10),
         }),
-        width: 30,
+        width: this.width,
         height: Math.max(90, this.time),
         // child: new Padding({
         //   padding: {
@@ -375,22 +381,27 @@ const app = new Container({
   width: canvas.width,
   height: canvas.height,
   child: new Flex({
-    children: Array.from(new Array(30).fill(0)).map((_, ndx) => {
-      return new Button(ndx);
-    }),
+    children: Array.from(new Array(2).fill(0)).map(
+      (_, ndx) => new Button(ndx)
+    ),
   }),
-}); // new Scaffold();
+});
+// new Scaffold();
 runApp(app);
 
-// notifier.addListener(()=>{
-//   console.log("change1");
-// });
+const t = new Duration({
+  second: 60*60*12,
+});
 
-// notifier.addListener(()=>{
-//   console.log("change2");
-//   notifier.trigger();
-// });
-
-// notifier.addListener(()=>{
-//   console.log("change3");
-// });
+console.log(
+  "秒",
+  t.valueWithSeconds,
+  "毫秒",
+  t.valueWithMilliseconds,
+  "分",
+  t.valueWithMinutes,
+  "时",
+  t.valueWithHours,
+  "天",
+  t.valueWithDays,
+);

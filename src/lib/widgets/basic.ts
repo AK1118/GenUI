@@ -91,7 +91,10 @@ import { ImageDecorationArguments, ImageSource } from "../painting/image";
 import { Key } from "../basic/key";
 import { BoxFit } from "../painting/box-fit";
 import { RenderView } from "../render-object/render-object";
-import { RenderSliverBoxAdapter } from "../render-object/slivers";
+import {
+  AxisDirection,
+  RenderSliverBoxAdapter,
+} from "../render-object/slivers";
 import { ViewPortOffset } from "../rendering/viewport";
 export interface ColoredBoxOption {
   color: string;
@@ -759,6 +762,7 @@ export class Image
 
 export class ViewPort extends MultiChildRenderObjectWidget {
   private offset: ViewPortOffset;
+  private axisDirection: AxisDirection;
   constructor(
     option: Partial<
       RenderViewPortArguments & MultiChildRenderObjectWidgetArguments
@@ -766,14 +770,17 @@ export class ViewPort extends MultiChildRenderObjectWidget {
   ) {
     super(option?.children, option?.key);
     this.offset = option?.offset;
+    this.axisDirection = option?.axisDirection;
   }
 
   updateRenderObject(context: BuildContext, renderView: RenderViewPort): void {
     renderView.offset = this.offset;
+    renderView.axisDirection = this.axisDirection;
   }
   createRenderObject(): RenderView {
     return new RenderViewPort({
       offset: this.offset,
+      axisDirection: this.axisDirection,
     });
   }
 }

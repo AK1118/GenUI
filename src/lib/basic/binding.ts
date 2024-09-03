@@ -40,7 +40,7 @@ export class SchedulerFrameManager {
   private frameCallbacks: Map<number, FrameCallback>; // 存储回调函数的映射
   private isRequestingFrame: boolean; // 是否正在请求帧
   private nextCallbackId: number; // 回调函数的唯一标识符
-
+  private frameUpdater: FrameUpdater = new FrameUpdater();
   private constructor() {
     this.frameCallbacks = new Map<number, FrameCallback>();
     this.isRequestingFrame = false;
@@ -84,7 +84,8 @@ export class SchedulerFrameManager {
         callback(timestamp); // 执行每个回调，传递时间戳
       }
     });
-
+    //更新fps
+    this.frameUpdater.update();
     // 清空所有的回调函数
     this.frameCallbacks.clear();
     // 标记当前没有请求帧
@@ -100,7 +101,7 @@ export class SchedulerFrameManager {
 class SchedulerBinding extends BindingBase {
   private frameCallbacks: Map<number, FrameCallbackEntity> = new Map();
   private nextFrameCallbackId: number = 0;
-  private frameUpdater: FrameUpdater = new FrameUpdater();
+ 
   public static instance: SchedulerBinding;
   protected initInstance() {
     super.initInstance();
@@ -119,17 +120,17 @@ class SchedulerBinding extends BindingBase {
     this.nextFrameCallbackId += 1;
     const frameCallback = new FrameCallbackEntity(callback);
     this.frameCallbacks.set(this.nextFrameCallbackId, frameCallback);
-    SchedulerFrameManager.getInstance().addFrameCallback((time) => {
-      this.handleBeginCallbackFrame();
+    SchedulerFrameManager.getInstance().addFrameCallback((timeStamp) => {
+      this.handleBeginCallbackFrame(timeStamp);
     });
     return this.nextFrameCallbackId;
   }
-  public handleBeginCallbackFrame() {
+  public handleBeginCallbackFrame(timeStamp:number) {
     const callbacks = new Map(this.frameCallbacks);
     this.frameCallbacks = new Map();
     callbacks.forEach((entity) => {
       const callback = entity.callback;
-      callback?.(+new Date());
+      callback?.(timeStamp);
     });
     callbacks.clear();
   }
@@ -139,7 +140,6 @@ class SchedulerBinding extends BindingBase {
     SchedulerFrameManager.getInstance().addFrameCallback((time) => {
       this.ensureVisualUpdate();
     });
-
     // if (this.timer) {
     //   console.log("帧拒绝")
     //   // 如果已经有一个定时器在等待，直接返回，避免重复调用
@@ -155,7 +155,6 @@ class SchedulerBinding extends BindingBase {
   }
   private handleCleanCanvas() {
     new Painter().clearRect(0, 0, 1000, 1000);
-    this.frameUpdater.update();
   }
   // 用于清理定时器的方法，在不需要更新时调用
   // clearVisualUpdate() {

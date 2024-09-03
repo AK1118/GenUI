@@ -2100,6 +2100,7 @@ export interface ViewPortArguments {
 
 export interface RenderViewPortArguments {
   offset: ViewPortOffset;
+  axisDirection: AxisDirection;
 }
 
 export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
@@ -2113,6 +2114,7 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
   constructor(args: Partial<RenderViewPortArguments>) {
     super();
     this.offset = args?.offset;
+    this.axisDirection = args?.axisDirection;
   }
   get axisDirection(): AxisDirection {
     return this._axisDirection;
@@ -2171,11 +2173,10 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
       return parentData?.nextSibling;
     };
 
-
     this.performLayoutSliverChild(
       this.center,
       scrollOffset,
-      Math.max(0,-scrollOffset),
+      Math.max(0, -scrollOffset),
       mainAxisExtent,
       mainAxisExtent,
       crossAxisExtent,
@@ -2189,7 +2190,10 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
      * 设置滚动器的滚动范围，滚动最小为0，最大为滚动元素的最大高度减去视口高度
      * 必须在 @performLayoutSliverChild 执行完毕后再调用，且 @maxScrollExtent 不为 0
      */
-    this.offset.applyContentDimension(0, Math.max(0,this.maxScrollExtent-mainAxisExtent));
+    this.offset.applyContentDimension(
+      0,
+      Math.max(0, this.maxScrollExtent - mainAxisExtent)
+    );
   }
 
   private performLayoutSliverChild(
@@ -2209,11 +2213,11 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
   ): number {
     let current: RenderSliver = child;
     let precedingScrollExtent: number = 0;
-    const initialLayoutOffset: number = layoutOffset; 
+    const initialLayoutOffset: number = layoutOffset;
     this.maxScrollExtent = 0;
     let count = 0;
     while (current) {
-      const sliverScrollOffset = scrollOffset<= 0.0 ? 0.0 : scrollOffset;
+      const sliverScrollOffset = scrollOffset <= 0.0 ? 0.0 : scrollOffset;
       const correctedCacheOrigin = Math.max(cacheOrigin, -sliverScrollOffset);
       const cacheExtentCorrection: number = cacheOrigin - correctedCacheOrigin;
 
@@ -2264,26 +2268,38 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
   private updateChildLayoutOffset(
     child: RenderSliver,
     layoutOffset: number,
-    growthDirection: GrowthDirection,
+    growthDirection: GrowthDirection
   ) {
     const parentData: SliverPhysicalParentData =
       child.parentData as SliverPhysicalParentData;
     if (parentData) {
-      parentData.paintOffset = this.computeAbsolutePaintOffset(child,layoutOffset,growthDirection);
+      parentData.paintOffset = this.computeAbsolutePaintOffset(
+        child,
+        layoutOffset,
+        growthDirection
+      );
     }
   }
-  private computeAbsolutePaintOffset( child: RenderSliver,
+  private computeAbsolutePaintOffset(
+    child: RenderSliver,
     layoutOffset: number,
-    growthDirection: GrowthDirection):Offset{
+    growthDirection: GrowthDirection
+  ): Offset {
     switch (this.axisDirection) {
       case AxisDirection.up:
-        return new Offset(0.0, this.size.height - (layoutOffset + child.geometry!.paintExtent));
+        return new Offset(
+          0.0,
+          this.size.height - (layoutOffset + child.geometry!.paintExtent)
+        );
       case AxisDirection.right:
         return new Offset(layoutOffset, 0.0);
       case AxisDirection.down:
         return new Offset(0.0, layoutOffset);
       case AxisDirection.left:
-        return new Offset(this.size.width - (layoutOffset + child.geometry!.paintExtent), 0.0);
+        return new Offset(
+          this.size.width - (layoutOffset + child.geometry!.paintExtent),
+          0.0
+        );
     }
   }
 
