@@ -139,7 +139,7 @@ class ScaffoldState extends State<Scaffold> {
             offset: position,
             axisDirection: position.axisDirection,
             children: [
-              ...Array.from(Array(30)).map((_, ndx) => {
+              ...Array.from(Array(10)).map((_, ndx) => {
                 return new WidgetToSliverAdapter({
                   child: new Container({
                     width: canvas.width,
@@ -147,7 +147,18 @@ class ScaffoldState extends State<Scaffold> {
                     color: ndx % 2 === 0 ? "white" : "#edf2fa",
                     child: new Align({
                       alignment: Alignment.center,
-                      child: new Text("item" + ndx),
+                      child: new Flex({
+                        // crossAxisAlignment:CrossAxisAlignment.center,
+                        // mainAxisAlignment:MainAxisAlignment.center,
+                        children:[
+                          new Text("item" + ndx),
+                          Transform.rotate({
+                            angle:Math.PI/180*45,
+                            alignment:Alignment.center,
+                            child:new Button(ndx)
+                          })
+                        ]
+                      })
                     }),
                   }),
                 });
@@ -276,79 +287,25 @@ class Button extends StatefulWidget {
 
 class _ButtonState extends State<Button> {
   private time: number = 0;
-  private width: number = 30;
-  private animationController = new AnimationController({
-    begin: 90,
-    end: canvas.height,
-    duration: new Duration({
-      second: 1,
-    }),
-    reverseDuration: new Duration({
-      second: 0.9,
-    }),
-  });
-  public initState(): void {
-    super.initState();
-    this.animationController.addListener(() => {
-      this.setState(() => {
-        this.time = this.animationController.value; //*canvas.height;
-      });
-      // console.log(this.time);
-    });
-    this.animationController.addStatusListener(() => {
-      if (
-        this.animationController.status == AnimationStatus.completed &&
-        !this.animationController.isAnimating
-      ) {
-        this.animationController.reverse();
-      } else if (
-        this.animationController.status === AnimationStatus.dismissed &&
-        !this.animationController.isAnimating
-      ) {
-        this.animationController.forward();
-      }
-    });
-    setTimeout(() => {
-      this.animationController.forward();
-    }, 100 * this.widget.index);
-  }
-  private animate() {
-    this.setState(() => {
-      this.time += 1;
-    });
-    requestAnimationFrame(() => {
-      this.animate();
-    });
-  }
   build(context: BuildContext): Widget {
     return new GestureDetector({
       onTap: () => {
-        // this.animate();
-        this.animationController.forward();
-        // setTimeout(() => {
-        //   this.animationController.reverse();
-        // }, 1000);
+        this.setState(()=>{
+          this.time+=1;
+        })
       },
       child: new Container({
+        padding:{
+          top:10,
+          bottom:10,
+          left:20,
+          right:20
+        },
         decoration: new BoxDecoration({
           backgroundColor: "#edf2fa",
           borderRadius: BorderRadius.all(10),
         }),
-        width: this.width,
-        height: Math.max(90, this.time),
-        // child: new Padding({
-        //   padding: {
-        //     top: 10,
-        //     bottom: 10,
-        //     left: abs(sin((Math.PI / 180) * this.time) * 100),
-        //     right: abs(sin((Math.PI / 180) * this.time) * 100),
-        //   },
-        //   // child: new Text("Button" + this.time.toFixed(1), {
-        //   //   style: new TextStyle({
-        //   //     color: "white",
-        //   //   }),
-        //   // }),
-        // }),
+        child:new Text(`${this.time}`)
       }),
     });
   }

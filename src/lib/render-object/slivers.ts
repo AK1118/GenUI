@@ -1,8 +1,11 @@
 import { Offset, Size } from "../basic/rect";
 import { ChangeNotifier } from "../core/change-notifier";
+import { HitTestResult } from "../gesture/hit_test";
 import { abs, clamp } from "../math/math";
+import { Matrix4 } from "../math/matrix";
 import Vector from "../math/vector";
 import Constraints, { BoxConstraints } from "../rendering/constraints";
+import MatrixUtils from "../utils/matrixUtils";
 import {
   Axis,
   PaintingContext,
@@ -430,6 +433,24 @@ export abstract class RenderSliverToSingleBoxAdapter extends RenderSliver {
       child.render(context, offset.add(parentData.paintOffset.toVector()));
     }
   }
+  public hitTest(result: HitTestResult, position: Vector): boolean {
+    const child = this.child as RenderSliver;
+    if (child && this.geometry?.visible) {
+      const parentData: SliverPhysicalParentData =
+        child.parentData as SliverPhysicalParentData;
+        
+      const paintOffset = parentData.paintOffset;
+      const translation = Matrix4.zero
+        .identity()
+        .translate(-paintOffset.offsetX, -paintOffset.offsetY);
+      return this.child?.hitTest(
+        result,
+        MatrixUtils.transformPoint(translation, position)
+      );
+    }
+
+    return false;
+  }
 }
 
 export class RenderSliverBoxAdapter extends RenderSliverToSingleBoxAdapter {
@@ -461,7 +482,7 @@ export class RenderSliverBoxAdapter extends RenderSliverToSingleBoxAdapter {
     const paintStart = Math.max(0, a);
     const paintEnd = Math.min(childExtent, b);
     const paintedChildSize = paintEnd > paintStart ? paintEnd - paintStart : 0;
-
+    
     // 设置几何信息
     this.geometry = new SliverGeometry({
       paintExtent: paintedChildSize, // 子节点在视口内的绘制大小

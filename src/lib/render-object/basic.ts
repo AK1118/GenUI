@@ -248,13 +248,15 @@ export abstract class RenderBox extends RenderView {
   }
   protected defaultHitTestChildren(
     result: HitTestResult,
-    position: Vector
+    position: Vector,
+    transform: Matrix4 = Matrix4.zero.identity()
   ): boolean {
     let child = this.child;
     while (child != null) {
       const parentData =
         child.parentData as ContainerRenderViewParentData<RenderView>;
-      const transformed = Vector.sub(position, parentData.offset);
+      let transformed = Vector.sub(position, parentData.offset);
+      transformed = MatrixUtils.transformPoint(transform, transformed);
       const isHit = child.hitTest(result, transformed);
       if (isHit) {
         return true;
@@ -810,13 +812,15 @@ export abstract class MultiChildRenderView<
   }
   protected defaultHitTestChildren(
     result: HitTestResult,
-    position: Vector
+    position: Vector,
+    transform: Matrix4 = Matrix4.zero.identity()
   ): boolean {
     let child = this.lastChild;
     while (child != null) {
       const parentData =
         child.parentData as ContainerRenderViewParentData<ChildType>;
-      const transformed = Vector.sub(position, parentData.offset);
+      let transformed = Vector.sub(position, parentData.offset);
+      transformed = MatrixUtils.transformPoint(transform, transformed);
       const isHit = child.hitTest(result, transformed);
       if (isHit) {
         return true;
@@ -2319,6 +2323,27 @@ export class RenderViewPort extends MultiChildRenderView<RenderSliver> {
         );
       }
     });
+  }
+
+  public hitTestChildren(result: HitTestResult, position: Vector): boolean {
+    let current: RenderSliver = this.firstChild;
+    while (current) {
+      const parentData: SliverPhysicalParentData =
+        current.parentData as SliverPhysicalParentData;
+      const transform = Matrix4.zero
+        .identity()
+        .translate(
+          -parentData.paintOffset.offsetX,
+          -parentData.paintOffset.offsetY
+        );
+      const isHit = current.hitTest(
+        result,
+        MatrixUtils.transformPoint(transform, position)
+      );
+      if (isHit) return true;
+      current = parentData?.nextSibling as RenderSliver;
+    }
+    return false;
   }
 
   render(context: PaintingContext, offset?: Vector): void {
