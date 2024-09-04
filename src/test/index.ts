@@ -67,12 +67,12 @@ import {
   TextDecorationStyle,
   TextStyle,
 } from "@/lib/text-painter";
-import { Container, Scrollable } from "@/lib/widgets/widgets";
+import {  Container, Scrollable } from "@/lib/widgets/widgets";
 import { ImageSource } from "@/lib/painting/image";
 import { BoxFit } from "@/lib/painting/box-fit";
 import { ChangeNotifier } from "@/lib/core/change-notifier";
 import { ScrollPosition } from "@/lib/rendering/viewport";
-import { SimpleScrollPhysics } from "@/lib/core/scroll-physics";
+import { BouncingScrollPhysics, SimpleScrollPhysics } from "@/lib/core/scroll-physics";
 import { AnimationController, AnimationStatus } from "@/lib/core/animation";
 import { AxisDirection } from "@/lib/render-object/slivers";
 import { Duration } from "@/lib/core/duration";
@@ -114,34 +114,10 @@ class MyListener extends ChangeNotifier {
 const notifier = new MyListener();
 class ScaffoldState extends State<Scaffold> {
   private time: number = 1;
-  private offset: ScrollPosition = new ScrollPosition({
-    physics: new SimpleScrollPhysics(),
-  });
   private dy: number = 0;
   private preDeltaY: number = 0;
   public initState(): void {
     super.initState();
-    this.animate();
-    // setInterval(()=>{
-    //   this.setState(()=>{
-    //     this.time+=1;
-    //   });
-    // },1000);
-    // notifier.addListener(() => {
-    //   this.setState(() => {
-    //     this.time = notifier.counter;
-    //   });
-    // });
-  }
-  private animate() {
-    this.setState(() => {
-      //this.time += 1;
-    });
-    requestAnimationFrame(() => {
-      this.offset.setPixels(this.offset.pixels - this.dy);
-      this.dy *= 0.95;
-      if (abs(this.dy) >= 0.01 && this.offset.pixels > 0) this.animate();
-    });
   }
   build(context: BuildContext): Widget {
     return new Container({
@@ -157,6 +133,7 @@ class ScaffoldState extends State<Scaffold> {
       }),
       child: new Scrollable({
         axisDirection: AxisDirection.down,
+        physics:new BouncingScrollPhysics(),
         viewportBuilder(context, position) {
           return new ViewPort({
             offset: position,
@@ -377,16 +354,15 @@ class _ButtonState extends State<Button> {
   }
 }
 
-const app = new Container({
-  width: canvas.width,
-  height: canvas.height,
-  child: new Flex({
-    children: Array.from(new Array(2).fill(0)).map(
-      (_, ndx) => new Button(ndx)
-    ),
-  }),
-});
-// new Scaffold();
+const app =
+//  new Container({
+//   width: canvas.width,
+//   height: canvas.height,
+//   child: new Flex({
+//     children: Array.from(new Array(2).fill(0)).map((_, ndx) => new Button(ndx)),
+//   }),
+//});
+new Scaffold();
 runApp(app);
 
 const t = new Duration({
@@ -405,3 +381,37 @@ console.log(
   "天",
   t.valueWithDays,
 );
+
+// function animate(y:number=Math.random()*300){
+//   const animation = new AnimationController({
+//     duration: new Duration({
+//       milliseconds: 1000,
+//     }),
+//   });
+  
+//   g.fillStyle = "#ffffff";
+//   animation.addListener(() => {
+    
+//     g.fillRect(0,y,animation.value*canvas.width,30)
+//   });
+  
+//   animation.addStatusListener(() => {
+//     if (animation.status == AnimationStatus.completed && !animation.isAnimating) {
+//       animation.reverse();
+//     } else if (
+//       animation.status === AnimationStatus.dismissed &&
+//       !animation.isAnimating
+//     ) {
+//       animation.forward();
+//     }
+//   });
+  
+//   animation.forward();
+// }
+
+// animate(0);
+// animate(30);
+// animate(70);
+// animate(130);
+// animate(160);
+// animate(190);

@@ -27,7 +27,7 @@ import { GestureBinding } from "../gesture/binding";
 import { AbstractNode, RenderView } from "../render-object/render-object";
 
 type FrameCallback = (timestamp: number) => void;
-
+type AnimationFrame=(callback:FrameCallback)=>void;
 class FrameCallbackEntity {
   callback: FrameCallback;
   constructor(callback: FrameCallback) {
@@ -41,12 +41,31 @@ export class SchedulerFrameManager {
   private isRequestingFrame: boolean; // 是否正在请求帧
   private nextCallbackId: number; // 回调函数的唯一标识符
   private frameUpdater: FrameUpdater = new FrameUpdater();
+  private requestAnimationFrame:AnimationFrame;
   private constructor() {
     this.frameCallbacks = new Map<number, FrameCallback>();
     this.isRequestingFrame = false;
     this.nextCallbackId = 0;
+    this.initAnimationFrame();
   }
-
+  private initAnimationFrame(){
+    // this.requestAnimationFrame=(callback:FrameCallback)=>{
+    //   setTimeout(()=>{
+    //     callback(+new Date())
+    //   },1000/60);
+    // }
+    if(typeof window !=='undefined'&&typeof window.requestAnimationFrame==='function'){
+      this.requestAnimationFrame=(callback:FrameCallback)=>{
+        requestAnimationFrame(callback);
+      };
+    }else{
+      this.requestAnimationFrame=(callback:FrameCallback)=>{
+        setTimeout(()=>{
+          callback(+new Date())
+        },1000/120);
+      }
+    }
+  }
   // 获取单例实例
   public static getInstance(): SchedulerFrameManager {
     if (!SchedulerFrameManager.instance) {
@@ -72,7 +91,7 @@ export class SchedulerFrameManager {
   private requestFrameIfNeeded(): void {
     if (!this.isRequestingFrame) {
       this.isRequestingFrame = true;
-      requestAnimationFrame(this.handleFrame.bind(this));
+      this.requestAnimationFrame(this.handleFrame.bind(this));
     }
   }
 
@@ -101,7 +120,7 @@ export class SchedulerFrameManager {
 class SchedulerBinding extends BindingBase {
   private frameCallbacks: Map<number, FrameCallbackEntity> = new Map();
   private nextFrameCallbackId: number = 0;
- 
+
   public static instance: SchedulerBinding;
   protected initInstance() {
     super.initInstance();
@@ -120,12 +139,12 @@ class SchedulerBinding extends BindingBase {
     this.nextFrameCallbackId += 1;
     const frameCallback = new FrameCallbackEntity(callback);
     this.frameCallbacks.set(this.nextFrameCallbackId, frameCallback);
-    SchedulerFrameManager.getInstance().addFrameCallback((timeStamp) => {
-      this.handleBeginCallbackFrame(timeStamp);
-    });
+    SchedulerFrameManager.getInstance().addFrameCallback(
+      this.handleBeginCallbackFrame.bind(this)
+    );
     return this.nextFrameCallbackId;
   }
-  public handleBeginCallbackFrame(timeStamp:number) {
+  public handleBeginCallbackFrame(timeStamp: number) {
     const callbacks = new Map(this.frameCallbacks);
     this.frameCallbacks = new Map();
     callbacks.forEach((entity) => {
@@ -136,33 +155,14 @@ class SchedulerBinding extends BindingBase {
   }
   // private timer: any = null;
   public requestVisualUpdate() {
+    SchedulerFrameManager.getInstance().addFrameCallback(
+      this.ensureVisualUpdate.bind(this)
+    );
     this.handleCleanCanvas();
-    SchedulerFrameManager.getInstance().addFrameCallback((time) => {
-      this.ensureVisualUpdate();
-    });
-    // if (this.timer) {
-    //   console.log("帧拒绝")
-    //   // 如果已经有一个定时器在等待，直接返回，避免重复调用
-    //   return;
-    // }
-    // const update = () => {
-    //   Binding.getInstance().schedulerBinding.ensureVisualUpdate();
-    //   this.timer = null; // 重置定时器
-    // };
-    // this.handleCleanCanvas();
-    // // 使用 requestAnimationFrame 进行帧调度
-    // this.timer = requestAnimationFrame(update);
   }
   private handleCleanCanvas() {
     new Painter().clearRect(0, 0, 1000, 1000);
   }
-  // 用于清理定时器的方法，在不需要更新时调用
-  // clearVisualUpdate() {
-  //   if (this.timer) {
-  //     cancelAnimationFrame(this.timer);
-  //     this.timer = null;
-  //   }
-  // }
 }
 
 export class PipelineOwner {

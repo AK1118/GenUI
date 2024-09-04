@@ -8,7 +8,12 @@ import {
 } from "../basic/framework";
 import { Key } from "../basic/key";
 import { Offset } from "../basic/rect";
-import { AnimationController } from "../core/animation";
+import {
+  AnimationController,
+  FrictionSimulation,
+  Simulation,
+} from "../core/animation";
+import { Duration } from "../core/duration";
 import { SimpleScrollPhysics, ScrollPhysics } from "../core/scroll-physics";
 import {
   MovePointerEvent,
@@ -16,6 +21,7 @@ import {
   PanZoomStartPointerEvent,
   PanZoomUpdatePointerEvent,
 } from "../gesture/events";
+import { min } from "../math/math";
 import Alignment from "../painting/alignment";
 import { BoxDecoration } from "../painting/decoration";
 import { AlignArguments, Axis, RectTLRB } from "../render-object/basic";
@@ -146,7 +152,10 @@ export class Scrollable extends StatefulWidget implements ScrollableArguments {
 class ScrollableState extends State<Scrollable> {
   private position: ScrollPosition;
   private delta: number = 0;
-  private velocityTicker: VelocityTracker = new VelocityTracker();
+  private velocityTicker: VelocityTracker = new VelocityTracker(new Duration({
+    milliseconds:200
+  }));
+  private animationController = new AnimationController({});
   public initState(): void {
     this.position = new ScrollPosition({
       axisDirection: this.widget.axisDirection,
@@ -154,51 +163,36 @@ class ScrollableState extends State<Scrollable> {
     });
   }
   private applyUserOffset(offset: Offset) {
-    this.delta = this.getMainAxisDirectionOffset(offset);
+    this.delta = this.position.applyUserOffset(offset);
     this.position.setPixels(this.position.pixels + this.delta);
   }
-  private getMainAxisDirectionOffset(offset: Offset): number {
-    let mainDirectionOffset = 0;
-    switch (axisDirectionToAxis(this.position.axisDirection)) {
-      case Axis.horizontal:
-        mainDirectionOffset = offset.offsetX;
-        break;
-      case Axis.vertical:
-        mainDirectionOffset = offset.offsetY;
-        break;
+  private handleStartSimulation() {
+    const velocityOffset = this.velocityTicker.getVelocity();
+    const simulation = this.position.createBallisticSimulation(velocityOffset);
+    if (simulation) {
+      this.animationController.animateWidthSimulation(simulation);
+      this.animationController.addListener(() => {
+        this.position.setPixels(this.animationController.value);
+      });
     }
-    if (axisDirectionIsReversed(this.position.axisDirection)) {
-      mainDirectionOffset *= -1;
-    }
-    return mainDirectionOffset;
   }
-  private animationController = new AnimationController({});
   build(context: BuildContext): Widget {
     return new Listener({
       onPointerDown: () => {
         this.animationController.stop();
       },
-      onPointerMove: (event: MovePointerEvent) => {
-        this.applyUserOffset(event.delta);
-        this.velocityTicker.addPosition(
-          new Offset(event.position.x, event.position.y)
-        );
-      },
-      onPointerUp: () => {
-        const velocity = this.velocityTicker.getVelocity();
-        if (Math.abs(velocity.offsetY) > 20) {
-          const simulation = this.widget.physics.createBallisticSimulation(
-            this.position,
-            -velocity.offsetY
+      child:new GestureDetector({
+        onPanUpdate:(event)=>{
+          this.applyUserOffset(event.delta);
+          this.velocityTicker.addPosition(
+            new Offset(event.position.x, event.position.y)
           );
-
-          this.animationController.animateWidthSimulation(simulation);
-          this.animationController.addListener(() => {
-            this.position.setPixels(this.animationController.value);
-          });
-        }
-      },
-      child:this.widget.viewportBuilder(context, this.position),
+        },
+        onPanEnd: () => {
+          this.handleStartSimulation();
+        },
+        child: this.widget.viewportBuilder(context, this.position)
+      }),
     });
   }
 }

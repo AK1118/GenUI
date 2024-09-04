@@ -95,14 +95,12 @@ class Ticker {
     if (this.startTime === 0) {
       this.startTime = time; // 记录首次tick的时间戳
     }
-    const elapsed = (time - this.startTime) / 1000; // 计算运行时间（秒）
+    const elapsed = (time - this.startTime) *0.001; // 计算运行时间（秒）
     if(this.inActive){
       this.onTick(elapsed); // 调用回调函数
     }
     if (this.shouldCallbackSchedule) {
-      setTimeout(() => {
-        this.scheduleTick(); // 如果需要继续，调度下一帧
-      });
+      setTimeout(this.scheduleTick.bind(this));
     }
   }
 
@@ -111,11 +109,7 @@ class Ticker {
   }
 
   private scheduleTick(): void {
-    this.animateId = SchedulerBinding.instance.scheduleFrameCallback(
-      (time: number) => {
-        this.tick(time);
-      }
-    );
+    this.animateId = SchedulerBinding.instance.scheduleFrameCallback(this.tick.bind(this));
   }
 }
 
@@ -354,5 +348,268 @@ class InterpolationSimulation extends Simulation {
   }
   isDone(time: number): boolean {
     return time >= this.duration.valueWithSeconds;
+  }
+}
+
+
+
+export class FrictionSimulation extends Simulation {
+  private drag: number;
+  private dragLog: number;
+  private position: number;
+  private velocity: number;
+  private constantDeceleration: number;
+  private finalTime: number = Infinity; // 需要为牛顿迭代方法在构造函数中调用设置为 Infinity
+  private toleranceVelocity: number;
+
+  constructor(
+    drag: number,
+    position: number,
+    velocity: number,
+    toleranceVelocity: number = 0,
+    constantDeceleration: number = 0
+  ) {
+    if (drag <= 0) {
+      throw new Error("Drag must be greater than 0");
+    }
+    super();
+    this.drag = drag;
+    this.dragLog = Math.log(drag);
+    this.position = position;
+    this.velocity = velocity;
+    this.constantDeceleration = constantDeceleration * Math.sign(velocity);
+    this.toleranceVelocity = toleranceVelocity;
+
+    // 计算终止时间
+    this.finalTime = this.newtonsMethod({
+      initialGuess: 0,
+      target: 0,
+      f: (time) => this.dx(time),
+      df: (time) =>
+        this.velocity * Math.pow(this.drag, time) * this.dragLog -
+        this.constantDeceleration,
+      iterations: 10,
+    });
+  }
+
+  /**
+   * 指数衰减阻尼物理模型：
+   * x(t) =p0 + v0 * d^t / ln(d) - v0 / ln(d) - (c / 2)*t^2
+   * * 牛顿迭代方法求解
+   * x'(t) = v0 * d^t / ln(d) - c*t 
+   * 其中t单位是秒,p0是初始位置,v0是初始速度,d是阻尼因子,c是一个常量的减速度（负加速度）
+   * 
+   */
+  x(time: number): number {
+    if (time > this.finalTime) {
+      return this.finalX;
+    }
+    let x =
+      this.position +
+      (this.velocity * Math.pow(this.drag, time)) / this.dragLog -
+      this.velocity / this.dragLog -
+      (this.constantDeceleration / 2) * Math.pow(time, 2);
+    return x;
+  }
+
+  dx(time: number): number {
+    if (time > this.finalTime) {
+      return 0;
+    }
+    return (
+      this.velocity * Math.pow(this.drag, time) -
+      this.constantDeceleration * time
+    );
+  }
+
+  /**
+   * 可能会到达的最终位置
+   */
+  get finalX(): number {
+    if (this.constantDeceleration === 0) {
+      return this.position - this.velocity / this.dragLog;
+    }
+    return this.x(this.finalTime);
+  }
+
+
+  /**
+   * 在某一位置上的时间
+   */
+  public timeAtX(targetX: number): number {
+    if (targetX === this.position) {
+      return 0.0;
+    }
+    if (
+      this.velocity === 0.0 ||
+      (this.velocity > 0
+        ? targetX < this.position || targetX > this.finalX
+        : targetX > this.position || targetX < this.finalX)
+    ) {
+      return Infinity;
+    }
+    return this.newtonsMethod({
+      initialGuess: 0,
+      target: targetX,
+      f: (time) => this.x(time),
+      df: (time) => this.dx(time),
+      iterations: 10,
+    });
+  }
+
+  isDone(time: number): boolean {
+    return (
+      Math.abs(this.dx(time)) < this.toleranceVelocity || this.dx(time) === 0
+    );
+  }
+
+  private newtonsMethod({
+    initialGuess,
+    target,
+    f,
+    df,
+    iterations,
+  }: {
+    initialGuess: number;
+    target: number;
+    f: (x: number) => number;
+    df: (x: number) => number;
+    iterations: number;
+  }): number {
+    let guess = initialGuess;
+    for (let i = 0; i < iterations; i++) {
+      guess = guess - (f(guess) - target) / df(guess);
+    }
+    return guess;
+  }
+}
+
+
+class SpringSimulation extends Simulation {
+  private damping: number = 2; // 阻尼系数
+  private stiffness: number =2; // 刚度系数
+  private initialPosition: number;
+  private endPosition: number;
+  private initialVelocity: number;
+
+  constructor(position: number, endPosition: number, velocity: number) {
+    super();
+    this.initialPosition = position;
+    this.endPosition = endPosition;
+    this.initialVelocity = velocity;
+  }
+
+  x(time: number): number {
+    const distance = this.initialPosition - this.endPosition;
+    // 计算弹簧的位置，公式：x(t) = end + (start - end) * e^(-damping * t) * cos(stiffness * t)
+    //此处只关注x位置衰减
+    return (
+      this.endPosition +
+      distance *
+        Math.exp(-this.damping * time*2) 
+        //* Math.cos(this.stiffness * time*2)
+    );
+  }
+
+  dx(time: number): number {
+    const distance = this.endPosition - this.initialPosition;
+    // 计算弹簧的速度，公式：v(t) = -distance * e^(-damping * t) * (damping * cos(stiffness * t) + stiffness * sin(stiffness * t))
+    return (
+      -distance *
+      Math.exp(-this.damping * time) *
+      (this.damping * Math.cos(this.stiffness * time) +
+        this.stiffness * Math.sin(this.stiffness * time))
+    );
+  }
+
+  isDone(time: number): boolean {
+    // 当时间足够长时，假设弹簧运动已停止
+    return (
+      Math.abs(this.x(time) - this.endPosition) < 0.1 &&
+      Math.abs(this.dx(time)) < 0.1
+    );
+  }
+}
+
+export class BouncingSimulation extends Simulation {
+  private position: number = 0;
+  private maxScrollExtent: number = 0;
+  private minScrollExtent: number = 0;
+  private velocity: number = 0;
+  private frictionSimulation: FrictionSimulation;
+  private springTime: number = Infinity;
+  private springSimulation: SpringSimulation;
+  constructor(
+    position: number,
+    maxScrollExtent: number,
+    minScrollExtent: number,
+    velocity: number
+  ) {
+    super();
+    this.position = position;
+    this.maxScrollExtent = maxScrollExtent;
+    this.minScrollExtent = minScrollExtent;
+    this.velocity = velocity;
+    this.frictionSimulation = new FrictionSimulation(0.135, position, velocity);
+    if (position > maxScrollExtent) {
+      this.springSimulation = new SpringSimulation(
+        position,
+        maxScrollExtent,
+        velocity
+      );
+      this.springTime = -Infinity;
+    } else if (position < minScrollExtent) {
+      this.springSimulation = new SpringSimulation(position, 0, velocity);
+      this.springTime = -Infinity;
+    } else {
+      this.frictionSimulation = new FrictionSimulation(
+        0.135,
+        position,
+        velocity
+      );
+      const finalX = this.frictionSimulation.finalX;
+      if (finalX > maxScrollExtent) {
+        this.springTime = this.frictionSimulation.timeAtX(maxScrollExtent);
+        this.springSimulation = new SpringSimulation(
+          this.frictionSimulation.x(this.springTime),
+          this.maxScrollExtent,
+          this.frictionSimulation.dx(velocity)
+        );
+      } else if (finalX < minScrollExtent) {
+        this.springTime = this.frictionSimulation.timeAtX(minScrollExtent);
+        this.springSimulation = new SpringSimulation(
+          this.frictionSimulation.x(this.springTime),
+          this.minScrollExtent,
+          this.frictionSimulation.dx(velocity)
+        );
+      }
+    }
+  }
+  private offsetTime: number = 0;
+  private simulation(time: number): Simulation {
+    let simulation:Simulation;
+    if (time > this.springTime) {
+      this.offsetTime = isFinite(this.springTime) ? this.springTime : 0;
+      simulation= this.springSimulation;
+    } else {
+      this.offsetTime = 0;
+      simulation= this.frictionSimulation;
+    }
+    if(!simulation){
+      simulation=this.frictionSimulation;
+    }
+    return simulation;
+  }
+
+  x(time: number): number {
+    return this.simulation(time).x(time - this.offsetTime);
+  }
+
+  dx(time: number): number {
+    return this.simulation(time).dx(time - this.offsetTime);
+  }
+
+  isDone(time: number): boolean {
+    return this.simulation(time).isDone(time - this.offsetTime);
   }
 }

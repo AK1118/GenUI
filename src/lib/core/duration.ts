@@ -42,7 +42,7 @@ export class Duration {
     return this._duration / 1000;
   }
   /**
-   * 获取单位是`毫秒`的值，与value相同
+   * 获取单位是`毫秒`的值，与`Duration.value`一致
    */
   get valueWithMilliseconds(): number {
     return this._duration;

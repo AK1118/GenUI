@@ -1,9 +1,11 @@
 import { Offset } from "../basic/rect";
+import { Simulation } from "../core/animation";
 import { ChangeNotifier } from "../core/change-notifier";
 import { ScrollPhysics } from "../core/scroll-physics";
 import { Axis } from "../render-object/basic";
 import {
   AxisDirection,
+  axisDirectionIsReversed,
   axisDirectionToAxis,
   ScrollDirection,
 } from "../render-object/slivers";
@@ -74,6 +76,9 @@ export class ScrollPosition extends ViewPortOffset {
       this.pixels == this._maxScrollExtent
     );
   }
+  get outOfRange(): boolean {
+    return this.pixels < this._minScrollExtent || this.pixels > this._maxScrollExtent;
+  }
   get axis(): Axis {
     return axisDirectionToAxis(this.axisDirection);
   }
@@ -96,7 +101,7 @@ export class ScrollPosition extends ViewPortOffset {
     return true;
   }
   public applyBoundaryConditions(newPixels: number): number {
-    const result=this.physics.applyBoundaryConditions(this, newPixels);
+    const result = this.physics.applyBoundaryConditions(this, newPixels);
     return result;
   }
 
@@ -107,4 +112,46 @@ export class ScrollPosition extends ViewPortOffset {
     const pixels: number = newPixels - correctScroll;
     super.setPixels(pixels);
   }
+
+  public applyUserOffset(offset: Offset): number {
+    const mainAxisOffset = getMainAxisDirectionOffset(
+      this._axisDirection,
+      offset
+    );
+    return this.physics.applyPhysicsToUserOffset(this, mainAxisOffset);
+  }
+
+  public createBallisticSimulation(velocityOffset: Offset): Simulation {
+    const velocity = getMainAxisDirectionOffset(
+      this._axisDirection,
+      velocityOffset
+    );
+    //速度不足时不需要创建模拟器
+    if(Math.abs(velocity)<20){
+      return;
+    }
+    return this.physics?.createBallisticSimulation(this, velocity);
+  }
 }
+
+/**
+ * 获取主轴方向偏移量
+ */
+const getMainAxisDirectionOffset = (
+  axisDirection: AxisDirection,
+  offset: Offset
+): number => {
+  let mainDirectionOffset = 0;
+  switch (axisDirectionToAxis(axisDirection)) {
+    case Axis.horizontal:
+      mainDirectionOffset = offset.offsetX;
+      break;
+    case Axis.vertical:
+      mainDirectionOffset = offset.offsetY;
+      break;
+  }
+  if (axisDirectionIsReversed(axisDirection)) {
+    mainDirectionOffset *= -1;
+  }
+  return mainDirectionOffset;
+};
