@@ -5,7 +5,7 @@
  * @Last Modified time: 2024-08-30 18:14:53
  */
 
-import { ScrollPosition } from "../rendering/viewport";
+import { ScrollPosition } from "../render-object/viewport";
 import { BouncingSimulation, FrictionSimulation, Simulation } from "./animation";
 
 export abstract class ScrollPhysics {

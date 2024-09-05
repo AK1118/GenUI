@@ -60,12 +60,11 @@ import {  Container, Scrollable } from "@/lib/widgets/widgets";
 import { ImageSource } from "@/lib/painting/image";
 import { BoxFit } from "@/lib/painting/box-fit";
 import { ChangeNotifier } from "@/lib/core/change-notifier";
-import { ScrollPosition } from "@/lib/rendering/viewport";
+import { ScrollPosition } from "@/lib/render-object/viewport";
 import { BouncingScrollPhysics, SimpleScrollPhysics } from "@/lib/core/scroll-physics";
 import { AnimationController, AnimationStatus } from "@/lib/core/animation";
-import { AxisDirection } from "@/lib/render-object/slivers";
 import { Duration } from "@/lib/core/duration";
-import { Axis } from "@/lib/core/base-types";
+import { Axis, AxisDirection } from "@/lib/core/base-types";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");

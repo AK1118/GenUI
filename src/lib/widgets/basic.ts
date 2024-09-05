@@ -42,8 +42,6 @@ import {
   RenderPointerListenerArguments,
   RenderTransformArguments,
   RenderTransformBox,
-  RenderViewPort,
-  RenderViewPortArguments,
   RootRenderView,
   StackOption,
   StackParentData,
@@ -87,11 +85,10 @@ import { Key } from "../basic/key";
 import { BoxFit } from "../painting/box-fit";
 import { RenderView } from "../render-object/render-object";
 import {
-  AxisDirection,
   RenderSliverBoxAdapter,
 } from "../render-object/slivers";
-import { ViewPortOffset } from "../rendering/viewport";
-import { Axis, CrossAxisAlignment, MainAxisAlignment, StackFit, WrapAlignment, WrapCrossAlignment } from "../core/base-types";
+import { RenderViewPort, RenderViewPortArguments, ViewPortOffset } from "../render-object/viewport";
+import { Axis, AxisDirection, CrossAxisAlignment, MainAxisAlignment, StackFit, WrapAlignment, WrapCrossAlignment } from "../core/base-types";
 export interface ColoredBoxOption {
   color: string;
 }

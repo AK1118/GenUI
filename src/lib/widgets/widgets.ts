@@ -13,6 +13,7 @@ import {
   FrictionSimulation,
   Simulation,
 } from "../core/animation";
+import { AxisDirection } from "../core/base-types";
 import { Duration } from "../core/duration";
 import { SimpleScrollPhysics, ScrollPhysics } from "../core/scroll-physics";
 import {
@@ -26,12 +27,11 @@ import Alignment from "../painting/alignment";
 import { BoxDecoration } from "../painting/decoration";
 import { AlignArguments, RectTLRB } from "../render-object/basic";
 import {
-  AxisDirection,
   axisDirectionIsReversed,
   axisDirectionToAxis,
 } from "../render-object/slivers";
 import { BoxConstraints } from "../rendering/constraints";
-import { ScrollPosition } from "../rendering/viewport";
+import { ScrollPosition } from "../render-object/viewport";
 import VelocityTracker from "../utils/velocity-ticker";
 import {
   Align,

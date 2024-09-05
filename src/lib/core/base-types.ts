@@ -61,3 +61,22 @@ export enum WrapCrossAlignment {
   end = "end",
   center = "center",
 }
+
+
+export enum AxisDirection {
+    up = "up",
+    down = "down",
+    left = "left",
+    right = "right",
+  }
+  
+  export enum GrowthDirection {
+    forward = "forward",
+    reverse = "reverse",
+  }
+  
+  export enum ScrollDirection {
+    idle = "idle",
+    forward = "forward",
+    reverse = "reverse",
+  }

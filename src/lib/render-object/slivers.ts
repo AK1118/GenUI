@@ -1,36 +1,20 @@
 import { Offset, Size } from "../basic/rect";
-import { Axis } from "../core/base-types";
+import { Axis, AxisDirection, GrowthDirection, ScrollDirection } from "../core/base-types";
 import { ChangeNotifier } from "../core/change-notifier";
 import { HitTestResult } from "../gesture/hit_test";
 import { abs, clamp } from "../math/math";
 import { Matrix4 } from "../math/matrix";
 import Vector from "../math/vector";
 import Constraints, { BoxConstraints } from "../rendering/constraints";
+import { SliverPhysicalParentData } from "./viewport";
 import MatrixUtils from "../utils/matrixUtils";
 import {
-  PaintingContext,
-  SliverPhysicalParentData,
+  PaintingContext
   // MultiChildRenderView,
 } from "./basic";
 import { ParentData, RenderView } from "./render-object";
 
-export enum AxisDirection {
-  up = "up",
-  down = "down",
-  left = "left",
-  right = "right",
-}
 
-export enum GrowthDirection {
-  forward = "forward",
-  reverse = "reverse",
-}
-
-export enum ScrollDirection {
-  idle = "idle",
-  forward = "forward",
-  reverse = "reverse",
-}
 
 export const axisDirectionToAxis = (axisDirection: AxisDirection): Axis => {
   switch (axisDirection) {
