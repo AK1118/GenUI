@@ -24,7 +24,7 @@ import {
 import { min } from "../math/math";
 import Alignment from "../painting/alignment";
 import { BoxDecoration } from "../painting/decoration";
-import { AlignArguments, Axis, RectTLRB } from "../render-object/basic";
+import { AlignArguments, RectTLRB } from "../render-object/basic";
 import {
   AxisDirection,
   axisDirectionIsReversed,
@@ -153,7 +153,7 @@ class ScrollableState extends State<Scrollable> {
   private position: ScrollPosition;
   private delta: number = 0;
   private velocityTicker: VelocityTracker = new VelocityTracker(new Duration({
-    milliseconds:200
+    milliseconds:3000
   }));
   private animationController = new AnimationController({});
   public initState(): void {

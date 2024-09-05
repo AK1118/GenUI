@@ -15,7 +15,6 @@ import {
 import {
   AlignArguments,
   AlignRenderView,
-  Axis,
   BoxDecorationRenderView,
   ClipRectRenderView,
   ClipRRectArguments,
@@ -23,13 +22,12 @@ import {
   ColoredRender,
   ConstrainedBoxRender,
   ConstrainedBoxRenderArguments,
-  CrossAxisAlignment,
+
   ExpandedArguments,
   FlexOption,
   FlexParentData,
   FlexRenderView,
   ImageRenderView,
-  MainAxisAlignment,
   onPointerCancelCallback,
   onPointerDownCallback,
   onPointerMoveCallback,
@@ -47,12 +45,9 @@ import {
   RenderViewPort,
   RenderViewPortArguments,
   RootRenderView,
-  StackFit,
   StackOption,
   StackParentData,
   StackRenderView,
-  WrapAlignment,
-  WrapCrossAlignment,
   WrapOption,
   WrapRenderView,
 } from "../render-object/basic";
@@ -96,6 +91,7 @@ import {
   RenderSliverBoxAdapter,
 } from "../render-object/slivers";
 import { ViewPortOffset } from "../rendering/viewport";
+import { Axis, CrossAxisAlignment, MainAxisAlignment, StackFit, WrapAlignment, WrapCrossAlignment } from "../core/base-types";
 export interface ColoredBoxOption {
   color: string;
 }

@@ -3,17 +3,6 @@ import { Binding } from "../lib/basic/binding";
 import { BuildContext, Element } from "../lib/basic/elements";
 import { Offset, Size } from "@/lib/basic/rect";
 import {
-  Axis,
-  ContainerRenderViewParentData,
-  CrossAxisAlignment,
-  MainAxisAlignment,
-  MultiChildRenderView,
-  PlaceholderRenderView,
-  StackFit,
-  WrapAlignment,
-  WrapCrossAlignment,
-} from "@/lib/render-object/basic";
-import {
   Align,
   ClipRRect,
   ColoredBox,
@@ -76,6 +65,7 @@ import { BouncingScrollPhysics, SimpleScrollPhysics } from "@/lib/core/scroll-ph
 import { AnimationController, AnimationStatus } from "@/lib/core/animation";
 import { AxisDirection } from "@/lib/render-object/slivers";
 import { Duration } from "@/lib/core/duration";
+import { Axis } from "@/lib/core/base-types";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
@@ -139,28 +129,43 @@ class ScaffoldState extends State<Scaffold> {
             offset: position,
             axisDirection: position.axisDirection,
             children: [
-              ...Array.from(Array(10)).map((_, ndx) => {
+              ...Array.from(Array(1000)).map((_, ndx) => {
                 return new WidgetToSliverAdapter({
-                  child: new Container({
+                  child:new Container({
                     width: canvas.width,
-                    height: 150,
+                    height: Math.max(30,Math.random()*canvas.height),
                     color: ndx % 2 === 0 ? "white" : "#edf2fa",
                     child: new Align({
                       alignment: Alignment.center,
-                      child: new Flex({
-                        // crossAxisAlignment:CrossAxisAlignment.center,
-                        // mainAxisAlignment:MainAxisAlignment.center,
-                        children:[
-                          new Text("item" + ndx),
-                          Transform.rotate({
-                            angle:Math.PI/180*45,
-                            alignment:Alignment.center,
-                            child:new Button(ndx)
-                          })
-                        ]
-                      })
+                      child:new Button(ndx)
                     }),
-                  }),
+                  })
+                  // child:new Container({
+                  //   child:new Flex({
+                  //     direction: Axis.vertical,
+
+                  //     children:Array.from(Array(1000)).map((_, ndx) => {
+                  //       return new Container({
+                  //         width: canvas.width,
+                  //         height: Math.max(30,Math.random()*canvas.height),
+                  //         color: ndx % 2 === 0 ? "white" : "#edf2fa",
+                  //         child: new Align({
+                  //           alignment: Alignment.center,
+                  //           child:new Button(ndx)
+                  //         }),
+                  //       })
+                  //     }),
+                  // })
+                  // }),
+                  // child: new Container({
+                  //   width: canvas.width,
+                  //   height: Math.max(30,Math.random()*canvas.height),
+                  //   color: ndx % 2 === 0 ? "white" : "#edf2fa",
+                  //   child: new Align({
+                  //     alignment: Alignment.center,
+                  //     child: new Text("Item" + ndx),
+                  //   }),
+                  // }),
                 });
               }),
             ],
@@ -296,8 +301,8 @@ class _ButtonState extends State<Button> {
       },
       child: new Container({
         padding:{
-          top:10,
-          bottom:10,
+          top:10+this.time,
+          bottom:10+this.time,
           left:20,
           right:20
         },

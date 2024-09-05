@@ -1,4 +1,5 @@
 import { Offset, Size } from "../basic/rect";
+import { Axis } from "../core/base-types";
 import { ChangeNotifier } from "../core/change-notifier";
 import { HitTestResult } from "../gesture/hit_test";
 import { abs, clamp } from "../math/math";
@@ -7,7 +8,6 @@ import Vector from "../math/vector";
 import Constraints, { BoxConstraints } from "../rendering/constraints";
 import MatrixUtils from "../utils/matrixUtils";
 import {
-  Axis,
   PaintingContext,
   SliverPhysicalParentData,
   // MultiChildRenderView,

@@ -13,20 +13,15 @@ import {
   Widget,
 } from "./lib/basic/framework";
 import Rect, { Size } from "./lib/basic/rect";
+import { Axis, Clip, CrossAxisAlignment, MainAxisAlignment, WrapAlignment, WrapCrossAlignment } from "./lib/core/base-types";
 import Vector from "./lib/math/vector";
 import Alignment from "./lib/painting/alignment";
 import Painter from "./lib/painting/painter";
 import {
-  Axis,
-  Clip,
-  CrossAxisAlignment,
-  MainAxisAlignment,
   MultiChildRenderView,
   PaintingContext,
   RenderBox,
   SingleChildRenderView,
-  WrapAlignment,
-  WrapCrossAlignment,
 } from "./lib/render-object/basic";
 import Constraints, { BoxConstraints } from "./lib/rendering/constraints";
 import {

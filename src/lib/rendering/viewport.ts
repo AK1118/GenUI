@@ -1,8 +1,8 @@
 import { Offset } from "../basic/rect";
 import { Simulation } from "../core/animation";
+import { Axis } from "../core/base-types";
 import { ChangeNotifier } from "../core/change-notifier";
 import { ScrollPhysics } from "../core/scroll-physics";
-import { Axis } from "../render-object/basic";
 import {
   AxisDirection,
   axisDirectionIsReversed,
@@ -45,7 +45,7 @@ export class ScrollPosition extends ViewPortOffset {
   private _minScrollExtent: number = 0;
   private _maxScrollExtent: number = 0;
   private _viewportDimension: number = 0;
-
+  private oldPixels: number = 0;
   constructor(args: Partial<ScrollPositionArguments>) {
     super();
     this.physics = args?.physics;
@@ -88,6 +88,17 @@ export class ScrollPosition extends ViewPortOffset {
   get extentAfter(): number {
     return Math.max(0, this._maxScrollExtent - this.pixels);
   }
+  private updateScrollDirection(delta:number):void{
+    if(delta===0){
+      this._scrollDirection=ScrollDirection.idle;
+    }
+    if(delta<0){
+      this._scrollDirection=(this.axisDirection===AxisDirection.down||this.axisDirection===AxisDirection.right)?ScrollDirection.reverse:ScrollDirection.forward;
+    }
+    if(delta>0){
+      this._scrollDirection=(this.axisDirection===AxisDirection.down||this.axisDirection===AxisDirection.right)?ScrollDirection.forward:ScrollDirection.reverse;
+    }
+  }
   applyViewportDimension(viewportDimension: number): boolean {
     this._viewportDimension = viewportDimension;
     return true;
@@ -106,11 +117,16 @@ export class ScrollPosition extends ViewPortOffset {
   }
 
   public setPixels(newPixels: number): void {
-    if (newPixels === this.pixels) return;
+    if (newPixels === this.pixels) {
+      this.updateScrollDirection(0);
+      return;
+    };
     const delta: number = newPixels - this.pixels;
+    this.updateScrollDirection(delta);
     const correctScroll = this.applyBoundaryConditions(newPixels);
     const pixels: number = newPixels - correctScroll;
     super.setPixels(pixels);
+    this.oldPixels=pixels;
   }
 
   public applyUserOffset(offset: Offset): number {
