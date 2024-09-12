@@ -9,7 +9,7 @@ import { Duration } from "./duration";
 
 type TickerCallback = (deltaTime: number) => void;
 
-abstract class Curve {
+export abstract class Curve {
   abstract transformInternal(t: number): number;
 }
 
@@ -95,8 +95,8 @@ class Ticker {
     if (this.startTime === 0) {
       this.startTime = time; // 记录首次tick的时间戳
     }
-    const elapsed = (time - this.startTime) *0.001; // 计算运行时间（秒）
-    if(this.inActive){
+    const elapsed = (time - this.startTime) * 0.001; // 计算运行时间（秒）
+    if (this.inActive) {
       this.onTick(elapsed); // 调用回调函数
     }
     if (this.shouldCallbackSchedule) {
@@ -109,7 +109,9 @@ class Ticker {
   }
 
   private scheduleTick(): void {
-    this.animateId = SchedulerBinding.instance.scheduleFrameCallback(this.tick.bind(this));
+    this.animateId = SchedulerBinding.instance.scheduleFrameCallback(
+      this.tick.bind(this)
+    );
   }
 }
 
@@ -313,6 +315,7 @@ export class AnimationController extends Animation<number> {
   }
   public stop(canceled: boolean = true) {
     this.ticker.stop(canceled);
+    this.status = AnimationStatus.dismissed;
   }
 }
 
@@ -350,8 +353,6 @@ class InterpolationSimulation extends Simulation {
     return time >= this.duration.valueWithSeconds;
   }
 }
-
-
 
 export class FrictionSimulation extends Simulation {
   private drag: number;
@@ -396,9 +397,9 @@ export class FrictionSimulation extends Simulation {
    * 指数衰减阻尼物理模型：
    * x(t) =p0 + v0 * d^t / ln(d) - v0 / ln(d) - (c / 2)*t^2
    * * 牛顿迭代方法求解
-   * x'(t) = v0 * d^t / ln(d) - c*t 
+   * x'(t) = v0 * d^t / ln(d) - c*t
    * 其中t单位是秒,p0是初始位置,v0是初始速度,d是阻尼因子,c是一个常量的减速度（负加速度）
-   * 
+   *
    */
   x(time: number): number {
     if (time > this.finalTime) {
@@ -431,7 +432,6 @@ export class FrictionSimulation extends Simulation {
     }
     return this.x(this.finalTime);
   }
-
 
   /**
    * 在某一位置上的时间
@@ -484,10 +484,9 @@ export class FrictionSimulation extends Simulation {
   }
 }
 
-
 class SpringSimulation extends Simulation {
   private damping: number = 2; // 阻尼系数
-  private stiffness: number =2; // 刚度系数
+  private stiffness: number = 2; // 刚度系数
   private initialPosition: number;
   private endPosition: number;
   private initialVelocity: number;
@@ -504,10 +503,8 @@ class SpringSimulation extends Simulation {
     // 计算弹簧的位置，公式：x(t) = end + (start - end) * e^(-damping * t) * cos(stiffness * t)
     //此处只关注x位置衰减
     return (
-      this.endPosition +
-      distance *
-        Math.exp(-this.damping * time*2) 
-        //* Math.cos(this.stiffness * time*2)
+      this.endPosition + distance * Math.exp(-this.damping * time * 2)
+      //* Math.cos(this.stiffness * time*2)
     );
   }
 
@@ -587,16 +584,16 @@ export class BouncingSimulation extends Simulation {
   }
   private offsetTime: number = 0;
   private simulation(time: number): Simulation {
-    let simulation:Simulation;
+    let simulation: Simulation;
     if (time > this.springTime) {
       this.offsetTime = isFinite(this.springTime) ? this.springTime : 0;
-      simulation= this.springSimulation;
+      simulation = this.springSimulation;
     } else {
       this.offsetTime = 0;
-      simulation= this.frictionSimulation;
+      simulation = this.frictionSimulation;
     }
-    if(!simulation){
-      simulation=this.frictionSimulation;
+    if (!simulation) {
+      simulation = this.frictionSimulation;
     }
     return simulation;
   }

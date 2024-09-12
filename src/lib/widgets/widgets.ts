@@ -31,7 +31,10 @@ import {
   axisDirectionToAxis,
 } from "../render-object/slivers";
 import { BoxConstraints } from "../rendering/constraints";
-import { ScrollPosition } from "../render-object/viewport";
+import {
+  ScrollPosition,
+  ScrollPositionWithSingleContext,
+} from "../render-object/viewport";
 import VelocityTracker from "../utils/velocity-ticker";
 import {
   Align,
@@ -43,6 +46,7 @@ import {
   Padding,
   SizedBox,
 } from "./basic";
+import { ScrollController } from "./scroll-controller";
 
 interface ContainerArguments {
   width: number;
@@ -133,6 +137,7 @@ interface ScrollableArguments {
   physics: ScrollPhysics;
   viewportBuilder: ViewportBuilder;
   axisDirection: AxisDirection;
+  controller: ScrollController;
 }
 export class Scrollable extends StatefulWidget implements ScrollableArguments {
   viewportBuilder: ViewportBuilder;
@@ -143,7 +148,9 @@ export class Scrollable extends StatefulWidget implements ScrollableArguments {
     this.viewportBuilder = args?.viewportBuilder;
     this.axisDirection = args?.axisDirection;
     this.physics = args?.physics ?? new SimpleScrollPhysics();
+    this.controller = args?.controller;
   }
+  controller: ScrollController;
   createState(): State<Scrollable> {
     return new ScrollableState();
   }
@@ -151,47 +158,48 @@ export class Scrollable extends StatefulWidget implements ScrollableArguments {
 
 class ScrollableState extends State<Scrollable> {
   private position: ScrollPosition;
-  private delta: number = 0;
-  private velocityTicker: VelocityTracker = new VelocityTracker(new Duration({
-    milliseconds:3000
-  }));
-  private animationController = new AnimationController({});
+  private effectiveController: ScrollController;
   public initState(): void {
-    this.position = new ScrollPosition({
-      axisDirection: this.widget.axisDirection,
-      physics: this.widget.physics,
-    });
+    super.initState();
+    this.effectiveController=this.widget.controller??new ScrollController();
+    console.log("创建B");
+    this.updatePosition();
+  }
+  private updatePosition() {
+    const oldPosition=this.position;
+    if(oldPosition){
+      this.effectiveController.detach(oldPosition);
+    }
+    const position = this.widget.controller.createScrollPosition(
+      this.widget.physics,
+      this.widget.axisDirection
+    );
+    this.effectiveController.attach(position);
+    this.position = position;
   }
   private applyUserOffset(offset: Offset) {
-    this.delta = this.position.applyUserOffset(offset);
-    this.position.setPixels(this.position.pixels + this.delta);
+    this.position.pointerScroll(offset);
   }
-  private handleStartSimulation() {
-    const velocityOffset = this.velocityTicker.getVelocity();
-    const simulation = this.position.createBallisticSimulation(velocityOffset);
-    if (simulation) {
-      this.animationController.animateWidthSimulation(simulation);
-      this.animationController.addListener(() => {
-        this.position.setPixels(this.animationController.value);
-      });
-    }
+  public didUpdateWidget(oldWidget: Widget): void {
+    super.didUpdateWidget(oldWidget);
   }
   build(context: BuildContext): Widget {
     return new Listener({
       onPointerDown: () => {
-        this.animationController.stop();
+        this.position.scrollStart();
       },
-      child:new GestureDetector({
-        onPanUpdate:(event)=>{
+      child: new GestureDetector({
+        onPanStart: () => {
+          this.position.scrollStart();
+        },
+        onPanUpdate: (event) => {
           this.applyUserOffset(event.delta);
-          this.velocityTicker.addPosition(
-            new Offset(event.position.x, event.position.y)
-          );
+          this.position.scrollUpdate(new Offset(event.position.x, event.position.y));
         },
         onPanEnd: () => {
-          this.handleStartSimulation();
+          this.position.scrollEnd();
         },
-        child: this.widget.viewportBuilder(context, this.position)
+        child: this.widget.viewportBuilder(context, this.position),
       }),
     });
   }

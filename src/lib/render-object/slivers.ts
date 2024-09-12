@@ -1,5 +1,10 @@
 import { Offset, Size } from "../basic/rect";
-import { Axis, AxisDirection, GrowthDirection, ScrollDirection } from "../core/base-types";
+import {
+  Axis,
+  AxisDirection,
+  GrowthDirection,
+  ScrollDirection,
+} from "../core/base-types";
 import { ChangeNotifier } from "../core/change-notifier";
 import { HitTestResult } from "../gesture/hit_test";
 import { abs, clamp } from "../math/math";
@@ -9,12 +14,10 @@ import Constraints, { BoxConstraints } from "../rendering/constraints";
 import { SliverPhysicalParentData } from "./viewport";
 import MatrixUtils from "../utils/matrixUtils";
 import {
-  PaintingContext
+  PaintingContext,
   // MultiChildRenderView,
 } from "./basic";
 import { ParentData, RenderView } from "./render-object";
-
-
 
 export const axisDirectionToAxis = (axisDirection: AxisDirection): Axis => {
   switch (axisDirection) {
@@ -177,21 +180,22 @@ export class SliverConstraints
   asBoxConstraints(
     minExtent: number = 0,
     maxExtent: number = Infinity,
-    crossAxisExtent: number = null
+    crossAxisExtent: number=null
   ): BoxConstraints {
+    crossAxisExtent = this.crossAxisExtent;
     if (this.axis === Axis.vertical) {
-      return new BoxConstraints({
-        minWidth: minExtent,
-        maxWidth: maxExtent,
-        maxHeight: crossAxisExtent,
-        minHeight: crossAxisExtent,
-      });
-    } else {
       return new BoxConstraints({
         minWidth: crossAxisExtent,
         maxWidth: crossAxisExtent,
-        minHeight: minExtent,
         maxHeight: maxExtent,
+        minHeight: minExtent,
+      });
+    } else if(this.axis===Axis.horizontal){
+      return new BoxConstraints({
+        minWidth: minExtent,
+        maxWidth: maxExtent,
+        minHeight: crossAxisExtent,
+        maxHeight: crossAxisExtent,
       });
     }
   }
@@ -338,10 +342,20 @@ export abstract class RenderSliver extends RenderView {
     this.markNeedsLayout();
   }
   render(context: PaintingContext, offset?: Vector): void {
-    context.paintChild(this.child, offset);
+    const child = this.child as RenderSliver;
+    if (child && this.geometry?.visible) {
+      const parentData: SliverPhysicalParentData =
+        child.parentData as SliverPhysicalParentData;
+      context.paintChild(child, offset.add(parentData.paintOffset.toVector()));
+    }
   }
   debugRender(context: PaintingContext, offset?: Vector): void {
-    context.paintChildDebug(this.child, offset);
+    const child = this.child as RenderSliver;
+    if (child && this.geometry?.visible) {
+      const parentData: SliverPhysicalParentData =
+        child.parentData as SliverPhysicalParentData;
+      context.paintChildDebug(child, offset.add(parentData.paintOffset.toVector()));
+    }
   }
   layout(constraints: Constraints, parentUseSize?: boolean): void {
     if (this.needsReLayout || parentUseSize) {
@@ -409,20 +423,12 @@ export abstract class RenderSliverToSingleBoxAdapter extends RenderSliver {
         );
     }
   }
-  render(context: PaintingContext, offset?: Vector): void {
-    const child = this.child as RenderSliver;
-    if (child && this.geometry?.visible) {
-      const parentData: SliverPhysicalParentData =
-        child.parentData as SliverPhysicalParentData;
-      child.render(context, offset.add(parentData.paintOffset.toVector()));
-    }
-  }
   public hitTest(result: HitTestResult, position: Vector): boolean {
     const child = this.child as RenderSliver;
     if (child && this.geometry?.visible) {
       const parentData: SliverPhysicalParentData =
         child.parentData as SliverPhysicalParentData;
-        
+
       const paintOffset = parentData.paintOffset;
       const translation = Matrix4.zero
         .identity()
@@ -466,7 +472,7 @@ export class RenderSliverBoxAdapter extends RenderSliverToSingleBoxAdapter {
     const paintStart = Math.max(0, a);
     const paintEnd = Math.min(childExtent, b);
     const paintedChildSize = paintEnd > paintStart ? paintEnd - paintStart : 0;
-    
+
     // 设置几何信息
     this.geometry = new SliverGeometry({
       paintExtent: paintedChildSize, // 子节点在视口内的绘制大小

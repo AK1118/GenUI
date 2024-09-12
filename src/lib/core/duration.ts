@@ -29,6 +29,11 @@ export class Duration {
       this._duration += duration.microsecond / 1000;
     }
   }
+  static get zero(): Duration {
+    return new Duration({
+      milliseconds: 0,
+    });
+  }
   /**
    * 获取单位是`天`的值
    */
@@ -57,7 +62,7 @@ export class Duration {
    * 获取单位是`分`的值
    */
   get valueWithMinutes(): number {
-    return this.valueWithSeconds/60;
+    return this.valueWithSeconds / 60;
   }
   /**
    * 获取默认值，单位毫秒

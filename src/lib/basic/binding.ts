@@ -161,7 +161,8 @@ class SchedulerBinding extends BindingBase {
     this.handleCleanCanvas();
   }
   private handleCleanCanvas() {
-    new Painter().clearRect(0, 0, 1000, 1000);
+    const paint=new Painter();
+    paint.clearRect(0, 0,paint.canvas.width ,paint.canvas.height);
   }
 }
 

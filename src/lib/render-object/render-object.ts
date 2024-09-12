@@ -28,7 +28,7 @@ import {
   ImageSource,
 } from "../painting/image";
 import { ChangeNotifier } from "../core/change-notifier";
-import { ContainerRenderViewParentData, PaintingContext } from "./basic";
+import { ColoredRender, ContainerRenderViewParentData, PaintingContext } from "./basic";
 import { SliverConstraints, SliverGeometry } from "./slivers";
 
 
@@ -129,6 +129,10 @@ export abstract class AbstractNode {
     get isRepaintBoundary(): boolean {
       return false;
     }
+    /**
+     * 派生类必须实现该方法才会被正常渲染，并且在渲染child时必须使用 `context.paintChild` 方法渲染child，这是
+     * 必须的。
+     */
     abstract render(context: PaintingContext, offset?: Vector): void;
     abstract debugRender(context: PaintingContext, offset?: Vector): void;
     //默认大小等于子大小，被子撑开
@@ -172,12 +176,16 @@ export abstract class AbstractNode {
       } else if (this.parent instanceof RenderView) {
         this.parent?.markNeedsPaint();
       }
+      // if(this instanceof ColoredRender){
+      //   console.log("颜色得到通知",this)
+      // }
       /**
        * 通知Child的重绘，@needsRePaint 在此之前已经被赋值true
        * child 在 @markNeedsPaint 时会调用父 @markNeedsPaint ，但是会判断 @needsRePaint 达到阻止循环调用，
        * 持续向下通知
        */
       this.visitChildren((child) => {
+        // console.log(this,"通知child",child)
         child.markNeedsPaint();
       });
     }

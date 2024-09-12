@@ -1,12 +1,26 @@
 import { Offset, Size } from "../basic/rect";
-import { Simulation } from "../core/animation";
-import { Axis, AxisDirection, GrowthDirection, ScrollDirection } from "../core/base-types";
+import {
+  AnimationController,
+  AnimationStatus,
+  Curve,
+  Simulation,
+} from "../core/animation";
+import {
+  Axis,
+  AxisDirection,
+  GrowthDirection,
+  ScrollDirection,
+} from "../core/base-types";
 import { ChangeNotifier } from "../core/change-notifier";
 import { ScrollPhysics } from "../core/scroll-physics";
 import { HitTestResult } from "../gesture/hit_test";
 import { Matrix4 } from "../math/matrix";
 import Vector from "../math/vector";
-import { ContainerRenderViewParentData, MultiChildRenderView, PaintingContext } from "./basic";
+import {
+  ContainerRenderViewParentData,
+  MultiChildRenderView,
+  PaintingContext,
+} from "./basic";
 import { RenderView } from "./render-object";
 import {
   axisDirectionIsReversed,
@@ -16,6 +30,8 @@ import {
   SliverGeometry,
 } from "./slivers";
 import MatrixUtils from "../utils/matrixUtils";
+import VelocityTracker from "../utils/velocity-ticker";
+import { Duration } from "../core/duration";
 
 export abstract class ViewPortOffset extends ChangeNotifier {
   private _pixels: number = 0;
@@ -45,7 +61,7 @@ interface ScrollPositionArguments {
   axisDirection: AxisDirection;
 }
 
-export class ScrollPosition extends ViewPortOffset {
+export abstract class ScrollPosition extends ViewPortOffset {
   private physics: ScrollPhysics;
   private _scrollDirection: ScrollDirection = ScrollDirection.idle;
   private _axisDirection: AxisDirection = AxisDirection.down;
@@ -84,7 +100,9 @@ export class ScrollPosition extends ViewPortOffset {
     );
   }
   get outOfRange(): boolean {
-    return this.pixels < this._minScrollExtent || this.pixels > this._maxScrollExtent;
+    return (
+      this.pixels < this._minScrollExtent || this.pixels > this._maxScrollExtent
+    );
   }
   get axis(): Axis {
     return axisDirectionToAxis(this.axisDirection);
@@ -95,16 +113,28 @@ export class ScrollPosition extends ViewPortOffset {
   get extentAfter(): number {
     return Math.max(0, this._maxScrollExtent - this.pixels);
   }
-  private updateScrollDirection(delta:number):void{
-    if(delta===0){
-      this._scrollDirection=ScrollDirection.idle;
+  private updateScrollDirection(delta: number): void {
+    if (delta === 0) {
+      this._scrollDirection = ScrollDirection.idle;
+    } else {
+      this._scrollDirection =
+        delta > 0 ? ScrollDirection.forward : ScrollDirection.reverse;
     }
-    if(delta<0){
-      this._scrollDirection=(this.axisDirection===AxisDirection.down||this.axisDirection===AxisDirection.right)?ScrollDirection.reverse:ScrollDirection.forward;
-    }
-    if(delta>0){
-      this._scrollDirection=(this.axisDirection===AxisDirection.down||this.axisDirection===AxisDirection.right)?ScrollDirection.forward:ScrollDirection.reverse;
-    }
+    this.didUpdateScrollDirection(this._scrollDirection);
+  }
+  protected didUpdateScrollDirection(scrollDirection: ScrollDirection): void {}
+  public jumpTo(value: number): void {
+    if (value === this.pixels) return;
+    const offset = value - this.pixels;
+    this.correctBy(offset);
+    this.didEndScroll();
+    this.notifyListeners();
+  }
+  animateTo(offset: number, duration: Duration, curve: Curve): Promise<void> {
+    return Promise.resolve();
+  }
+  protected didEndScroll(): void {
+    this.updateScrollDirection(0);
   }
   applyViewportDimension(viewportDimension: number): boolean {
     this._viewportDimension = viewportDimension;
@@ -127,13 +157,13 @@ export class ScrollPosition extends ViewPortOffset {
     if (newPixels === this.pixels) {
       this.updateScrollDirection(0);
       return;
-    };
+    }
     const delta: number = newPixels - this.pixels;
     this.updateScrollDirection(delta);
     const correctScroll = this.applyBoundaryConditions(newPixels);
     const pixels: number = newPixels - correctScroll;
     super.setPixels(pixels);
-    this.oldPixels=pixels;
+    this.oldPixels = pixels;
   }
 
   public applyUserOffset(offset: Offset): number {
@@ -150,10 +180,72 @@ export class ScrollPosition extends ViewPortOffset {
       velocityOffset
     );
     //速度不足时不需要创建模拟器
-    if(Math.abs(velocity)<20){
+    if (Math.abs(velocity) < 20) {
       return;
     }
     return this.physics?.createBallisticSimulation(this, velocity);
+  }
+  abstract scrollEnd(): void;
+  abstract scrollStart(): void;
+  abstract scrollUpdate(position: Offset);
+  abstract pointerScroll(offset: Offset): void;
+}
+
+export class ScrollPositionWithSingleContext extends ScrollPosition {
+  private velocityTicker: VelocityTracker = new VelocityTracker(
+    new Duration({
+      milliseconds: 3000,
+    })
+  );
+  private animationController = new AnimationController({});
+  pointerScroll(offset: Offset): void {
+    const delta = this.applyUserOffset(offset);
+    this.setPixels(this.pixels + delta);
+  }
+  public goBallistic(velocity: Offset) {
+    const simulation = this.createBallisticSimulation(velocity);
+    if (simulation) {
+      this.animationController.animateWidthSimulation(simulation);
+      this.animationController.addListener(() => {
+        this.setPixels(this.animationController.value);
+      });
+    }
+  }
+  animateTo(offset: number, duration: Duration, curve: Curve): Promise<void> {
+    return new Promise((resolve, eject) => {
+      if (duration.value === 0) {
+        this.jumpTo(offset);
+        resolve();
+      }
+      this.animationController = new AnimationController({
+        begin: this.pixels,
+        end: offset,
+        duration: duration,
+        curve: curve,
+      });
+      this.animationController.addListener(() => {
+        this.setPixels(this.animationController.value);
+      });
+      this.animationController.addStatusListener(() => {
+        if (
+          this.animationController.status === AnimationStatus.dismissed ||
+          this.animationController.status === AnimationStatus.completed
+        ) {
+          resolve();
+        }
+      });
+      this.animationController.forward();
+    });
+  }
+  scrollEnd(): void {
+    const velocityOffset = this.velocityTicker.getVelocity();
+    this.goBallistic(velocityOffset);
+  }
+  scrollUpdate(position: Offset) {
+    this.velocityTicker.addPosition(position);
+  }
+  scrollStart(): void {
+    this.animationController.stop();
   }
 }
 
@@ -178,7 +270,6 @@ const getMainAxisDirectionOffset = (
   }
   return mainDirectionOffset;
 };
-
 
 export class SliverPhysicalParentData extends ContainerRenderViewParentData<RenderSliver> {
   paintOffset: Offset = Offset.zero;
@@ -223,9 +314,7 @@ export class RenderViewPortBase extends MultiChildRenderView<RenderSliver> {
   }
   set offset(value: ViewPortOffset) {
     this._offset = value;
-    this.offset?.addListener(() => {
-      this.markNeedsLayout();
-    });
+    this.offset?.addListener(this.markNeedsLayout.bind(this));
     this.markNeedsLayout();
   }
   get offset(): ViewPortOffset {
@@ -444,7 +533,9 @@ export class RenderViewPortBase extends MultiChildRenderView<RenderSliver> {
 
   render(context: PaintingContext, offset?: Vector): void {
     this.paintContents(context, offset);
-    context.paintDefaultDebugBoundary(offset, this.size);
+  }
+  debugRender(context: PaintingContext, offset?: Vector): void {
+    this.paintContents(context, offset);
   }
 }
 
@@ -485,6 +576,9 @@ export class RenderViewPort extends RenderViewPortBase {
       const offset =
         scrollOffset - (this.lastScrolledMaxScrollExtent + scrollExtent);
       if (offset > 0) break;
+      this.visitChildren((child: RenderSliver) => {
+        if (child?.geometry) child.geometry!.visible = false;
+      });
       const preChild = previousChild(layoutStartChild);
       if (!preChild || preChild === layoutStartChild) break;
       const preChildGeometry = preChild.geometry;

@@ -7,6 +7,7 @@ import {
   RootRenderView,
 } from "../render-object/basic";
 import { ParentData, RenderView } from "../render-object/render-object";
+import { clone } from "../utils/utils";
 import { PipelineOwner, RendererBinding } from "./binding";
 import { BuildContext, BuildOwner, Element } from "./elements";
 import { Key } from "./key";
@@ -113,6 +114,8 @@ class StatefulElement extends ComponentElement {
     super.firstBuild();
   }
   update(newWidget: Widget): void {
+    const oldWidget = this.widget;
+    this.state.didUpdateWidget(oldWidget);
     super.update(newWidget);
     this.rebuild(true);
   }
@@ -150,6 +153,7 @@ export abstract class State<T extends StatefulWidget = StatefulWidget> {
   }
   abstract build(context: BuildContext): Widget;
   public unmount() {}
+  public didUpdateWidget(oldWidget: Widget) {}
 }
 
 /**
@@ -488,11 +492,11 @@ export class ParentDataElement<
   /**
    * 使用子节点的 @updateParentData 方法通过 @widget 更新 @parentData 属性,
    * 此处的 @widget 属性是 @ParentDataWidget 的子类，例如 @Positioned 、 @Expanded 等。
-   * 
+   *
    * @updateParentData 方法是 @RenderObjectElement 独有的方法，所以需要判断类型满足时才能直接调用，
    * 如条件不满足时，即 child 为其他类型，则需要调用超类 @Element 的 @visitChildren 方法，通过向下查找子节点
    * 遍历叶子节点，调用 @updateParentData 方法。
-   * 
+   *
    */
   applyParentData(widget: ParentDataWidget<T>): void {
     const applyParentDataToChild = (child: Element) => {
