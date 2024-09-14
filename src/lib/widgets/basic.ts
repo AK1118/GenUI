@@ -23,6 +23,10 @@ import {
   ConstrainedBoxRender,
   ConstrainedBoxRenderArguments,
 
+  CustomPaintArguments,
+
+  CustomPaintRenderView,
+
   ExpandedArguments,
   FlexOption,
   FlexParentData,
@@ -89,6 +93,7 @@ import {
 } from "../render-object/slivers";
 import { RenderViewPort, RenderViewPortArguments, ViewPortOffset } from "../render-object/viewport";
 import { Axis, AxisDirection, CrossAxisAlignment, MainAxisAlignment, StackFit, WrapAlignment, WrapCrossAlignment } from "../core/base-types";
+import {CustomPainter} from "../rendering/custom";
 export interface ColoredBoxOption {
   color: string;
 }
@@ -786,5 +791,25 @@ export class WidgetToSliverAdapter extends SingleChildRenderObjectWidget {
 
   createRenderObject(): RenderView {
     return new RenderSliverBoxAdapter();
+  }
+}
+
+
+export class CustomPaint extends SingleChildRenderObjectWidget {
+  private painter: CustomPainter;
+  private foregroundPainter: CustomPainter;
+  constructor(option: Partial<SingleChildRenderObjectWidgetArguments & CustomPaintArguments>) {
+    super(option?.child, option?.key);
+    this.painter = option?.painter;
+    this.foregroundPainter = option?.foregroundPainter;
+  }
+  createRenderObject(): RenderView {
+   return  new CustomPaintRenderView({
+      painter: this.painter,
+      foregroundPainter: this.foregroundPainter,
+    });
+  }
+  updateRenderObject(context: BuildContext, renderView: RenderView): void {
+    
   }
 }

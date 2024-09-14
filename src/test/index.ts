@@ -6,6 +6,7 @@ import {
   Align,
   ClipRRect,
   ColoredBox,
+  CustomPaint,
   DecoratedBox,
   Expanded,
   Flex,
@@ -72,15 +73,17 @@ import {
   AxisDirection,
   CrossAxisAlignment,
   MainAxisAlignment,
+  StackFit,
 } from "@/lib/core/base-types";
 import { ScrollController } from "@/lib/widgets/scroll-controller";
+import {CustomPainter} from "@/lib/rendering/custom";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
 
 const dev = window.devicePixelRatio;
-const width = window.innerWidth;
-const height = window.innerHeight;
+const width = 300;
+const height = 300;
 console.log("DPR：", dev);
 canvas.width = width * dev;
 canvas.height = height * dev;
@@ -106,6 +109,23 @@ class MyListener extends ChangeNotifier {
   add() {
     this.counter += 1;
     this.notifyListeners();
+  }
+}
+
+class MyCustomPainter extends CustomPainter {
+  render(painter: Painter, size: Size): void {
+    console.log("渲染", size);
+    painter.fillStyle = "orange";
+    painter.fillRect(0, 0, 10, 10);
+  }
+}
+class MyForgoundCustomPainter extends CustomPainter {
+  render(painter: Painter, size: Size): void {
+    console.log("渲染", size);
+    painter.fillStyle = "orange";
+    // painter.clip();
+    // painter.fillRect(0,0,10,10);
+    painter.fillText("\ue89e\ue7cc", 10, 10);
   }
 }
 
@@ -148,12 +168,27 @@ class ScaffoldState extends State<Scaffold> {
           color: "orange",
         }),
       }),
-      child: new Flex({
-        direction: Axis.horizontal,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          new Expanded({
-            flex: 1,
+      child: new Padding({
+        padding: {
+          top: 30,
+          left: 30,
+          right: 30,
+          bottom: 30,
+        },
+        child: new CustomPaint({
+          painter: new MyCustomPainter(),
+          foregroundPainter: new MyForgoundCustomPainter(),
+          child: new Container({
+            decoration: new BoxDecoration({
+              shadows: [
+                new BoxShadow({
+                  shadowColor: "#ccc",
+                  shadowBlur: 3,
+                  shadowOffsetX: 3,
+                  shadowOffsetY: 3,
+                }),
+              ],
+            }),
             child: new Scrollable({
               controller: controller,
               axisDirection: AxisDirection.down,
@@ -177,7 +212,7 @@ class ScaffoldState extends State<Scaffold> {
                           // }),
                           child: new Align({
                             alignment: Alignment.center,
-                            child:new Button(ndx)
+                            child: new Button(ndx),
                           }),
                         }),
                       });
@@ -187,129 +222,10 @@ class ScaffoldState extends State<Scaffold> {
               },
             }),
           }),
-          // new Expanded({
-          //   flex: 1,
-          //   child:new Flex({
-          //     direction:Axis.vertical,
-          //     children: Array.from(Array(10)).map((_, ndx) => {
-          //       return new Container({
-          //         width: canvas.width,
-          //         height: 150,
-          //         color: ndx % 2 === 0 ? "white" : "#edf2fa",
-          //         child: new Align({
-          //           alignment: Alignment.center,
-          //           child: new Button(ndx),
-          //         }),
-          //       })
-          //     })
-          //   })})
-        ],
+        }),
       }),
     });
   }
-  // build(context: BuildContext): Widget {
-  //   return new SizedBox({
-  //     width: 300, // canvas.width,
-  //     height: canvas.height,
-  //     child: new ColoredBox({
-  //       color: "white",
-  //       child: new Flex({
-  //         direction: Axis.vertical,
-  //         crossAxisAlignment: CrossAxisAlignment.center,
-  //         children: [
-  //           new Text("123"+this.time, {
-  //             style: new TextStyle({
-  //               fontSize: 10,
-  //               fontWeight: FontWeight.bold,
-  //             }),
-  //           }),
-  //           new Text("123", {
-  //             style: new TextStyle({
-  //               fontSize: 10,
-  //               fontWeight: FontWeight.bold,
-  //             }),
-  //           }),
-  //           new Container({
-  //             width: 100,
-  //             height: 100,
-  //             child: new DecoratedBox({
-  //               decoration: new BoxDecoration({
-  //                 backgroundColor:'orange'
-  //               }),
-  //               child: new Image({
-  //                 imageSource: new ImageSource({
-  //                   image: img2,
-  //                   width: img2.width,
-  //                   height: img2.height,
-  //                 }),
-  //                 fit: BoxFit.fitHeight,
-  //                 align: Alignment.center,
-  //               }),
-  //             }),
-  //           }),
-  //           // new Text(
-  //           //   `Python 的 for 语句与 C 或 Pascal 中的不同。Python 的 for 语句不迭代算术递增数值（如 Pascal），或是给予用户定义迭代步骤和结束条件的能力（如 C），而是在列表或字符串等任意序列的元素上迭代，按它们在序列中出现的顺序。 例如（这不是有意要暗指什么）：`,
-  //           //   {
-  //           //     style: new TextStyle({
-  //           //       fontSize: 10,
-  //           //       // color:'orange',
-  //           //       textAlign: TextAlign.justify,
-  //           //     }),
-  //           //   }
-  //           // ),
-  //           new GestureDetector({
-  //             onTap: () => {
-  //               this.setState(() => {
-  //                 this.time += 0.1;
-  //               });
-  //             },
-  //             child: new Padding({
-  //               child: new Container({
-  //                 decoration: new BoxDecoration({
-  //                   backgroundColor: "#ccc",
-  //                   border: Border.all({
-  //                     color: "#58b6f0",
-  //                   }),
-  //                   borderRadius: BorderRadius.all(20),
-  //                 }),
-  //                 child: new Text(
-  //                   `Python 的 for 语句与 C 或 Pascal 中的不同。Python 的 for 语句不迭代算术递增数值（如 Pascal），或是给予用户定义迭代步骤和结束条件的能力（如 C），而是在列表或字符串等任意序列的元素上迭代，按它们在序列中出现的顺序。 例如（这不是有意要暗指什么）：`,
-  //                   {
-  //                     style: new TextStyle({
-  //                       fontSize: 10,
-  //                       // color:'orange',
-  //                       textAlign: TextAlign.justify,
-  //                       decorationStyle: TextDecorationStyle.solid,
-  //                       decorationColor: "orange",
-  //                       decoration: TextDecoration.underline,
-  //                     }),
-  //                   }
-  //                 ),
-  //               }),
-  //               padding: {
-  //                 top: 20,
-  //                 left: 20,
-  //                 right: 20,
-  //                 bottom: 20,
-  //               },
-  //             }),
-  //           }),
-  //           // new Text(
-  //           //   `The Non-Uniform Border package provides a custom border class for Flutter that allows different widths for each side of a border with a single color. This can be useful for creating custom UI elements that require non-uniform border styling.`,
-  //           //   {
-  //           //     style: new TextStyle({
-  //           //       fontSize: 10,
-  //           //       // color:'orange',
-  //           //       textAlign: TextAlign.justify,
-  //           //     }),
-  //           //   }
-  //           // ),
-  //           new Button(),
-  //         ],
-  //       }),
-  //     }),
-  //   });
-  // }
 }
 
 class Button extends StatefulWidget {
@@ -326,8 +242,8 @@ class Button extends StatefulWidget {
 class _ButtonState extends State<Button> {
   private time: number;
   public initState(): void {
-      super.initState();
-this.time=this.widget.index;
+    super.initState();
+    this.time = this.widget.index;
   }
   build(context: BuildContext): Widget {
     return new GestureDetector({
@@ -338,7 +254,7 @@ this.time=this.widget.index;
       },
       child: new Container({
         padding: {
-          top: 10 ,
+          top: 10,
           bottom: 10,
           left: 20,
           right: 20,
@@ -369,57 +285,90 @@ const app =
   //   }),
   //});
   new Scaffold();
-runApp(app);
+// runApp(app);
 
-const t = new Duration({
-  second: 60 * 60 * 12,
-});
+// img2.onload = () => {
+//   // const path = new Path2D();
+//   // path.rect(0, 0, 100, 100);
+//   // path.arc(50, 50, 25, 0, Math.PI * 2, true);
 
-console.log(
-  "秒",
-  t.valueWithSeconds,
-  "毫秒",
-  t.valueWithMilliseconds,
-  "分",
-  t.valueWithMinutes,
-  "时",
-  t.valueWithHours,
-  "天",
-  t.valueWithDays
-);
-g.font = "20px Material";
-g.fillStyle = "orange";
-g.fillText("\ue89e\ue7cc", 100, 100);
-// function animate(y:number=Math.random()*300){
-//   const animation = new AnimationController({
-//     duration: new Duration({
-//       milliseconds: 1000,
-//     }),
-//   });
+//   // g.save();
+//   // g.shadowColor = "#000";
+//   // g.shadowBlur = 3;
+//   // g.shadowOffsetX = 3;
+//   // g.shadowOffsetY = 3;
+//   // g.fillStyle = "white";
+//   // g.fill(path);
+//   // g.restore();
 
-//   g.fillStyle = "#ffffff";
-//   animation.addListener(() => {
+//   // g.save();
+//   // g.clip(path);
+//   // g.drawImage(img2, 0, 0, 100, 100);
+//   // g.restore();
+//   // 绘制矩形和圆形路径
+//   g.save();
+//   g.beginPath();
+//   g.rect(0, 0, 100, 100);
+//   g.arc(50, 50, 25, 0, Math.PI * 2,true);
 
-//     g.fillRect(0,y,animation.value*canvas.width,30)
-//   });
+//   // 应用阴影并填充路径
+//   g.shadowColor = "#ccc";
+//   g.shadowBlur = 3;
+//   g.shadowOffsetX = 3;
+//   g.shadowOffsetY = 3;
+//   g.fillStyle = "white";
+//   g.fill();
+//   g.restore();
 
-//   animation.addStatusListener(() => {
-//     if (animation.status == AnimationStatus.completed && !animation.isAnimating) {
-//       animation.reverse();
-//     } else if (
-//       animation.status === AnimationStatus.dismissed &&
-//       !animation.isAnimating
-//     ) {
-//       animation.forward();
-//     }
-//   });
+//   // 使用路径剪裁并绘制图像
+//   g.save();
+//   g.beginPath();
+//   g.rect(0, 0, 100, 100);
+//   g.arc(50, 50, 25, 0, Math.PI * 2, true);
+//   g.clip();
+//   g.drawImage(img2, 0, 0, 100, 100);
+//   g.restore();
+// };
+function drawRoundedStar(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  spikes: number,
+  outerRadius: number,
+  innerRadius: number,
+  cornerRadius: number
+): void {
+  const angle = Math.PI / spikes;
 
-//   animation.forward();
-// }
+  ctx.beginPath();
+  let startX = cx + Math.cos(0) * outerRadius;
+  let startY = cy + Math.sin(0) * outerRadius;
+  ctx.moveTo(startX, startY);
 
-// animate(0);
-// animate(30);
-// animate(70);
-// animate(130);
-// animate(160);
-// animate(190);
+  for (let i = 0; i < spikes * 2+1; i++) {
+    const isOuter = i % 2 === 0;
+    const radius = isOuter ? outerRadius : innerRadius;
+    const nextX = cx + Math.cos(i * angle) * radius;
+    const nextY = cy + Math.sin(i * angle) * radius;
+
+    if (i === 0) {
+      ctx.moveTo(nextX, nextY);
+    } else {
+      ctx.arcTo(startX, startY, nextX, nextY, cornerRadius);
+    }
+    
+    startX = nextX;
+    startY = nextY;
+  }
+
+  ctx.closePath();
+  ctx.fillStyle = "#ffcc00";  // Star color
+  ctx.fill();
+  ctx.strokeStyle = "#000000"; // Border color
+  ctx.lineWidth = 3;
+  ctx.stroke();
+}
+
+
+
+drawRoundedStar(g, 100, 100, 6, 100, 50, 10);

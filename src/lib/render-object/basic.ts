@@ -44,6 +44,7 @@ import {
   WrapAlignment,
   WrapCrossAlignment,
 } from "../core/base-types";
+import {CustomPainter} from "../rendering/custom";
 
 export interface RenderViewOption {
   child: RenderBox;
@@ -2031,3 +2032,45 @@ export class ImageRenderView extends SingleChildRenderView {
   }
 }
 
+export interface CustomPaintArguments {
+  painter: CustomPainter;
+  foregroundPainter: CustomPainter;
+}
+
+export class CustomPaintRenderView extends SingleChildRenderView {
+  private _painter: CustomPainter;
+  private _foregroundPainter: CustomPainter;
+  constructor(args: Partial<CustomPaintArguments>) {
+    super();
+    this._painter = args?.painter;
+    this._foregroundPainter = args?.foregroundPainter;
+  }
+  set painter(value: CustomPainter) {
+    this._painter = value;
+    this.markNeedsPaint();
+  }
+  set foregroundPainter(value: CustomPainter) {
+    this._foregroundPainter = value;
+    this.markNeedsPaint();
+  }
+
+  render(context: PaintingContext, offset?: Vector): void {
+    if(this._painter){
+      this.renderWidthPainter(context.paint, this._painter,offset);
+    }
+    super.render(context, offset);
+    if(this._foregroundPainter){
+       this.renderWidthPainter(context.paint, this._foregroundPainter,offset);
+    }
+  }
+  private renderWidthPainter(
+    paint: Painter,
+    painter: CustomPainter,
+    offset: Vector = Vector.zero
+  ) {
+    paint.save();
+    paint.translate(offset.x, offset.y);
+    painter.render(paint, this.size);
+    paint.restore();
+  }
+}
