@@ -4,6 +4,7 @@ import { BuildContext, Element } from "../lib/basic/elements";
 import { Offset, Size } from "@/lib/basic/rect";
 import {
   Align,
+  ClipPath,
   ClipRRect,
   ColoredBox,
   CustomPaint,
@@ -76,7 +77,8 @@ import {
   StackFit,
 } from "@/lib/core/base-types";
 import { ScrollController } from "@/lib/widgets/scroll-controller";
-import {CustomPainter} from "@/lib/rendering/custom";
+import { CustomClipper, CustomPainter } from "@/lib/rendering/custom";
+import { Path2D } from "@/lib/rendering/path-2D";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
@@ -131,6 +133,66 @@ class MyForgoundCustomPainter extends CustomPainter {
 
 const controller = new ScrollController();
 const controller2 = new ScrollController();
+
+class Model extends ChangeNotifier {
+  x: number = 0;
+  y: number = 0;
+  setXY(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+    this.notifyListeners();
+  }
+}
+
+class MyClipper extends CustomClipper {
+  model: Model;
+  constructor(model) {
+    super(model);
+    this.model = model;
+    window.addEventListener("mousemove", (e) => {
+      this.model.setXY(e.clientX, e.clientY);
+    });
+  }
+  getClip(offset:Vector,size: Size): Path2D {
+    const path2d = new Path2D();
+    this.drawRoundedStar(path2d,this.model.x-offset.x, this.model.y-offset.y, 10, 100, 50, 10);
+    // path2d.rect(0, 0, size.width, size.height);
+    // path2d.arc(this.model.x-offset.x, this.model.y-offset.y, 50, 0, Math.PI * 2, true);
+    return path2d;
+  }
+  drawRoundedStar(
+    ctx: Path2D,
+    cx: number,
+    cy: number,
+    spikes: number,
+    outerRadius: number,
+    innerRadius: number,
+    cornerRadius: number
+  ): void {
+    const angle = Math.PI / spikes;
+    spikes+=1;
+    let startX = cx + Math.cos(0) * outerRadius;
+    let startY = cy + Math.sin(0) * outerRadius;
+    ctx.moveTo(startX, startY);
+  
+    for (let i = 0; i < spikes * 2; i++) {
+      const isOuter = i % 2 === 0;
+      const radius = isOuter ? outerRadius : innerRadius;
+      const nextX = cx + Math.cos(i * angle) * radius;
+      const nextY = cy + Math.sin(i * angle) * radius;
+  
+      if (i === 0) {
+        ctx.moveTo(nextX, nextY);
+      } else {
+        ctx.arcTo(startX, startY, nextX, nextY, cornerRadius);
+      }
+  
+      startX = nextX;
+      startY = nextY;
+    }
+  }
+}
+
 class ScaffoldState extends State<Scaffold> {
   private time: number = 1;
   private dy: number = 0;
@@ -163,63 +225,28 @@ class ScaffoldState extends State<Scaffold> {
     return new Container({
       width: canvas.width,
       height: canvas.height,
+      padding:{
+        top: 30,
+        left: 30,
+        right: 30,
+        bottom: 30,
+      },
       decoration: new BoxDecoration({
         border: Border.all({
           color: "orange",
         }),
       }),
-      child: new Padding({
-        padding: {
-          top: 30,
-          left: 30,
-          right: 30,
-          bottom: 30,
-        },
-        child: new CustomPaint({
-          painter: new MyCustomPainter(),
-          foregroundPainter: new MyForgoundCustomPainter(),
-          child: new Container({
-            decoration: new BoxDecoration({
-              shadows: [
-                new BoxShadow({
-                  shadowColor: "#ccc",
-                  shadowBlur: 3,
-                  shadowOffsetX: 3,
-                  shadowOffsetY: 3,
-                }),
-              ],
-            }),
-            child: new Scrollable({
-              controller: controller,
-              axisDirection: AxisDirection.down,
-              physics: new BouncingScrollPhysics(),
-              viewportBuilder(context, position) {
-                return new ViewPort({
-                  offset: position,
-                  axisDirection: position.axisDirection,
-                  children: [
-                    ...Array.from(Array(100)).map((_, ndx) => {
-                      return new WidgetToSliverAdapter({
-                        child: new Container({
-                          width: canvas.width,
-                          height: 150,
-                          color: ndx % 2 === 0 ? "white" : "#edf2fa",
-                          // child: new Image({
-                          //   imageSource: new ImageSource({
-                          //     image: img2,
-                          //   }),
-                          //   fit:BoxFit.fitWidth
-                          // }),
-                          child: new Align({
-                            alignment: Alignment.center,
-                            child: new Button(ndx),
-                          }),
-                        }),
-                      });
-                    }),
-                  ],
-                });
-              },
+      child: new ClipPath({
+        clipper: new MyClipper(new Model()),
+        child: new Container({
+          // width: 300,
+          // height: 300,
+          child: new Image({
+            fit: BoxFit.fill,
+            imageSource: new ImageSource({
+              image: img2,
+              width: img2.width,
+              height: img2.height,
             }),
           }),
         }),
@@ -285,7 +312,7 @@ const app =
   //   }),
   //});
   new Scaffold();
-// runApp(app);
+runApp(app);
 
 // img2.onload = () => {
 //   // const path = new Path2D();
@@ -329,46 +356,6 @@ const app =
 //   g.drawImage(img2, 0, 0, 100, 100);
 //   g.restore();
 // };
-function drawRoundedStar(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  spikes: number,
-  outerRadius: number,
-  innerRadius: number,
-  cornerRadius: number
-): void {
-  const angle = Math.PI / spikes;
-
-  ctx.beginPath();
-  let startX = cx + Math.cos(0) * outerRadius;
-  let startY = cy + Math.sin(0) * outerRadius;
-  ctx.moveTo(startX, startY);
-
-  for (let i = 0; i < spikes * 2+1; i++) {
-    const isOuter = i % 2 === 0;
-    const radius = isOuter ? outerRadius : innerRadius;
-    const nextX = cx + Math.cos(i * angle) * radius;
-    const nextY = cy + Math.sin(i * angle) * radius;
-
-    if (i === 0) {
-      ctx.moveTo(nextX, nextY);
-    } else {
-      ctx.arcTo(startX, startY, nextX, nextY, cornerRadius);
-    }
-    
-    startX = nextX;
-    startY = nextY;
-  }
-
-  ctx.closePath();
-  ctx.fillStyle = "#ffcc00";  // Star color
-  ctx.fill();
-  ctx.strokeStyle = "#000000"; // Border color
-  ctx.lineWidth = 3;
-  ctx.stroke();
-}
 
 
 
-drawRoundedStar(g, 100, 100, 6, 100, 50, 10);

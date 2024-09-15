@@ -16,12 +16,15 @@ import {
   AlignArguments,
   AlignRenderView,
   BoxDecorationRenderView,
+  ClipPathRenderView,
   ClipRectRenderView,
   ClipRRectArguments,
   ClipRRectRenderView,
   ColoredRender,
   ConstrainedBoxRender,
   ConstrainedBoxRenderArguments,
+
+  CustomClipperArguments,
 
   CustomPaintArguments,
 
@@ -92,8 +95,8 @@ import {
   RenderSliverBoxAdapter,
 } from "../render-object/slivers";
 import { RenderViewPort, RenderViewPortArguments, ViewPortOffset } from "../render-object/viewport";
-import { Axis, AxisDirection, CrossAxisAlignment, MainAxisAlignment, StackFit, WrapAlignment, WrapCrossAlignment } from "../core/base-types";
-import {CustomPainter} from "../rendering/custom";
+import { Axis, AxisDirection, Clip, CrossAxisAlignment, MainAxisAlignment, StackFit, WrapAlignment, WrapCrossAlignment } from "../core/base-types";
+import {CustomClipper, CustomPainter} from "../rendering/custom";
 export interface ColoredBoxOption {
   color: string;
 }
@@ -811,5 +814,23 @@ export class CustomPaint extends SingleChildRenderObjectWidget {
   }
   updateRenderObject(context: BuildContext, renderView: RenderView): void {
     
+  }
+}
+
+
+export class ClipPath extends SingleChildRenderObjectWidget{
+  private clipper: CustomClipper;
+  private clipBehavior: Clip;
+  constructor(args: Partial<CustomClipperArguments & SingleChildRenderObjectWidgetArguments>) {
+    super(args?.child, args?.key);
+    this.clipper=args?.clipper;
+    this.clipBehavior=args?.clipBehavior;
+  }
+  createRenderObject(): RenderView {
+    return new ClipPathRenderView({clipper:this.clipper, clipBehavior: this.clipBehavior});
+  }
+  updateRenderObject(context: BuildContext, renderView: ClipPathRenderView): void {
+    renderView.clipper=this.clipper;
+    renderView.clipBehavior=this.clipBehavior;
   }
 }

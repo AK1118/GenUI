@@ -44,7 +44,8 @@ import {
   WrapAlignment,
   WrapCrossAlignment,
 } from "../core/base-types";
-import {CustomPainter} from "../rendering/custom";
+import { CustomClipper, CustomPainter } from "../rendering/custom";
+import { Path2D } from "../rendering/path-2D";
 
 export interface RenderViewOption {
   child: RenderBox;
@@ -650,12 +651,16 @@ export abstract class ClipContext {
     clipCall: VoidFunction,
     clipBehavior: Clip,
     paintClipPath: VoidFunction,
-    painter: VoidFunction
+    painter: VoidFunction,
+    bounds: BoundsRect,
   ) {
     this.paint.save();
     if (clipBehavior != Clip.none) {
+      this.paint.save();
+      this.paint.translate(bounds.x,bounds.y);
       paintClipPath();
       clipCall();
+      this.paint.translate(-bounds.x,-bounds.y);
     }
     painter();
     this.paint.restore();
@@ -673,7 +678,8 @@ export abstract class ClipContext {
         const { x, y, width, height, radii } = bounds;
         this.paint.roundRect(x, y, width, height, radii);
       },
-      painter
+      painter,
+      bounds
     );
   }
 
@@ -689,7 +695,25 @@ export abstract class ClipContext {
         const { x, y, width, height } = bounds;
         this.paint.rect(x, y, width, height);
       },
-      painter
+      painter,
+      bounds
+    );
+  }
+
+  public clipPath(
+    clipBehavior: Clip,
+    bounds: BoundsRect,
+    clipPath: Path2D,
+    painter: VoidFunction
+  ) {
+    this.clipAndPaint(
+      () => this.paint.clip(),
+      clipBehavior,
+      () => {
+        clipPath.render(this.paint, new Size(bounds.width, bounds.height));
+      },
+      painter,
+      bounds
     );
   }
 }
@@ -2055,12 +2079,12 @@ export class CustomPaintRenderView extends SingleChildRenderView {
   }
 
   render(context: PaintingContext, offset?: Vector): void {
-    if(this._painter){
-      this.renderWidthPainter(context.paint, this._painter,offset);
+    if (this._painter) {
+      this.renderWidthPainter(context.paint, this._painter, offset);
     }
     super.render(context, offset);
-    if(this._foregroundPainter){
-       this.renderWidthPainter(context.paint, this._foregroundPainter,offset);
+    if (this._foregroundPainter) {
+      this.renderWidthPainter(context.paint, this._foregroundPainter, offset);
     }
   }
   private renderWidthPainter(
@@ -2072,5 +2096,72 @@ export class CustomPaintRenderView extends SingleChildRenderView {
     paint.translate(offset.x, offset.y);
     painter.render(paint, this.size);
     paint.restore();
+  }
+}
+
+export interface CustomClipperArguments {
+  clipper: CustomClipper;
+  clipBehavior: Clip;
+}
+
+export abstract class CustomClipperRenderView extends SingleChildRenderView {
+  protected clip: Path2D;
+  private _clipper?: CustomClipper;
+  private _clipBehavior: Clip = Clip.antiAlias;
+  private markNeedsRePaintBind: VoidFunction;
+  constructor(args: Partial<CustomClipperArguments>) {
+    super();
+    this.clipper = args?.clipper;
+    this._clipBehavior=args?.clipBehavior;
+    this.markNeedsRePaintBind = this.markNeedsPaint.bind(this);
+  }
+  set clipper(value: CustomClipper) {
+    this._clipper?.removeListener(this.markNeedsRePaintBind);
+    this._clipper = value;
+    this._clipper?.addListener(this.markNeedsRePaintBind);
+    this.markNeedsPaint();
+  }
+  get clipBehavior() {
+    return this._clipBehavior;
+  }
+  get defaultPath(){
+    return null;
+  }
+  protected updateClip(offset:Vector) {
+    if(!this._clipper){
+      this.clip=this.defaultPath;
+    }
+    this.clip = this._clipper?.getClip(offset,this.size);
+  }
+  set clipBehavior(value: Clip) {
+    this._clipBehavior = value;
+    this.markNeedsPaint();
+  }
+}
+
+export class ClipPathRenderView extends CustomClipperRenderView {
+  get defaultPath(): Path2D {
+    const path = new Path2D();
+    path.rect(0, 0, this.size.width, this.size.height);
+    return path;
+  }
+  render(context: PaintingContext, offset?: Vector): void {
+    if (this.child) {
+      this.updateClip(offset);
+      const paint=context.paint;
+      context.clipPath(
+        this.clipBehavior,
+        {
+          x: offset?.x ?? 0,
+          y: offset?.y ?? 0,
+          width: this.size.width,
+          height: this.size.height,
+        },
+        this.clip ?? this.defaultPath,
+        () => {
+          super.render(context, offset);
+        }
+      );
+    }
   }
 }

@@ -1,4 +1,4 @@
-abstract class Listenable {
+export abstract class Listenable {
   abstract addListener(listener: VoidFunction): void;
   abstract removeListener(listener: VoidFunction): void;
 }
