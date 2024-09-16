@@ -59,6 +59,12 @@ export class Size {
 export class Offset {
   offsetX: number;
   offsetY: number;
+  get x():number{
+    return this.offsetX;
+  }
+  get y():number{
+    return this.offsetY;
+  }
   constructor(offsetX: number, offsetY: number) {
     this.offsetX = offsetX;
     this.offsetY = offsetY;

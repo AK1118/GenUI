@@ -2,7 +2,7 @@
  * @Author: AK1118 
  * @Date: 2024-09-16 09:49:49 
  * @Last Modified by: AK1118
- * @Last Modified time: 2024-09-16 09:50:17
+ * @Last Modified time: 2024-09-16 17:54:29
  * @Description: 组合类组件
  */
 import { BuildContext } from "../basic/elements";
@@ -215,6 +215,7 @@ class ScrollableState extends State<Scrollable> {
           this.position.scrollStart();
         },
         onPanUpdate: (event) => {
+          console.log("滚动节目", event);
           this.applyUserOffset(event.delta);
           this.position.scrollUpdate(
             new Offset(event.position.x, event.position.y)

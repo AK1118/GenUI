@@ -76,7 +76,7 @@ import {
   MainAxisAlignment,
   StackFit,
 } from "@/lib/core/base-types";
-import { ScrollController } from "@/lib/widgets/scroll";
+import { ScrollBar, ScrollController } from "@/lib/widgets/scroll";
 import { CustomClipper, CustomPainter } from "@/lib/rendering/custom";
 import { Path2D } from "@/lib/rendering/path-2D";
 import GenPlatformConfig from "@/lib/core/platform";
@@ -86,14 +86,12 @@ const img2: HTMLImageElement = document.querySelector("#bg");
 
 const dev = window.devicePixelRatio;
 const width = 300;
-const height =300;
+const height =window.innerHeight;
 console.log("DPR：", dev);
 canvas.width = width * dev;
 canvas.height = height * dev;
 canvas.style.width = width + "px";
 canvas.style.height = height + "px";
-
-
 
 const g = canvas.getContext("2d", {
   // willReadFrequently: true,
@@ -107,8 +105,6 @@ GenPlatformConfig.InitInstance({
   canvas: canvas,
   renderContext: g,
 });
-
-
 
 class Scaffold extends StatefulWidget {
   createState(): State<Scaffold> {
@@ -266,31 +262,34 @@ class ScaffoldState extends State<Scaffold> {
       //     height:100,
       //   })
       // }),
-      child: new Scrollable({
-        controller: controller,
-        axisDirection: AxisDirection.down,
-        physics: new BouncingScrollPhysics(),
-        viewportBuilder(context, position) {
-          return new ViewPort({
-            offset: position,
-            axisDirection: position.axisDirection,
-            children: [
-              ...Array.from(Array(100)).map((_, ndx) => {
-                return new WidgetToSliverAdapter({
-                  child: new Container({
-                    width: canvas.width,
-                    height: 150,
-                    color: ndx % 2 === 0 ? "white" : "#edf2fa",
-                    child: new Align({
-                      alignment: Alignment.center,
-                      child: new Button(ndx),
+      child: new ScrollBar({
+        controller:controller,
+        child: new Scrollable({
+          controller: controller,
+          axisDirection: AxisDirection.down,
+          physics: new BouncingScrollPhysics(),
+          viewportBuilder(context, position) {
+            return new ViewPort({
+              offset: position,
+              axisDirection: position.axisDirection,
+              children: [
+                ...Array.from(Array(100)).map((_, ndx) => {
+                  return new WidgetToSliverAdapter({
+                    child: new Container({
+                      width: canvas.width,
+                      height: 150,
+                      color: ndx % 2 === 0 ? "white" : "#edf2fa",
+                      child: new Align({
+                        alignment: Alignment.center,
+                        child: new Button(ndx),
+                      }),
                     }),
-                  }),
-                });
-              }),
-            ],
-          });
-        },
+                  });
+                }),
+              ],
+            });
+          },
+        }),
       }),
     });
   }

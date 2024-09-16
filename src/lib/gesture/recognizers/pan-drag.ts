@@ -25,7 +25,7 @@ class PanDragGestureRecognizer
   onPanEnd: (event: PanZoomEndPointerEvent) => void;
   private startEvent: PanZoomStartPointerEvent;
   private moved: boolean = false;
-  isAllowedPointer(): boolean {
+  isAllowedPointer(event: DownPointerEvent): boolean {
     return !!(this.onPanEnd || this.onPanStart || this.onPanUpdate);
   }
   handleEvent(event: PointerEvent): void {

@@ -207,6 +207,11 @@ export abstract class RenderBox extends RenderView {
     }
     return false;
   }
+  applyPaintTransform(child: RenderView, transform: Matrix4): void {
+    const childParentData=child?.parentData as BoxParentData;
+    const offset:Vector=childParentData.offset;
+    transform.translate(offset.x, offset.y);
+  }
 }
 
 //parentData设置

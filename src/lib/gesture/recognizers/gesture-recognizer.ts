@@ -26,11 +26,11 @@ export class GestureRecognizerFactory<T> {
 
 export abstract class GestureRecognizer extends GestureArenaMember {
   addPointer(event: DownPointerEvent) {
-    if (this.isAllowedPointer()) {
+    if (this.isAllowedPointer(event)) {
       this.addAllowedPointer(event);
     }
   }
-  abstract isAllowedPointer(): boolean;
+  abstract isAllowedPointer(event: PointerEvent): boolean;
   protected addAllowedPointer(event: DownPointerEvent) {}
   protected invokeCallback<T>(
     name: string,
