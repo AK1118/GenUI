@@ -1,3 +1,10 @@
+/*
+ * @Author: AK1118 
+ * @Date: 2024-09-16 09:49:49 
+ * @Last Modified by: AK1118
+ * @Last Modified time: 2024-09-16 09:50:17
+ * @Description: 组合类组件
+ */
 import { BuildContext } from "../basic/elements";
 import {
   SingleChildRenderObjectWidgetArguments,
@@ -48,13 +55,15 @@ import {
 } from "./basic";
 import { ScrollController } from "./scroll-controller";
 
+ 
+
 interface ContainerArguments {
   width: number;
   height: number;
   color: string;
   child: Widget;
   decoration: BoxDecoration;
-  align: Alignment;
+  alignment: Alignment;
   constraints: BoxConstraints;
   key: Key;
   padding: Partial<RectTLRB>;
@@ -67,7 +76,7 @@ export class Container extends StatelessWidget implements ContainerArguments {
   color: string;
   child: Widget;
   decoration: BoxDecoration;
-  align: Alignment;
+  alignment: Alignment;
   key: Key;
   padding: Partial<RectTLRB<number>>;
   constructor(args: Partial<ContainerArguments>) {
@@ -78,23 +87,37 @@ export class Container extends StatelessWidget implements ContainerArguments {
     this.color = args?.color;
     this.child = args?.child;
     this.decoration = args?.decoration;
-    this.align = args?.align;
+    this.alignment = args?.alignment;
     this.key = args?.key;
     this.padding = args?.padding;
+
+    this.constraints =
+      this.width !== null || this.height !== null
+        ? this.constraints?.tighten(this.width, this.height) ??
+          BoxConstraints.tightFor(this.width, this.height)
+        : this.constraints;
   }
-
+  /**
+   * 根据参数选择使用对应的组件包裹，包裹顺序由底至高。
+   * 例如：@Padding 依赖 @ConstrainedBox 的约束，所以Padding必须是 @ConstrainedBox 的child。
+   * 而 @DecoratedBox 的渲染需要覆盖整个 @ConstrainedBox ,所以需要在 @ConstrainedBox 之上。
+   */ 
   build(context: BuildContext): Widget {
-    if (!this.constraints) {
-      this.constraints = BoxConstraints.tightFor(
-        this.width ?? null,
-        this.height ?? null
-      );
+    let result: Widget = this.child;
+    if (
+      this.child === null &&
+      (this.constraints === null || !this.constraints?.isTight)
+    ) {
+      result = new ConstrainedBox({
+        additionalConstraints: BoxConstraints.expand(),
+        child: result,
+      });
+    } else if (this.alignment) {
+      result = new Align({
+        alignment: this.alignment,
+        child: result,
+      });
     }
-
-    let result: Widget = new ConstrainedBox({
-      additionalConstraints: this.constraints,
-      child: this.child,
-    });
 
     if (this.padding) {
       result = new Padding({
@@ -110,17 +133,17 @@ export class Container extends StatelessWidget implements ContainerArguments {
       });
     }
 
+    if (this.constraints) {
+      result=new ConstrainedBox({
+        additionalConstraints: this.constraints,
+        child: result,
+      });
+    }
+    
     if (this.decoration) {
       result = new DecoratedBox({
         decoration: this.decoration,
         child: result,
-      });
-    }
-
-    if (this.align) {
-      result = new Align({
-        child: result,
-        alignment: this.align,
       });
     }
 
@@ -161,13 +184,12 @@ class ScrollableState extends State<Scrollable> {
   private effectiveController: ScrollController;
   public initState(): void {
     super.initState();
-    this.effectiveController=this.widget.controller??new ScrollController();
-    console.log("创建B");
+    this.effectiveController = this.widget.controller ?? new ScrollController();
     this.updatePosition();
   }
   private updatePosition() {
-    const oldPosition=this.position;
-    if(oldPosition){
+    const oldPosition = this.position;
+    if (oldPosition) {
       this.effectiveController.detach(oldPosition);
     }
     const position = this.widget.controller.createScrollPosition(
@@ -194,7 +216,9 @@ class ScrollableState extends State<Scrollable> {
         },
         onPanUpdate: (event) => {
           this.applyUserOffset(event.delta);
-          this.position.scrollUpdate(new Offset(event.position.x, event.position.y));
+          this.position.scrollUpdate(
+            new Offset(event.position.x, event.position.y)
+          );
         },
         onPanEnd: () => {
           this.position.scrollEnd();

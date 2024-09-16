@@ -231,11 +231,20 @@ class ScaffoldState extends State<Scaffold> {
         right: 30,
         bottom: 30,
       },
+      alignment:Alignment.center,
       decoration: new BoxDecoration({
+        backgroundColor:"white",
         border: Border.all({
           color: "orange",
         }),
       }),
+      // child:new ColoredBox({
+      //   color:'#ccc',
+      //   child:new SizedBox({
+      //     width:100,
+      //     height:100,
+      //   })
+      // }),
       child: new ClipPath({
         clipper: new MyClipper(new Model()),
         child: new Container({

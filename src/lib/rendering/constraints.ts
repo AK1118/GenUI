@@ -73,7 +73,14 @@ class BoxConstraints extends Constraints {
       this.maxWidth === constraints.maxWidth
     );
   }
-
+  static expand(width?:number,height?:number):BoxConstraints{
+    return new BoxConstraints({
+      minWidth: width??Infinity,
+      maxWidth: width??Infinity,
+      minHeight: height??Infinity,
+      maxHeight: height??Infinity
+    });
+  }
   /**
    * 返回一个新的约束盒，约束盒的大小是此约束盒缩小 edges
    */
