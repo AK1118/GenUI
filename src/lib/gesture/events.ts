@@ -1,4 +1,5 @@
 import { Offset } from "../basic/rect";
+import GenPlatformConfig from "../core/platform";
 import { Matrix4 } from "../math/matrix";
 import Vector from "../math/vector";
 
@@ -262,16 +263,15 @@ export class PanZoomEndPointerEvent extends PointerEvent {}
 
 
 export abstract class PointerEventConverter {
-  private static dpr =
-    typeof window === "undefined" ? 1 : window?.devicePixelRatio;
   static expand(data: GenPointerData): PointerEvent {
+    const dpr=GenPlatformConfig.instance.devicePixelRatio;
     const position = new Vector(
-      data.position.x * this.dpr,
-      data.position.y * this.dpr
+      data.position.x * dpr,
+      data.position.y * dpr
     ); //data.position;//
     const delta = new Offset(
-      data.delta.offsetX * this.dpr,
-      data.delta.offsetY * this.dpr
+      data.delta.offsetX * dpr,
+      data.delta.offsetY * dpr
     );
     switch (data.change) {
       case PointerChange.cancel:

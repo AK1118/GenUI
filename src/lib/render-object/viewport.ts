@@ -8,6 +8,7 @@ import {
 import {
   Axis,
   AxisDirection,
+  Clip,
   GrowthDirection,
   ScrollDirection,
 } from "../core/base-types";
@@ -532,10 +533,32 @@ export class RenderViewPortBase extends MultiChildRenderView<RenderSliver> {
   }
 
   render(context: PaintingContext, offset?: Vector): void {
-    this.paintContents(context, offset);
+    context.clipRectAndPaint(
+      Clip.hardEdge,
+      {
+        width: this.size.width,
+        height: this.size.height,
+        y: offset?.y || 0,
+        x: offset?.x || 0,
+      },
+      () => {
+        this.paintContents(context, offset);
+      }
+    );
   }
   debugRender(context: PaintingContext, offset?: Vector): void {
-    this.paintContents(context, offset);
+    context.clipRectAndPaint(
+      Clip.hardEdge,
+      {
+        width: this.size.width,
+        height: this.size.height,
+        y: offset?.y || 0,
+        x: offset?.x || 0,
+      },
+      () => {
+        this.paintContents(context, offset);
+      }
+    );
   }
 }
 

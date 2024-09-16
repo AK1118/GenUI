@@ -253,11 +253,14 @@ export abstract class SingleChildRenderView extends RenderBox {
     this.child = child;
   }
   debugRender(context: PaintingContext, offset?: Vector): void {
-    const parentData: BoxParentData = this.child?.parentData as BoxParentData;
-    if (offset && parentData) {
-      offset.add(parentData.offset);
+    if (this.child) {
+      const parentData: BoxParentData = this.child?.parentData as BoxParentData;
+      let resultOffset = Vector.zero;
+      if (offset && parentData) {
+        resultOffset = Vector.add(offset, parentData.offset);
+      }
+      context.paintChildDebug(this.child!, resultOffset);
     }
-    context.paintChildDebug(this.child!, offset);
   }
   render(context: PaintingContext, offset?: Vector) {
     if (this.child) {
@@ -521,6 +524,9 @@ export class PaddingRenderView extends SingleChildRenderView {
   render(context: PaintingContext, offset?: Vector): void {
     super.render(context, offset);
   }
+  debugRender(context: PaintingContext, offset?: Vector): void {
+    super.debugRender(context, offset);   
+  }
 }
 export interface AlignArguments {
   alignment: Alignment;
@@ -656,11 +662,8 @@ export abstract class ClipContext {
   ) {
     this.paint.save();
     if (clipBehavior != Clip.none) {
-      this.paint.save();
-      this.paint.translate(bounds.x,bounds.y);
       paintClipPath();
       clipCall();
-      this.paint.translate(-bounds.x,-bounds.y);
     }
     painter();
     this.paint.restore();

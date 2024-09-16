@@ -25,9 +25,10 @@ import {
 } from "../gesture/hit_test";
 import { GestureBinding } from "../gesture/binding";
 import { AbstractNode, RenderView } from "../render-object/render-object";
+import GenPlatformConfig from "../core/platform";
 
 type FrameCallback = (timestamp: number) => void;
-type AnimationFrame=(callback:FrameCallback)=>void;
+type AnimationFrame = (callback: FrameCallback) => void;
 class FrameCallbackEntity {
   callback: FrameCallback;
   constructor(callback: FrameCallback) {
@@ -41,29 +42,32 @@ export class SchedulerFrameManager {
   private isRequestingFrame: boolean; // 是否正在请求帧
   private nextCallbackId: number; // 回调函数的唯一标识符
   private frameUpdater: FrameUpdater = new FrameUpdater();
-  private requestAnimationFrame:AnimationFrame;
+  private requestAnimationFrame: AnimationFrame;
   private constructor() {
     this.frameCallbacks = new Map<number, FrameCallback>();
     this.isRequestingFrame = false;
     this.nextCallbackId = 0;
     this.initAnimationFrame();
   }
-  private initAnimationFrame(){
+  private initAnimationFrame() {
     // this.requestAnimationFrame=(callback:FrameCallback)=>{
     //   setTimeout(()=>{
     //     callback(+new Date())
     //   },1000/60);
     // }
-    if(typeof window !=='undefined'&&typeof window.requestAnimationFrame==='function'){
-      this.requestAnimationFrame=(callback:FrameCallback)=>{
+    if (
+      typeof window !== "undefined" &&
+      typeof window?.requestAnimationFrame === "function"
+    ) {
+      this.requestAnimationFrame = (callback: FrameCallback) => {
         requestAnimationFrame(callback);
       };
-    }else{
-      this.requestAnimationFrame=(callback:FrameCallback)=>{
-        setTimeout(()=>{
-          callback(+new Date())
-        },1000/120);
-      }
+    } else {
+      this.requestAnimationFrame = (callback: FrameCallback) => {
+        setTimeout(() => {
+          callback(+new Date());
+        }, 1000 / 120);
+      };
     }
   }
   // 获取单例实例
@@ -161,8 +165,10 @@ class SchedulerBinding extends BindingBase {
     this.handleCleanCanvas();
   }
   private handleCleanCanvas() {
-    const paint=new Painter();
-    paint.clearRect(0, 0,paint.canvas.width ,paint.canvas.height);
+    const paint =GenPlatformConfig.instance.painter;
+    const width = GenPlatformConfig.instance.screenWidth,
+      height = GenPlatformConfig.instance.screenHeight;
+    paint.clearRect(0, 0,width,height);
   }
 }
 
@@ -187,7 +193,7 @@ export class PipelineOwner {
       if (_.needsRePaint) {
         // console.log("-----执行渲染-----",_)
         _?.paintWidthContext(
-          new PaintingContext(new Painter()),
+          new PaintingContext(GenPlatformConfig.instance.painter),
           layer?.offset || Vector.zero
         );
       }
@@ -223,13 +229,15 @@ class FrameUpdater {
   private lastFrameTime: number;
   private frameCount: number;
   private fps: number;
-  private painter: Painter = new Painter();
+  private painter: Painter= GenPlatformConfig.instance.painter;
   constructor() {
     this.lastFrameTime = performance.now();
     this.frameCount = 0;
     this.fps = 0;
   }
   private render(frame: number) {
+    const screenWidth =  GenPlatformConfig.instance.screenWidth;
+    
     this.painter.save();
     this.painter.globalAlpha = 0.5;
     // 设置字体样式
@@ -250,7 +258,7 @@ class FrameUpdater {
     const rectWidth = textWidth + 2 * padding;
     const rectHeight = 40;
     this.painter.clearRect(
-      this.painter.canvas.width - rectWidth,
+      screenWidth - rectWidth,
       0,
       rectWidth,
       rectHeight
@@ -258,7 +266,7 @@ class FrameUpdater {
     // 绘制背景矩形
     this.painter.fillStyle = "#429aba";
     this.painter.fillRect(
-      this.painter.canvas.width - rectWidth,
+      screenWidth - rectWidth,
       0,
       rectWidth,
       rectHeight
@@ -268,12 +276,12 @@ class FrameUpdater {
     this.painter.fillStyle = "white";
     this.painter.fillText(
       fpsText,
-      this.painter.canvas.width - rectWidth + padding,
+      screenWidth - rectWidth + padding,
       15
     );
     this.painter.fillText(
       elementText,
-      this.painter.canvas.width - rectWidth + padding,
+      screenWidth - rectWidth + padding,
       30
     );
 
@@ -298,7 +306,7 @@ class FrameUpdater {
 export class RendererBinding extends GestureBinding {
   private _pipelineOwner: PipelineOwner;
   public static instance: RendererBinding;
-  public debug: boolean = false;
+  public debug: boolean = GenPlatformConfig.instance.isDebug;
   get renderView(): RenderView {
     return this._pipelineOwner.renderView;
   }
@@ -354,6 +362,9 @@ class ElementBinding extends BindingBase {
     this.rootElement = wrappedWidget.createElement() as RootRenderObjectElement;
     this.buildOwner = new BuildOwner();
     this.rootElement.attachToRenderTree(this.buildOwner);
+    if (RendererBinding.instance.debug) {
+      console.log("The GenUI app is running on", new Date());
+    }
   }
 }
 

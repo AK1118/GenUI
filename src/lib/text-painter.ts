@@ -1,6 +1,7 @@
 import Painter, { PaintingStyle } from "@/lib/painting/painter";
 import Vector from "@/lib/math/vector";
 import { Size } from "@/lib/basic/rect";
+import GenPlatformConfig from "./core/platform";
 
 const _kDefaultFontSize: number = 14.0;
 const _kDefaultEllipsis: string = "…";
@@ -646,7 +647,7 @@ export class Paragraph {
       lastTextPoint.text = ellipsis;
       const preBox = lastTextPoint.parentData.box;
       const currentBox = this.getTextBox(
-        this.getMeasureText(new Painter(), ellipsis)
+        this.getMeasureText(GenPlatformConfig.instance.painter, ellipsis)
       );
       currentBox.lineHeight = preBox.lineHeight;
       if (hasCustomEllipsis) {
@@ -1169,7 +1170,7 @@ export class TextPainter {
   get height(): number {
     return this.size.height;
   }
-  constructor(text: TextSpan, painter: Painter = new Painter()) {
+  constructor(text: TextSpan, painter: Painter = GenPlatformConfig.instance.painter) {
     this.text = text;
     this.painter = painter;
   }

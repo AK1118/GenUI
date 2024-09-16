@@ -626,7 +626,7 @@ interface RawGestureDetectorArguments {
   gestures: Map<any, GestureRecognizerFactory<GestureRecognizer>>;
 }
 
-class RawGestureDetector extends StatefulWidget {
+export class RawGestureDetector extends StatefulWidget {
   public gestures: Map<any, GestureRecognizerFactory<GestureRecognizer>> =
     new Map();
   public child: Widget;
