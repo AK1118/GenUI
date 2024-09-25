@@ -51,6 +51,9 @@ export abstract class OnePointerGestureRecognizer extends GestureRecognizer {
     this.handleEventBind = this.handleEvent.bind(this);
   }
   protected handleEventBind: (event: PointerEvent) => void;
+  /**
+   * 每一个指针都对应一个 @GestureArenaEntry
+   */
   private entities: Map<number, GestureArenaEntry> = new Map<
     number,
     GestureArenaEntry
@@ -89,7 +92,9 @@ export abstract class OnePointerGestureRecognizer extends GestureRecognizer {
     return entry;
   }
   acceptGesture(pointer: number): void {}
-  rejectGesture(pointer: number): void {}
+  rejectGesture(pointer: number): void {
+    this.stopTrackingPointer(pointer);
+  }
 }
 
 export abstract class PrimaryPointerTapGestureRecognizer extends OnePointerGestureRecognizer {

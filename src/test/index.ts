@@ -80,13 +80,14 @@ import { ScrollBar, ScrollController } from "@/lib/widgets/scroll";
 import { CustomClipper, CustomPainter } from "@/lib/rendering/custom";
 import { Path2D } from "@/lib/rendering/path-2D";
 import GenPlatformConfig from "@/lib/core/platform";
+import MyPost from "./test";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
 
 const dev = window.devicePixelRatio;
-const width = 300;
-const height =window.innerHeight;
+const width = 500;
+const height = 500;
 console.log("DPR：", dev);
 canvas.width = width * dev;
 canvas.height = height * dev;
@@ -209,11 +210,15 @@ class MyClipper extends CustomClipper {
     }
   }
 }
-
+/**
+ * updatePositions时创建一个
+ * 
+ */
 class ScaffoldState extends State<Scaffold> {
   private time: number = 1;
   private dy: number = 0;
   private preDeltaY: number = 0;
+  private list: Array<number> = new Array(20).fill(0);
   public initState(): void {
     super.initState();
     console.log("创建A");
@@ -222,6 +227,24 @@ class ScaffoldState extends State<Scaffold> {
     // });
     setTimeout(() => {
       // this.animateTo();
+      // controller.animateTo(150*2000,new Duration({
+      //   milliseconds:6000,
+      // }))
+      // this.setState(() => {
+      //   this.time += 1;
+      //   // this.list=new Array(30).fill(0);
+      //   console.log("数据", this.list);
+      // });
+      // this.setState(()=>{
+      //   this.list.push(...new Array(100).fill(0));
+      // })
+    }, 3000);
+    controller.addListener(() => {
+    if(controller.offset>=controller.position.maxScrollExtent-200){
+      this.setState(()=>{
+        this.list.push(...new Array(10).fill(0));
+      })
+    }
     });
   }
   private animateTo() {
@@ -243,53 +266,51 @@ class ScaffoldState extends State<Scaffold> {
       width: canvas.width,
       height: canvas.height,
       padding: {
-        top: 30,
-        left: 30,
-        right: 30,
-        bottom: 30,
+        top: 100,
+        left: 0,
+        right: 0,
+        bottom: 100,
       },
-      // alignment: Alignment.center,
+      alignment: Alignment.center,
       decoration: new BoxDecoration({
         backgroundColor: "white",
         border: Border.all({
           color: "orange",
         }),
       }),
-      // child:new ColoredBox({
-      //   color:'#ccc',
-      //   child:new SizedBox({
-      //     width:100,
-      //     height:100,
-      //   })
-      // }),
-      child: new ScrollBar({
-        controller:controller,
-        child: new Scrollable({
-          controller: controller,
-          axisDirection: AxisDirection.down,
-          physics: new BouncingScrollPhysics(),
-          viewportBuilder(context, position) {
-            return new ViewPort({
-              offset: position,
-              axisDirection: position.axisDirection,
-              children: [
-                ...Array.from(Array(100)).map((_, ndx) => {
-                  return new WidgetToSliverAdapter({
-                    child: new Container({
-                      width: canvas.width,
-                      height: 150,
-                      color: ndx % 2 === 0 ? "white" : "#edf2fa",
-                      child: new Align({
-                        alignment: Alignment.center,
-                        child: new Button(ndx),
+      child: new Flex({
+        direction: Axis.horizontal,
+        mainAxisAlignment:MainAxisAlignment.start,
+        crossAxisAlignment:CrossAxisAlignment.stretch,
+        children: [
+          new Expanded({
+            flex:1,
+            child:new Scrollable({
+              controller: controller,
+              axisDirection: AxisDirection.down,
+              physics: new BouncingScrollPhysics(),
+              viewportBuilder: (context, position) => {
+                return new ViewPort({
+                  offset: position,
+                  axisDirection: position.axisDirection,
+                  children: this.list.map((_, ndx) => {
+                    return new WidgetToSliverAdapter({
+                      child: new Container({
+                        width: canvas.width,
+                        // height: ,
+                        color: ndx % 2 === 0 ? "white" : "#edf2fa",
+                        child: new Align({
+                          alignment: Alignment.center,
+                          child: new Button(ndx),
+                        }),
                       }),
-                    }),
-                  });
-                }),
-              ],
-            });
-          },
-        }),
+                    });
+                  }),
+                });
+              },
+            }),
+          }),
+        ],
       }),
     });
   }
@@ -313,29 +334,17 @@ class _ButtonState extends State<Button> {
     this.time = this.widget.index;
   }
   build(context: BuildContext): Widget {
-    return new GestureDetector({
-      onTap: () => {
-        this.setState(() => {
-          this.time += 1;
-        });
+    return new Container({
+      padding: {
+        top: 10,
+        bottom: 10,
+        left: 20,
+        right: 20,
       },
-      child: new Container({
-        padding: {
-          top: 10,
-          bottom: 10,
-          left: 20,
-          right: 20,
-        },
-        decoration: new BoxDecoration({
-          backgroundColor: "#edf2fa",
-          borderRadius: BorderRadius.all(10),
-        }),
-        child: new Flex({
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [new Text(`${this.time}`)],
-        }),
-      }),
+      // decoration: new BoxDecoration({
+      //   backgroundColor: "#edf2fa",
+      // }),
+      child: new Text(`${this.time}`),
     });
   }
 }
@@ -351,7 +360,8 @@ const app =
   //     children: Array.from(new Array(2).fill(0)).map((_, ndx) => new Button(ndx)),
   //   }),
   //});
-  new Scaffold();
+  // new Scaffold();
+  new MyPost();
 runApp(app);
 
 // img2.onload = () => {

@@ -135,10 +135,18 @@ export class ContainerRenderViewParentData<
 }
 
 export class FlexParentData extends ContainerRenderViewParentData<RenderView> {
+  private _flex: number;
+  public node:any;
+  get flex(): number {
+    return this._flex;
+  }
+  set flex(value: number) {
+    if(value!==0)console.log("被设置",this)
+    this._flex = value;
+  }
   constructor() {
     super();
   }
-  flex: number;
 }
 
 export abstract class RenderBox extends RenderView {
@@ -208,8 +216,8 @@ export abstract class RenderBox extends RenderView {
     return false;
   }
   applyPaintTransform(child: RenderView, transform: Matrix4): void {
-    const childParentData=child?.parentData as BoxParentData;
-    const offset:Vector=childParentData.offset;
+    const childParentData = child?.parentData as BoxParentData;
+    const offset: Vector = childParentData.offset;
     transform.translate(offset.x, offset.y);
   }
 }
@@ -350,14 +358,18 @@ export class ColoredRender extends SingleChildRenderView {
   get color(): string {
     return this._color;
   }
-  performLayout(): void {
-    super.performLayout();
-    this.child?.layout(this.constraints.loosen());
-    if (!this.child) {
-      this.size = Size.zero;
-    }
-    this.size = this.child.size;
-  }
+  // performLayout(): void {
+  //   // super.performLayout();
+  //   // this.child?.layout(this.constraints);
+  //   // if (!this.child) {
+  //   //   this.size = Size.zero;
+  //   //   return;
+  //   // }
+  //   // this.size = this.child?.size??Size.zero;
+  //   if(this.child){
+  //     this.child.layout()
+  //   }
+  // }
   performResize(): void {
     this.size = this.child?.getDryLayout(this.constraints);
   }
@@ -530,7 +542,7 @@ export class PaddingRenderView extends SingleChildRenderView {
     super.render(context, offset);
   }
   debugRender(context: PaintingContext, offset?: Vector): void {
-    super.debugRender(context, offset);   
+    super.debugRender(context, offset);
   }
 }
 export interface AlignArguments {
@@ -663,7 +675,7 @@ export abstract class ClipContext {
     clipBehavior: Clip,
     paintClipPath: VoidFunction,
     painter: VoidFunction,
-    bounds: BoundsRect,
+    bounds: BoundsRect
   ) {
     this.paint.save();
     if (clipBehavior != Clip.none) {
@@ -1026,7 +1038,6 @@ export class FlexRenderView extends MultiChildRenderView {
       childCount += 1;
       const childMainSize = this.getMainSize(child.size),
         childCrossSize = this.getCrossSize(child.size);
-
       const crossSize = this.getCrossSize(this.size);
       switch (this.crossAxisAlignment) {
         case CrossAxisAlignment.start:
@@ -1049,6 +1060,10 @@ export class FlexRenderView extends MultiChildRenderView {
       } else if (this.direction === Axis.vertical) {
         parentData.offset = new Vector(childCrossPosition, childMainPosition);
       }
+      // if(Math.abs(parentData.offset.x)===Infinity||Math.abs(parentData.offset.y)===Infinity){
+      //   console.log("布局",parentData.offset,child,childMainSize,childMainSize + betweenSpace)
+      // }
+      // console.log("布局",parentData.offset,child,childMainSize,betweenSpace)
       childMainPosition += childMainSize + betweenSpace;
       child = parentData?.nextSibling;
     }
@@ -1074,6 +1089,7 @@ export class FlexRenderView extends MultiChildRenderView {
         child.parentData as ContainerRenderViewParentData<RenderView>;
       let innerConstraint: BoxConstraints = BoxConstraints.zero;
       const flex = this.getFlex(child);
+      if(flex!==0)console.log(child,"有",flex,child.parentData)
       if (flex > 0) {
         totalFlex += flex;
       } else {
@@ -1111,7 +1127,6 @@ export class FlexRenderView extends MultiChildRenderView {
 
       child = parentData?.nextSibling;
     }
-
     //弹性布局计算
     if (totalFlex > 0) {
       //剩余空间
@@ -1188,7 +1203,10 @@ export class FlexRenderView extends MultiChildRenderView {
     return 0;
   }
   protected setupParentData(child: RenderView): void {
-    child.parentData = new FlexParentData();
+    const parentData=new FlexParentData();
+    parentData.node=child;
+    child.parentData = parentData;
+    
   }
 
   private getCrossSize(size: Size) {
@@ -1451,6 +1469,7 @@ export class ParagraphView extends SingleChildRenderView {
         },
         () => {
           this.textPainter.paint(context.paint, offset, true);
+          context.paintDefaultDebugBoundary(offset,this.size);
         }
       );
     } else {
@@ -2033,9 +2052,25 @@ export class BoxDecorationRenderView extends SingleChildRenderView {
 export class ImageRenderView extends SingleChildRenderView {
   private decoration: ImageDecoration;
   private decorationPainter: ImageDecorationPainter;
-  constructor(option: Partial<ImageDecorationArguments>) {
+  private _width: number;
+  private _height: number;
+  constructor(args: Partial<ImageDecorationArguments>) {
     super();
-    this.decoration = new ImageDecoration(option);
+    this.decoration = new ImageDecoration(args);
+    this.width = args?.width;
+    this.height = args?.height;
+  }
+
+  set width(value: number) {
+    if (value === this._width) return;
+    this._width = value;
+    this.markNeedsLayout();
+  }
+
+  set height(value: number) {
+    if (value === this._height) return;
+    this._height = value;
+    this.markNeedsLayout();
   }
 
   set imageSource(value: Partial<ImageDecorationArguments>) {
@@ -2046,12 +2081,19 @@ export class ImageRenderView extends SingleChildRenderView {
     this.markNeedsPaint();
   }
   performLayout(): void {
-    super.performLayout();
+    // super.performLayout();
     const imageSize = new Size(
       this.decoration?.imageSource.width,
       this.decoration?.imageSource.height
     );
-    this.size = this.constraints.constrain(imageSize);
+    // this.size = this.constraints.constrain(imageSize);
+    // // this.size=
+    //  this.decorationPainter.layout(this.size);
+    this.constraints = BoxConstraints.tightFor(null, null).enforce(
+      this.constraints
+    );
+    this.size =
+      this.constraints.constrainSizeAndAttemptToPreserveAspectRatio(imageSize);
     this.decorationPainter.layout(this.size);
   }
   render(context: PaintingContext, offset?: Vector): void {
@@ -2120,7 +2162,7 @@ export abstract class CustomClipperRenderView extends SingleChildRenderView {
   constructor(args: Partial<CustomClipperArguments>) {
     super();
     this.clipper = args?.clipper;
-    this._clipBehavior=args?.clipBehavior;
+    this._clipBehavior = args?.clipBehavior;
     this.markNeedsRePaintBind = this.markNeedsPaint.bind(this);
   }
   set clipper(value: CustomClipper) {
@@ -2132,14 +2174,14 @@ export abstract class CustomClipperRenderView extends SingleChildRenderView {
   get clipBehavior() {
     return this._clipBehavior;
   }
-  get defaultPath(){
+  get defaultPath() {
     return null;
   }
-  protected updateClip(offset:Vector) {
-    if(!this._clipper){
-      this.clip=this.defaultPath;
+  protected updateClip(offset: Vector) {
+    if (!this._clipper) {
+      this.clip = this.defaultPath;
     }
-    this.clip = this._clipper?.getClip(offset,this.size);
+    this.clip = this._clipper?.getClip(offset, this.size);
   }
   set clipBehavior(value: Clip) {
     this._clipBehavior = value;
@@ -2156,7 +2198,7 @@ export class ClipPathRenderView extends CustomClipperRenderView {
   render(context: PaintingContext, offset?: Vector): void {
     if (this.child) {
       this.updateClip(offset);
-      const paint=context.paint;
+      const paint = context.paint;
       context.clipPath(
         this.clipBehavior,
         {

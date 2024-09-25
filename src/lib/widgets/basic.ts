@@ -23,13 +23,9 @@ import {
   ColoredRender,
   ConstrainedBoxRender,
   ConstrainedBoxRenderArguments,
-
   CustomClipperArguments,
-
   CustomPaintArguments,
-
   CustomPaintRenderView,
-
   ExpandedArguments,
   FlexOption,
   FlexParentData,
@@ -91,12 +87,23 @@ import { ImageDecorationArguments, ImageSource } from "../painting/image";
 import { Key } from "../basic/key";
 import { BoxFit } from "../painting/box-fit";
 import { RenderView } from "../render-object/render-object";
+import { RenderSliverBoxAdapter } from "../render-object/slivers";
 import {
-  RenderSliverBoxAdapter,
-} from "../render-object/slivers";
-import { RenderViewPort, RenderViewPortArguments, ViewPortOffset } from "../render-object/viewport";
-import { Axis, AxisDirection, Clip, CrossAxisAlignment, MainAxisAlignment, StackFit, WrapAlignment, WrapCrossAlignment } from "../core/base-types";
-import {CustomClipper, CustomPainter} from "../rendering/custom";
+  RenderViewPort,
+  RenderViewPortArguments,
+  ViewPortOffset,
+} from "../render-object/viewport";
+import {
+  Axis,
+  AxisDirection,
+  Clip,
+  CrossAxisAlignment,
+  MainAxisAlignment,
+  StackFit,
+  WrapAlignment,
+  WrapCrossAlignment,
+} from "../core/base-types";
+import { CustomClipper, CustomPainter } from "../rendering/custom";
 export interface ColoredBoxOption {
   color: string;
 }
@@ -222,9 +229,10 @@ export class Expanded extends ParentDataWidget<FlexParentData> {
     option: Partial<ExpandedArguments & SingleChildRenderObjectWidgetArguments>
   ) {
     super(option?.child, option.key);
-    this.flex = option?.flex ?? 0;
+    this.flex = option?.flex ?? 1;
   }
   applyParentData(renderView: ParentDataRenderView<FlexParentData>): void {
+    if (!(renderView.parentData instanceof FlexParentData)) return;
     const flexParentData = renderView?.parentData as FlexParentData;
     flexParentData.flex = this.flex;
     renderView.parentData = flexParentData;
@@ -236,7 +244,7 @@ export class Expanded extends ParentDataWidget<FlexParentData> {
 export class Flex extends MultiChildRenderObjectWidget {
   public direction: Axis = Axis.horizontal;
   public mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.start;
-  public crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.start;
+  public crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.center;
   constructor(
     option: Partial<FlexOption & MultiChildRenderObjectWidgetArguments>
   ) {
@@ -440,6 +448,11 @@ export interface TransformScaleArguments {
   origin: Vector;
 }
 
+export interface TransformSkewArguments {
+  skewX: number;
+  skewY: number;
+}
+
 export interface TransformTranslateArguments {
   x: number;
   y: number;
@@ -508,6 +521,18 @@ export class Transform extends SingleChildRenderObjectWidget {
       child: option?.child,
     });
   }
+  static skew(
+    option: Partial<
+      TransformSkewArguments & SingleChildRenderObjectWidgetArguments
+    >
+  ): Transform {
+    const { skewX = 0, skewY = 0 } = option;
+    const transform = Matrix4.skew(skewX, skewY);
+    return new Transform({
+      child: option?.child,
+      transform: transform,
+    });
+  }
   static scale(
     option: Partial<
       TransformScaleArguments & SingleChildRenderObjectWidgetArguments
@@ -567,6 +592,9 @@ export class GestureDetector
     this.onPanUpdate = option?.onPanUpdate;
     this.onPanEnd = option?.onPanEnd;
   }
+  onLongPressUpdate: (event: UpPointerEvent) => void;
+  onLongPressStart: (event: UpPointerEvent) => void;
+  onLongPressEnd: (event: UpPointerEvent) => void;
 
   build(context: BuildContext): Widget {
     const gestures: Map<
@@ -732,18 +760,44 @@ export class Text extends SingleChildRenderObjectWidget {
   }
 }
 
+interface TextRichArguments {
+  textSpan: TextSpan;
+}
+
+export class TextRich extends SingleChildRenderObjectWidget {
+  private textSpan: TextSpan;
+  constructor(
+    args: Partial<TextRichArguments & SingleChildRenderObjectWidgetArguments>
+  ) {
+    super(args?.child, args.key);
+    this.textSpan = args?.textSpan;
+  }
+  createRenderObject(): RenderView {
+    return new ParagraphView({
+      text: this.textSpan,
+    });
+  }
+  updateRenderObject(context: BuildContext, renderView: ParagraphView): void {
+    renderView.text = this.textSpan;
+  }
+}
+
 export class Image
   extends SingleChildRenderObjectWidget
   implements ImageDecorationArguments
 {
   imageSource: ImageSource;
   fit: BoxFit;
-  align: Alignment;
+  alignment: Alignment;
+  width: number;
+  height: number;
   constructor(option: Partial<ImageDecorationArguments & { key: Key }>) {
     super(null, option?.key);
     this.imageSource = option?.imageSource;
     this.fit = option?.fit ?? BoxFit.none;
-    this.align = option?.align ?? Alignment.center;
+    this.alignment = option?.alignment ?? Alignment.center;
+    this.width = option?.width;
+    this.height = option?.height;
   }
 
   createRenderObject(): RenderView {
@@ -753,11 +807,15 @@ export class Image
     return {
       imageSource: this.imageSource,
       fit: this.fit,
-      align: this.align,
+      alignment: this.alignment,
+      width: this.width,
+      height: this.height,
     };
   }
   updateRenderObject(context: BuildContext, renderView: ImageRenderView): void {
     renderView.imageSource = this.imageDecorationArgs;
+    renderView.width = this.width;
+    renderView.height = this.height;
   }
 }
 
@@ -797,40 +855,50 @@ export class WidgetToSliverAdapter extends SingleChildRenderObjectWidget {
   }
 }
 
-
 export class CustomPaint extends SingleChildRenderObjectWidget {
   private painter: CustomPainter;
   private foregroundPainter: CustomPainter;
-  constructor(option: Partial<SingleChildRenderObjectWidgetArguments & CustomPaintArguments>) {
+  constructor(
+    option: Partial<
+      SingleChildRenderObjectWidgetArguments & CustomPaintArguments
+    >
+  ) {
     super(option?.child, option?.key);
     this.painter = option?.painter;
     this.foregroundPainter = option?.foregroundPainter;
   }
   createRenderObject(): RenderView {
-   return  new CustomPaintRenderView({
+    return new CustomPaintRenderView({
       painter: this.painter,
       foregroundPainter: this.foregroundPainter,
     });
   }
-  updateRenderObject(context: BuildContext, renderView: RenderView): void {
-    
-  }
+  updateRenderObject(context: BuildContext, renderView: RenderView): void {}
 }
 
-
-export class ClipPath extends SingleChildRenderObjectWidget{
+export class ClipPath extends SingleChildRenderObjectWidget {
   private clipper: CustomClipper;
   private clipBehavior: Clip;
-  constructor(args: Partial<CustomClipperArguments & SingleChildRenderObjectWidgetArguments>) {
+  constructor(
+    args: Partial<
+      CustomClipperArguments & SingleChildRenderObjectWidgetArguments
+    >
+  ) {
     super(args?.child, args?.key);
-    this.clipper=args?.clipper;
-    this.clipBehavior=args?.clipBehavior;
+    this.clipper = args?.clipper;
+    this.clipBehavior = args?.clipBehavior;
   }
   createRenderObject(): RenderView {
-    return new ClipPathRenderView({clipper:this.clipper, clipBehavior: this.clipBehavior});
+    return new ClipPathRenderView({
+      clipper: this.clipper,
+      clipBehavior: this.clipBehavior,
+    });
   }
-  updateRenderObject(context: BuildContext, renderView: ClipPathRenderView): void {
-    renderView.clipper=this.clipper;
-    renderView.clipBehavior=this.clipBehavior;
+  updateRenderObject(
+    context: BuildContext,
+    renderView: ClipPathRenderView
+  ): void {
+    renderView.clipper = this.clipper;
+    renderView.clipBehavior = this.clipBehavior;
   }
 }

@@ -232,7 +232,7 @@ export class BorderSide implements BorderSideArguments {
   public dashed: Iterable<number>;
   constructor(option: Partial<BorderSideArguments>) {
     this.color = option?.color;
-    this.width = option?.width;
+    this.width = option?.width??1;
     this.style = option?.style;
     this.dashed = option?.dashed;
   }

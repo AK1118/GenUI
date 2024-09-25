@@ -85,11 +85,14 @@ export class BouncingScrollPhysics extends ScrollPhysics {
     position: ScrollPosition,
     velocity: number
   ): Simulation {
-    return new BouncingSimulation(
-      position.pixels,
-      position.maxScrollExtent,
-      position.minScrollExtent,
-      velocity
-    );
+    if(Math.abs(velocity)>20){
+      return new BouncingSimulation(
+        position.pixels,
+        position.maxScrollExtent,
+        position.minScrollExtent,
+        velocity
+      );
+    }
+    return null;
   }
 }

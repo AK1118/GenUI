@@ -317,6 +317,10 @@ export class AnimationController extends Animation<number> {
     this.ticker.stop(canceled);
     this.status = AnimationStatus.dismissed;
   }
+  cancel(){
+    this.stop();
+    this.simulation=null;
+  }
 }
 
 class InterpolationSimulation extends Simulation {
@@ -585,7 +589,7 @@ export class BouncingSimulation extends Simulation {
   private offsetTime: number = 0;
   private simulation(time: number): Simulation {
     let simulation: Simulation;
-    if (time > this.springTime) {
+    if (time > this.springTime+this.springTime*0.1) {
       this.offsetTime = isFinite(this.springTime) ? this.springTime : 0;
       simulation = this.springSimulation;
     } else {

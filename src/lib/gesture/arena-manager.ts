@@ -38,7 +38,7 @@ class GestureArena {
   eagerWinner: GestureArenaMember;
   members: GestureArenaMember[] = new Array<GestureArenaMember>();
   add(member: GestureArenaMember) {
-    if(!this.isOpen) return;
+    if (!this.isOpen) return;
     this.members.push(member);
   }
   contain(member: GestureArenaMember) {
@@ -76,7 +76,9 @@ class GestureArenaManager {
       arena = new GestureArena();
       this.arenas.set(pointer, arena);
     }
-    arena.add(member);
+    if (!arena.contain(member)) {
+      arena.add(member);
+    }
     return new GestureArenaEntry(this, pointer, member);
   }
   _resolve(
@@ -107,7 +109,7 @@ class GestureArenaManager {
   sweep(pointer: number) {
     const arena: GestureArena = this.arenas.get(pointer);
     if (!arena) return;
-    if(arena.isOpen)return;
+    if (arena.isOpen) return;
     if (arena.isHeld) {
       arena.isPendingSweep = true;
       return;
@@ -139,7 +141,7 @@ class GestureArenaManager {
   }
 
   private tryToResolveArena(pointer: number, arena: GestureArena) {
-    if(arena.isOpen) return;
+    if (arena.isOpen) return;
     if (arena.count === 1) {
       this.arenas.delete(pointer);
       arena.first.acceptGesture(pointer);
@@ -152,18 +154,18 @@ class GestureArenaManager {
     arena: GestureArena,
     member: GestureArenaMember
   ) {
-   
     const state = this.arenas.get(pointer);
     if (state !== arena) return;
     state.remove(member);
     const members = arena.members;
     members.forEach((rejectedMember) => {
-      if (member !== rejectedMember) rejectedMember.rejectGesture(pointer);
+      if (member !== rejectedMember) {
+        rejectedMember.rejectGesture(pointer);
+      }
     });
     state.clear();
     this.arenas.delete(pointer);
     member.acceptGesture(pointer);
-    
   }
 }
 

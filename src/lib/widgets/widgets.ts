@@ -1,12 +1,13 @@
 /*
- * @Author: AK1118 
- * @Date: 2024-09-16 09:49:49 
+ * @Author: AK1118
+ * @Date: 2024-09-16 09:49:49
  * @Last Modified by: AK1118
  * @Last Modified time: 2024-09-16 17:54:29
  * @Description: 组合类组件
  */
 import { BuildContext } from "../basic/elements";
 import {
+  MultiChildRenderObjectWidgetArguments,
   SingleChildRenderObjectWidgetArguments,
   State,
   StatefulWidget,
@@ -20,7 +21,12 @@ import {
   FrictionSimulation,
   Simulation,
 } from "../core/animation";
-import { AxisDirection } from "../core/base-types";
+import {
+  Axis,
+  AxisDirection,
+  CrossAxisAlignment,
+  MainAxisAlignment,
+} from "../core/base-types";
 import { Duration } from "../core/duration";
 import { SimpleScrollPhysics, ScrollPhysics } from "../core/scroll-physics";
 import {
@@ -48,14 +54,14 @@ import {
   ColoredBox,
   ConstrainedBox,
   DecoratedBox,
+  Flex,
   GestureDetector,
   Listener,
   Padding,
   SizedBox,
+  Text,
 } from "./basic";
 import { ScrollController } from "./scroll";
-
- 
 
 interface ContainerArguments {
   width: number;
@@ -101,7 +107,7 @@ export class Container extends StatelessWidget implements ContainerArguments {
    * 根据参数选择使用对应的组件包裹，包裹顺序由底至高。
    * 例如：@Padding 依赖 @ConstrainedBox 的约束，所以Padding必须是 @ConstrainedBox 的child。
    * 而 @DecoratedBox 的渲染需要覆盖整个 @ConstrainedBox ,所以需要在 @ConstrainedBox 之上。
-   */ 
+   */
   build(context: BuildContext): Widget {
     let result: Widget = this.child;
     if (
@@ -134,12 +140,12 @@ export class Container extends StatelessWidget implements ContainerArguments {
     }
 
     if (this.constraints) {
-      result=new ConstrainedBox({
+      result = new ConstrainedBox({
         additionalConstraints: this.constraints,
         child: result,
       });
     }
-    
+
     if (this.decoration) {
       result = new DecoratedBox({
         decoration: this.decoration,
@@ -148,6 +154,38 @@ export class Container extends StatelessWidget implements ContainerArguments {
     }
 
     return result;
+  }
+}
+
+type RowArguments = {
+  mainAxisAlignment: MainAxisAlignment;
+  crossAxisAlignment: CrossAxisAlignment;
+};
+
+export class Row extends Flex {
+  constructor(
+    args: Partial<RowArguments & MultiChildRenderObjectWidgetArguments>
+  ) {
+    super({
+      ...args,
+      direction: Axis.horizontal,
+    });
+  }
+}
+
+type ColumnArguments = {
+  mainAxisAlignment: MainAxisAlignment;
+  crossAxisAlignment: CrossAxisAlignment;
+};
+
+export class Column extends Flex {
+  constructor(
+    args: Partial<ColumnArguments & MultiChildRenderObjectWidgetArguments>
+  ) {
+    super({
+      ...args,
+      direction: Axis.vertical,
+    });
   }
 }
 
@@ -162,12 +200,12 @@ interface ScrollableArguments {
   axisDirection: AxisDirection;
   controller: ScrollController;
 }
-export class Scrollable extends StatefulWidget implements ScrollableArguments {
+export class Scrollable extends StatefulWidget {
   viewportBuilder: ViewportBuilder;
   axisDirection: AxisDirection;
   physics: ScrollPhysics;
   constructor(args: Partial<ScrollableArguments>) {
-    super(args);
+    super();
     this.viewportBuilder = args?.viewportBuilder;
     this.axisDirection = args?.axisDirection;
     this.physics = args?.physics ?? new SimpleScrollPhysics();
@@ -194,7 +232,8 @@ class ScrollableState extends State<Scrollable> {
     }
     const position = this.widget.controller.createScrollPosition(
       this.widget.physics,
-      this.widget.axisDirection
+      this.widget.axisDirection,
+      oldPosition?.pixels
     );
     this.effectiveController.attach(position);
     this.position = position;
@@ -204,6 +243,7 @@ class ScrollableState extends State<Scrollable> {
   }
   public didUpdateWidget(oldWidget: Widget): void {
     super.didUpdateWidget(oldWidget);
+    // this.updatePosition();
   }
   build(context: BuildContext): Widget {
     return new Listener({
@@ -215,7 +255,6 @@ class ScrollableState extends State<Scrollable> {
           this.position.scrollStart();
         },
         onPanUpdate: (event) => {
-          console.log("滚动节目", event);
           this.applyUserOffset(event.delta);
           this.position.scrollUpdate(
             new Offset(event.position.x, event.position.y)

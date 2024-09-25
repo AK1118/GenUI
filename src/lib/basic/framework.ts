@@ -36,6 +36,9 @@ export abstract class Widget {
     return this.constructor;
   }
   constructor(key?: Key) {
+    if(key&&!(key instanceof Key)){
+      throw new Error("key must be instance of Key")
+    }
     this.key = key;
   }
 }
@@ -196,10 +199,14 @@ export abstract class RenderObjectElement extends Element {
     (built as RenderObjectWidget).updateRenderObject(this, this.renderView);
     super.performRebuild();
   }
+  /**
+   * 查找祖先 @ParentDataElement 节点，且查找过程中不允许出现parent是 @RenderObjectElement
+   * 如parent是 @RenderObjectElement 不做出操作，会导致深度子节点都会被执行 @updateParentData 方法
+   */
   protected findAncestorParentDataElement(): ParentDataElement {
     let ancestor: Element = this.parent;
     let result: ParentDataElement;
-    while (ancestor != null) {
+    while (ancestor != null&&!(ancestor instanceof RenderObjectElement)) {
       if (ancestor instanceof ParentDataElement) {
         result = ancestor;
         break;

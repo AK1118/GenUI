@@ -1,8 +1,8 @@
 /*
- * @Author: AK1118 
- * @Date: 2024-08-23 17:22:27 
- * @Last Modified by:   AK1118 
- * @Last Modified time: 2024-08-23 17:22:27 
+ * @Author: AK1118
+ * @Date: 2024-08-23 17:22:27
+ * @Last Modified by:   AK1118
+ * @Last Modified time: 2024-08-23 17:22:27
  */
 import { Size } from "@/lib/basic/rect";
 import Vector from "../math/vector";
@@ -73,12 +73,45 @@ class BoxConstraints extends Constraints {
       this.maxWidth === constraints.maxWidth
     );
   }
-  static expand(width?:number,height?:number):BoxConstraints{
+  constrainSizeAndAttemptToPreserveAspectRatio(size: Size): Size {
+    let width = size.width;
+    let height = size.height;
+
+    if (width < 0 || height < 0) return Size.zero;
+    const aspectRatio = width / height;
+
+    if (width > this.maxWidth) {
+      width = this.maxWidth;
+      height = width / aspectRatio;
+    }
+
+    if (height > this.maxHeight) {
+      height = this.maxHeight;
+      width = height * aspectRatio;
+    }
+
+    if (width < this.minWidth) {
+      width = this.minWidth;
+      height = width / aspectRatio;
+    }
+
+    if (height < this.minHeight) {
+      height = this.minHeight;
+      width = height * aspectRatio;
+    }
+
+    const result = new Size(
+      this.constrainWidth(width),
+      this.constrainHeight(height)
+    );
+    return result;
+  }
+  static expand(width?: number, height?: number): BoxConstraints {
     return new BoxConstraints({
-      minWidth: width??Infinity,
-      maxWidth: width??Infinity,
-      minHeight: height??Infinity,
-      maxHeight: height??Infinity
+      minWidth: width ?? Infinity,
+      maxWidth: width ?? Infinity,
+      minHeight: height ?? Infinity,
+      maxHeight: height ?? Infinity,
     });
   }
   /**

@@ -109,6 +109,22 @@ export class Matrix4 extends Matrix {
     scale.scaleValues(sx, sy, sz);
     this.multiply(scale);
   }
+  static skewX(alpha: number): Matrix4 {
+    const transform = Matrix4.zero.identity();
+    transform.matrix[4] = Math.tan(alpha);
+    return transform;
+  }
+  static skewY(beta: number): Matrix4 {
+    const transform = Matrix4.zero.identity();
+    transform.matrix[4] = Math.tan(beta);
+    return transform;
+  }
+  static skew(alpha: number,beta:number): Matrix4 {
+    const transform = Matrix4.zero.identity();
+    transform.matrix[4] = Math.tan(alpha);
+    transform.matrix[1] = Math.tan(beta);
+    return transform;
+  }
   translateValues(x: number = 0, y: number = 0, z: number = 0) {
     this.matrix[12] = x;
     this.matrix[13] = y;

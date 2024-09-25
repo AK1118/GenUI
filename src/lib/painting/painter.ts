@@ -230,11 +230,7 @@ class Painter implements Painter {
     dw?: number,
     dh?: number
   ) {
-    if (dx && dy) {
-      this.paint.drawImage(image, x, y, width, height, dx, dy, dw, dh);
-    } else {
-      this.paint.drawImage(image, x, y, width, height);
-    }
+    this.paint.drawImage(image, x, y, width, height, dx, dy, dw, dh);
   }
   scale(a: number, b: number) {
     this.paint.scale(a, b);

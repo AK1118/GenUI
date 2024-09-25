@@ -42,11 +42,15 @@ class PanDragGestureRecognizer
       }
     }
     if (event instanceof UpPointerEvent && this.moved && this.startEvent) {
-        this.resolve(GestureDisposition.rejected);
+        super.resolve(GestureDisposition.rejected);
         this.handlePanDragEnd(event);
         this.reset();
         this.stopTrackingPointer(event.pointer);
     }
+  }
+  rejectGesture(pointer: number): void {
+      super.rejectGesture(pointer);
+      this.reset();
   }
 
   private reset() {
@@ -72,6 +76,7 @@ class PanDragGestureRecognizer
       this.onPanUpdate?.(event);
     });
   }
+  
 }
 
 export default PanDragGestureRecognizer;

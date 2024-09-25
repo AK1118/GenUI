@@ -51,18 +51,23 @@ export class Size {
       height: this._height,
     };
   }
-  contains(offset:Vector):boolean{
-    return offset.x >= 0.0 && offset.x < this.width && offset.y >= 0.0 && offset.y < this.height;
+  contains(offset: Vector): boolean {
+    return (
+      offset.x >= 0.0 &&
+      offset.x < this.width &&
+      offset.y >= 0.0 &&
+      offset.y < this.height
+    );
   }
 }
 
 export class Offset {
   offsetX: number;
   offsetY: number;
-  get x():number{
+  get x(): number {
     return this.offsetX;
   }
-  get y():number{
+  get y(): number {
     return this.offsetY;
   }
   constructor(offsetX: number, offsetY: number) {
@@ -87,6 +92,63 @@ class Rect {
     this._y = isNaN(y) ? 0 : y;
     this._width = isNaN(width) ? 0 : width;
     this._height = isNaN(height) ? 0 : height;
+  }
+  public update({
+    x = 0,
+    y = 0,
+    width = 0,
+    height = 0,
+  }: {
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+  }) {
+    this._x = x;
+    this._y = y;
+    this._width = width;
+    this._height = height;
+  }
+  get x(): number {
+    return this._x;
+  }
+  get y(): number {
+    return this._y;
+  }
+  get width(): number {
+    return this._width;
+  }
+  get height(): number {
+    return this._height;
+  }
+  static get zero(): Rect {
+    return new Rect(0, 0, 0, 0);
+  }
+  get left(): number {
+    return this._x;
+  }
+  get right(): number {
+    return this._x + this._width;
+  }
+  get top(): number {
+    return this._y;
+  }
+  get bottom(): number {
+    return this._y + this._height;
+  }
+  public contains(point: Vector) {
+    return (
+      point.x >= this.left &&
+      point.x < this.right &&
+      point.y >= this.top &&
+      point.y < this.bottom
+    );
+  }
+  get size(): Size {
+    return new Size(this._width, this._height);
+  }
+  static merge(offset: Offset | Vector, size: Size): Rect {
+    return new Rect(offset.x, offset.y, size.width, size.height);
   }
 }
 

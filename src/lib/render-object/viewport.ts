@@ -33,6 +33,7 @@ import {
 import MatrixUtils from "../utils/matrixUtils";
 import VelocityTracker from "../utils/velocity-ticker";
 import { Duration } from "../core/duration";
+import { Key, SimpleKey } from "../basic/key";
 
 export abstract class ViewPortOffset extends ChangeNotifier {
   private _pixels: number = 0;
@@ -40,6 +41,8 @@ export abstract class ViewPortOffset extends ChangeNotifier {
     return this._pixels;
   }
   public setPixels(value: number): void {
+    if(value == this._pixels) return;
+
     this._pixels = value;
     this.notifyListeners();
   }
@@ -60,6 +63,7 @@ export abstract class ViewPortOffset extends ChangeNotifier {
 interface ScrollPositionArguments {
   physics: ScrollPhysics;
   axisDirection: AxisDirection;
+  initPixels: number;
 }
 
 export abstract class ScrollPosition extends ViewPortOffset {
@@ -69,11 +73,11 @@ export abstract class ScrollPosition extends ViewPortOffset {
   private _minScrollExtent: number = 0;
   private _maxScrollExtent: number = 0;
   private _viewportDimension: number = 0;
-  private oldPixels: number = 0;
   constructor(args: Partial<ScrollPositionArguments>) {
     super();
     this.physics = args?.physics;
     this._axisDirection = args?.axisDirection;
+    this.correctBy(args?.initPixels ?? 0);
   }
 
   get viewportDimension(): number {
@@ -141,13 +145,26 @@ export abstract class ScrollPosition extends ViewPortOffset {
     this._viewportDimension = viewportDimension;
     return true;
   }
+  private pendingDimensions:boolean=false;
   applyContentDimension(
     minScrollExtent: number,
     maxScrollExtent: number
   ): boolean {
+    if(minScrollExtent!==this._minScrollExtent||maxScrollExtent!==this._maxScrollExtent){
+      this.pendingDimensions=true;
+    }
     this._minScrollExtent = minScrollExtent;
     this._maxScrollExtent = maxScrollExtent;
+    if(this.pendingDimensions){
+      this.applyNewDimensions();  
+    }
     return true;
+  }
+  /**
+   * 更新新的尺寸后
+   */
+  applyNewDimensions() {
+    this.pendingDimensions=false;
   }
   public applyBoundaryConditions(newPixels: number): number {
     const result = this.physics.applyBoundaryConditions(this, newPixels);
@@ -164,7 +181,6 @@ export abstract class ScrollPosition extends ViewPortOffset {
     const correctScroll = this.applyBoundaryConditions(newPixels);
     const pixels: number = newPixels - correctScroll;
     super.setPixels(pixels);
-    this.oldPixels = pixels;
   }
 
   public applyUserOffset(offset: Offset): number {
@@ -175,11 +191,7 @@ export abstract class ScrollPosition extends ViewPortOffset {
     return this.physics.applyPhysicsToUserOffset(this, mainAxisOffset);
   }
 
-  public createBallisticSimulation(velocityOffset: Offset): Simulation {
-    const velocity = getMainAxisDirectionOffset(
-      this._axisDirection,
-      velocityOffset
-    );
+  public createBallisticSimulation(velocity: number): Simulation {
     //速度不足时不需要创建模拟器
     if (Math.abs(velocity) < 20) {
       return;
@@ -193,6 +205,7 @@ export abstract class ScrollPosition extends ViewPortOffset {
 }
 
 export class ScrollPositionWithSingleContext extends ScrollPosition {
+  key:SimpleKey=new SimpleKey();
   private velocityTicker: VelocityTracker = new VelocityTracker(
     new Duration({
       milliseconds: 3000,
@@ -203,7 +216,11 @@ export class ScrollPositionWithSingleContext extends ScrollPosition {
     const delta = this.applyUserOffset(offset);
     this.setPixels(this.pixels + delta);
   }
-  public goBallistic(velocity: Offset) {
+  get velocity(): number {
+    return this.animationController.velocity;
+  }
+  public goBallistic(velocity:number) {
+  
     const simulation = this.createBallisticSimulation(velocity);
     if (simulation) {
       this.animationController.animateWidthSimulation(simulation);
@@ -238,9 +255,17 @@ export class ScrollPositionWithSingleContext extends ScrollPosition {
       this.animationController.forward();
     });
   }
+  applyNewDimensions(): void {
+      super.applyNewDimensions();
+      this.goBallistic(this.animationController.velocity??0);
+  }
   scrollEnd(): void {
     const velocityOffset = this.velocityTicker.getVelocity();
-    this.goBallistic(velocityOffset);
+    const velocity = getMainAxisDirectionOffset(
+      this.axisDirection,
+      velocityOffset
+    );
+    this.goBallistic(velocity);
   }
   scrollUpdate(position: Offset) {
     this.velocityTicker.addPosition(position);
@@ -288,7 +313,7 @@ export interface RenderViewPortArguments {
 }
 
 export class RenderViewPortBase extends MultiChildRenderView<RenderSliver> {
-  private _offset: ViewPortOffset;
+  protected _offset: ViewPortOffset;
   protected center: RenderSliver;
   private _axisDirection: AxisDirection = AxisDirection.down;
   private _crossDirection: AxisDirection = AxisDirection.left;
@@ -564,6 +589,15 @@ export class RenderViewPortBase extends MultiChildRenderView<RenderSliver> {
 
 export class RenderViewPort extends RenderViewPortBase {
   private cachedMaxScrollExtent: number = 0;
+  set offset(value: ViewPortOffset) {
+    this._offset = value;
+    this.offset?.addListener(this.markNeedsLayout.bind(this));
+    this.markNeedsLayout();
+    this.cachedMaxScrollExtent = 0;
+  }
+  get offset(): ViewPortOffset {
+    return this._offset;
+  }
   constructor(args: Partial<RenderViewPortArguments>) {
     super(args);
     this.offset = args?.offset;
@@ -630,10 +664,10 @@ export class RenderViewPort extends RenderViewPortBase {
      * 设置滚动器的滚动范围，滚动最小为0，最大为滚动元素的最大高度减去视口高度
      * 必须在 @performLayoutSliverChild 执行完毕后再调用，且 @maxScrollExtent 不为 0
      */
-    this.offset.applyContentDimension(
-      0,
-      Math.max(0, this.maxScrollExtent - mainAxisExtent)
-    );
+    // this.offset.applyContentDimension(
+    //   0,
+    //   Math.max(0, this.maxScrollExtent - mainAxisExtent)
+    // );
   }
 
   protected performLayoutSliverChild(
