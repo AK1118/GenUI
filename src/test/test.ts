@@ -17,7 +17,7 @@ import { BoxDecoration } from "@/lib/painting/decoration";
 import { ImageSource } from "@/lib/painting/image";
 import BorderRadius from "@/lib/painting/radius";
 import BoxShadow from "@/lib/painting/shadow";
-import { FontStyle, FontWeight, TextSpan, TextStyle } from "@/lib/text-painter";
+import { FontStyle, FontWeight, TextSpan, TextStyle } from "@/lib/painting/text-painter";
 import {
   Align,
   ClipRect,

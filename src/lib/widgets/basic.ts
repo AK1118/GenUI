@@ -81,7 +81,7 @@ import PanDragGestureRecognizer, {
   PanDragGestureRecognizerArguments,
 } from "../gesture/recognizers/pan-drag";
 import { BoxDecoration } from "../painting/decoration";
-import { TextSpan, TextStyle } from "../text-painter";
+import { TextSpan, TextStyle } from "../painting/text-painter";
 import { BoxConstraints } from "../rendering/constraints";
 import { ImageDecorationArguments, ImageSource } from "../painting/image";
 import { Key } from "../basic/key";

@@ -57,7 +57,7 @@ import {
   TextDecoration,
   TextDecorationStyle,
   TextStyle,
-} from "@/lib/text-painter";
+} from "@/lib/painting/text-painter";
 import { Container, Scrollable } from "@/lib/widgets/widgets";
 import { ImageSource } from "@/lib/painting/image";
 import { BoxFit } from "@/lib/painting/box-fit";

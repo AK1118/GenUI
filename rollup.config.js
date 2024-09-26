@@ -12,10 +12,10 @@ const copyAllTargets = [
     src: "LICENSE",
     dest: "dist",
   },
-  {
-    src: "dist/",
-    dest: "example",
-  },
+  // {
+  //   src: "dist/",
+  //   dest: "example",
+  // },
   // {
   //   src:'index.js',
   //   dest:"dist",

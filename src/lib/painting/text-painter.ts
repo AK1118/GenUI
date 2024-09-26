@@ -1,9 +1,9 @@
 import Painter, { PaintingStyle } from "@/lib/painting/painter";
 import Vector from "@/lib/math/vector";
 import { Size } from "@/lib/basic/rect";
-import GenPlatformConfig from "./core/platform";
-import Color from "./painting/color";
-import { Shadow } from "./core/base-types";
+import GenPlatformConfig from "../core/platform";
+import Color from "./color";
+import { Shadow } from "../core/base-types";
 
 const _kDefaultFontSize: number = 14.0;
 const _kDefaultEllipsis: string = "…";
