@@ -40,12 +40,14 @@ import {
   Clip,
   CrossAxisAlignment,
   MainAxisAlignment,
+  Radius,
   StackFit,
   WrapAlignment,
   WrapCrossAlignment,
 } from "../core/base-types";
 import { CustomClipper, CustomPainter } from "../rendering/custom";
 import { Path2D } from "../rendering/path-2D";
+import Color from "../painting/color";
 
 export interface RenderViewOption {
   child: RenderBox;
@@ -344,18 +346,18 @@ export class LimitedBoxRender extends SingleChildRenderView {
 }
 
 export class ColoredRender extends SingleChildRenderView {
-  public _color: string;
+  public _color: Color;
 
-  constructor(color?: string, child?: RenderBox) {
+  constructor(color?: Color, child?: RenderBox) {
     super(child);
     this.color = color;
   }
-  set color(color: string) {
+  set color(color: Color) {
     if (!color || this._color === color) return;
     this._color = color;
     this.markNeedsPaint();
   }
-  get color(): string {
+  get color(): Color {
     return this._color;
   }
   // performLayout(): void {
@@ -377,7 +379,7 @@ export class ColoredRender extends SingleChildRenderView {
     const paint = context.paint;
     paint.save();
     paint.beginPath();
-    paint.fillStyle = this.color;
+    paint.fillStyle = this.color.rgba;
     paint.fillRect(
       offset?.x ?? 0,
       offset?.y ?? 0,

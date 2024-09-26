@@ -1,5 +1,6 @@
 import { Size } from "../basic/rect";
 import Vector from "../math/vector";
+import Color from "./color";
 import Painter from "./painter";
 import BorderRadius from "./radius";
 
@@ -95,7 +96,7 @@ export class Border extends BoxBorder implements BordersArguments {
       }
 
       paint.lineWidth = top.width;
-      paint.strokeStyle = top.color;
+      paint.strokeStyle = top.color.rgba;
       dashed && paint.setLineDash(top.dashed);
       paint.roundRect(
         offset.x,
@@ -111,7 +112,7 @@ export class Border extends BoxBorder implements BordersArguments {
     if (top?.style !== BorderStyle.none) {
       paint.beginPath();
       paint.lineWidth = top.width;
-      paint.strokeStyle = top.color;
+      paint.strokeStyle = top.color.rgba;
       top.dashed && paint.setLineDash(top.dashed);
       paint.moveTo(offset.x, offset.y);
       paint.lineTo(offset.x + size.width, offset.y);
@@ -119,7 +120,7 @@ export class Border extends BoxBorder implements BordersArguments {
         paint.stroke();
       } else {
         paint.save();
-        paint.fillStyle = top.color;
+        paint.fillStyle = top.color.rgba;
         paint.lineTo(offset.x + size.width - right.width, offset.y + top.width);
         paint.lineTo(offset.x + left.width, offset.y + top.width);
         paint.fill();
@@ -130,7 +131,7 @@ export class Border extends BoxBorder implements BordersArguments {
     if (right?.style !== BorderStyle.none) {
       paint.beginPath();
       paint.lineWidth = right.width;
-      paint.strokeStyle = right.color;
+      paint.strokeStyle = right.color.rgba;
       right.dashed && paint.setLineDash(right.dashed);
       paint.moveTo(offset.x + size.width, offset.y);
       paint.lineTo(offset.x + size.width, offset.y + size.height);
@@ -138,7 +139,7 @@ export class Border extends BoxBorder implements BordersArguments {
         paint.stroke();
       } else {
         paint.save();
-        paint.fillStyle = right.color;
+        paint.fillStyle = right.color.rgba;
         paint.lineTo(
           offset.x + size.width - right.width,
           offset.y + size.height
@@ -152,7 +153,7 @@ export class Border extends BoxBorder implements BordersArguments {
     if (bottom?.style !== BorderStyle.none) {
       paint.beginPath();
       paint.lineWidth = bottom.width;
-      paint.strokeStyle = bottom.color;
+      paint.strokeStyle = bottom.color.rgba;
       bottom.dashed && paint.setLineDash(bottom.dashed);
       paint.moveTo(offset.x, offset.y + size.height);
       paint.lineTo(offset.x + size.width, offset.y + size.height);
@@ -160,7 +161,7 @@ export class Border extends BoxBorder implements BordersArguments {
         paint.stroke();
       } else {
         paint.save();
-        paint.fillStyle = bottom.color;
+        paint.fillStyle = bottom.color.rgba;
         paint.lineTo(
           offset.x + size.width - right.width,
           offset.y + size.height - bottom.width
@@ -177,7 +178,7 @@ export class Border extends BoxBorder implements BordersArguments {
     if (left?.style !== BorderStyle.none) {
       paint.beginPath();
       paint.lineWidth = left.width;
-      paint.strokeStyle = left.color;
+      paint.strokeStyle = left.color.rgba;
       left.dashed && paint.setLineDash(left.dashed);
       paint.moveTo(offset.x, offset.y);
       paint.lineTo(offset.x, offset.y+size.height);
@@ -185,7 +186,7 @@ export class Border extends BoxBorder implements BordersArguments {
         paint.stroke();
       } else {
         paint.save();
-        paint.fillStyle = left.color;
+        paint.fillStyle = left.color.rgba;
         paint.lineTo(
           offset.x + left.width,
           offset.y + size.height - bottom.width
@@ -219,14 +220,14 @@ enum BorderStyle {
 }
 
 interface BorderSideArguments {
-  color: string;
+  color: Color;
   width: number;
   style: BorderStyle;
   dashed: Iterable<number>;
 }
 
 export class BorderSide implements BorderSideArguments {
-  public color: string;
+  public color: Color;
   public width: number;
   public style: BorderStyle;
   public dashed: Iterable<number>;
@@ -238,7 +239,7 @@ export class BorderSide implements BorderSideArguments {
   }
   static get none(): BorderSide {
     return new BorderSide({
-      color: "",
+      color: new Color(0x00000000),
       width: 0,
       style: BorderStyle.none,
     });

@@ -62,11 +62,12 @@ import {
   Text,
 } from "./basic";
 import { ScrollController } from "./scroll";
+import Color from "../painting/color";
 
 interface ContainerArguments {
   width: number;
   height: number;
-  color: string;
+  color: Color;
   child: Widget;
   decoration: BoxDecoration;
   alignment: Alignment;
@@ -79,7 +80,7 @@ export class Container extends StatelessWidget implements ContainerArguments {
   width: number;
   height: number;
   constraints: BoxConstraints;
-  color: string;
+  color: Color;
   child: Widget;
   decoration: BoxDecoration;
   alignment: Alignment;

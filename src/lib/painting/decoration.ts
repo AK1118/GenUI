@@ -1,6 +1,7 @@
 import { Size } from "../basic/rect";
 import Vector from "../math/vector";
 import { BoxBorder } from "./borders";
+import Color from "./color";
 import Painter from "./painter";
 import BorderRadius from "./radius";
 import BoxShadow from "./shadow";
@@ -23,7 +24,7 @@ export abstract class BoxPainter {
 }
 
 interface BoxDecorationArguments {
-  backgroundColor: string;
+  backgroundColor: Color;
   border: BoxBorder;
   borderRadius: BorderRadius;
   shadows: Array<BoxShadow>;
@@ -35,7 +36,7 @@ export class BoxDecoration
 {
   border: BoxBorder;
   borderRadius: BorderRadius;
-  backgroundColor: string;
+  backgroundColor: Color;
   shadows: BoxShadow[];
   constructor(option: Partial<BoxDecorationArguments>) {
     super();
@@ -87,7 +88,7 @@ class BoxDecorationPainter extends BoxPainter {
     paint.restore();
   }
   private paintBackgroundColor(paint: Painter, size: Size, offset: Vector) {
-    paint.fillStyle = this.decoration.backgroundColor;
+    paint.fillStyle = this.decoration.backgroundColor?.rgba;
     if (this.decoration.backgroundColor) {
       paint.beginPath();
       if (

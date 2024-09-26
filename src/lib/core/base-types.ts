@@ -1,3 +1,5 @@
+import Color from "../painting/color";
+
 export enum Axis {
   horizontal = "horizontal",
   vertical = "vertical",
@@ -80,3 +82,12 @@ export enum AxisDirection {
     forward = "forward",
     reverse = "reverse",
   }
+
+export interface Shadow {
+  shadowColor?: Color;
+  shadowBlur?: number;
+  shadowOffsetX?: number;
+  shadowOffsetY?: number;
+}
+
+export type Radius = number | Iterable<number>;

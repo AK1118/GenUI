@@ -2,6 +2,8 @@ import Painter, { PaintingStyle } from "@/lib/painting/painter";
 import Vector from "@/lib/math/vector";
 import { Size } from "@/lib/basic/rect";
 import GenPlatformConfig from "./core/platform";
+import Color from "./painting/color";
+import { Shadow } from "./core/base-types";
 
 const _kDefaultFontSize: number = 14.0;
 const _kDefaultEllipsis: string = "…";
@@ -128,10 +130,10 @@ export enum TextOverflow {
 interface TextDecorationOption {
   decoration: TextDecoration;
   decorationStyle: TextDecorationStyle;
-  decorationColor: string;
+  decorationColor: Color;
 }
 interface TextStyleOption extends ParagraphStyleOption, TextDecorationOption {
-  color: string;
+  color: Color;
   fontSize: number;
   fontWeight: FontWeight;
   fontStyle: FontStyle;
@@ -146,7 +148,7 @@ export class TextStyle
   extends ParagraphStyle
   implements TextStyleOption, TextDecorationOption
 {
-  color: string;
+  color: Color;
   fontSize: number;
   fontWeight: FontWeight = FontWeight.normal;
   fontStyle: FontStyle = FontStyle.normal;
@@ -154,7 +156,7 @@ export class TextStyle
   wordSpacing: number = 0;
   decoration: TextDecoration = TextDecoration.none;
   decorationStyle: TextDecorationStyle = TextDecorationStyle.solid;
-  decorationColor: string;
+  decorationColor: Color;
   foreground: Painter;
   shadow: Shadow;
   /**
@@ -198,14 +200,14 @@ export class TextStyle
 
       // this.fontSize??=14;
       this.height ??= (this.fontSize ?? _kDefaultFontSize) * 1.4; //默认
-      this.decorationColor ??= "black";
+      this.decorationColor ??= new Color(0xff000000);
 
       if (this.foreground && this.color) {
         throw Error(
           "The 'foreground' and 'color' cannot exist at the same time."
         );
       } else if (!this.foreground && !this.color) {
-        this.color = "black";
+        this.color = new Color(0xff000000);
       }
     }
   }
@@ -795,7 +797,7 @@ export class Paragraph {
         if (this.textStyle.decorationStyle === TextDecorationStyle.dashed) {
           paint.setLineDash([5, 5]);
         }
-        paint.strokeStyle = this.textStyle.decorationColor;
+        paint.strokeStyle = this.textStyle.decorationColor.rgba;
         this.performPaintLines(paint, offset);
       });
 
@@ -804,7 +806,7 @@ export class Paragraph {
           const paint = this.textStyle.foreground;
           this.performPaint(paint, offset, debugRect);
         } else {
-          paint.fillStyle = this.textStyle.color;
+          paint.fillStyle = this.textStyle.color.rgba;
           this.performPaint(paint, offset, debugRect);
         }
       });

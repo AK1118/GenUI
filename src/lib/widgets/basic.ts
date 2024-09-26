@@ -99,16 +99,18 @@ import {
   Clip,
   CrossAxisAlignment,
   MainAxisAlignment,
+  Radius,
   StackFit,
   WrapAlignment,
   WrapCrossAlignment,
 } from "../core/base-types";
 import { CustomClipper, CustomPainter } from "../rendering/custom";
+import Color from "../painting/color";
 export interface ColoredBoxOption {
-  color: string;
+  color: Color;
 }
 export class ColoredBox extends SingleChildRenderObjectWidget {
-  private color: string;
+  private color: Color;
   constructor(
     option: Partial<ColoredBoxOption & SingleChildRenderObjectWidgetArguments>
   ) {

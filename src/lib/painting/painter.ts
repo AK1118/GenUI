@@ -1,3 +1,5 @@
+import { Shadow } from "../core/base-types";
+
 export enum PaintingStyle {
   fill = "fill",
   stroke = "stroke",
@@ -84,7 +86,7 @@ class Painter implements Painter {
     this.paint.shadowOffsetX;
   }
   public setShadow(option?: Shadow) {
-    this.shadowColor = option?.shadowColor;
+    this.shadowColor = option?.shadowColor.rgba;
     this.shadowBlur = option?.shadowBlur || 0;
     this.shadowOffsetX = option?.shadowOffsetX || 0;
     this.shadowOffsetY = option?.shadowOffsetY || 0;

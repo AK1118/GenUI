@@ -81,13 +81,15 @@ import { CustomClipper, CustomPainter } from "@/lib/rendering/custom";
 import { Path2D } from "@/lib/rendering/path-2D";
 import GenPlatformConfig from "@/lib/core/platform";
 import MyPost from "./test";
+import ScreenUtils from "./screen-utils";
+import Color from "@/lib/painting/color";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
 
 const dev = window.devicePixelRatio;
-const width = 500;
-const height = 500;
+const width = window.innerWidth;
+const height = window.innerHeight;
 console.log("DPR：", dev);
 canvas.width = width * dev;
 canvas.height = height * dev;
@@ -105,6 +107,12 @@ GenPlatformConfig.InitInstance({
   debug: false,
   canvas: canvas,
   renderContext: g,
+});
+
+export const screenUtil=new ScreenUtils({
+ canvasWidth:canvas.width,
+ canvasHeight:canvas.height,
+ devicePixelRatio:dev,
 });
 
 class Scaffold extends StatefulWidget {
@@ -273,10 +281,8 @@ class ScaffoldState extends State<Scaffold> {
       },
       alignment: Alignment.center,
       decoration: new BoxDecoration({
-        backgroundColor: "white",
-        border: Border.all({
-          color: "orange",
-        }),
+        backgroundColor: new Color(0xffffffff),
+        
       }),
       child: new Flex({
         direction: Axis.horizontal,
@@ -298,7 +304,7 @@ class ScaffoldState extends State<Scaffold> {
                       child: new Container({
                         width: canvas.width,
                         // height: ,
-                        color: ndx % 2 === 0 ? "white" : "#edf2fa",
+                        color: ndx % 2 === 0 ? new Color(0xffffffff) : new Color(0xffedf2fa),
                         child: new Align({
                           alignment: Alignment.center,
                           child: new Button(ndx),

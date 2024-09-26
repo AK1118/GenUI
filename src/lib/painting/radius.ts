@@ -1,3 +1,4 @@
+import { Radius } from "../core/base-types";
 import { Border } from "./borders";
 
 interface BorderRadiusArguments {
