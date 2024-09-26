@@ -27,6 +27,9 @@ class BorderRadius implements BorderRadiusArguments {
       bottomRight: radius,
     });
   }
+  static only(option: Partial<BorderRadiusArguments>):BorderRadius{
+    return new BorderRadius(option);
+  }
   static get zero(): BorderRadius {
     return new BorderRadius({
       topLeft: 0,

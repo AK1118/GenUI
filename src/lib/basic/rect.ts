@@ -150,6 +150,19 @@ class Rect {
   static merge(offset: Offset | Vector, size: Size): Rect {
     return new Rect(offset.x, offset.y, size.width, size.height);
   }
+  /**
+   * 获取矩形较短的一边的长度
+   */
+  get shortestSide(): number {
+    return Math.min(Math.abs(this.width), Math.abs(this.height));
+  }
+
+  /**
+   * 获取矩形较长的一边的长度
+   */
+  get longestSide(): number {
+    return Math.max(Math.abs(this.width), Math.abs(this.height));
+  }
 }
 
 export default Rect;

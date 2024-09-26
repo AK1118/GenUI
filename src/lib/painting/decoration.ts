@@ -1,7 +1,8 @@
-import { Size } from "../basic/rect";
+import Rect, { Size } from "../basic/rect";
 import Vector from "../math/vector";
 import { BoxBorder } from "./borders";
 import Color from "./color";
+import { Gradient } from "./gradient";
 import Painter from "./painter";
 import BorderRadius from "./radius";
 import BoxShadow from "./shadow";
@@ -28,6 +29,7 @@ interface BoxDecorationArguments {
   border: BoxBorder;
   borderRadius: BorderRadius;
   shadows: Array<BoxShadow>;
+  gradient: Gradient;
 }
 
 export class BoxDecoration
@@ -38,12 +40,14 @@ export class BoxDecoration
   borderRadius: BorderRadius;
   backgroundColor: Color;
   shadows: BoxShadow[];
+  gradient: Gradient;
   constructor(option: Partial<BoxDecorationArguments>) {
     super();
     this.border = option?.border;
     this.borderRadius = option?.borderRadius;
     this.backgroundColor = option?.backgroundColor;
     this.shadows = option?.shadows;
+    this.gradient = option?.gradient;
   }
 
   createBoxPainter(onChanged: VoidFunction): BoxPainter {
@@ -87,8 +91,21 @@ class BoxDecorationPainter extends BoxPainter {
     }
     paint.restore();
   }
+  private cachedBackgroundPaint: any;
+  private getBackgroundStyle(rect: Rect): any {
+    if (this.cachedBackgroundPaint) return this.cachedBackgroundPaint;
+    let paint;
+    if (this.decoration.gradient) {
+      paint = this.decoration.gradient?.createShader(rect);
+    } else if (this.decoration.backgroundColor) {
+      paint = this.decoration.backgroundColor?.rgba;
+    }
+    this.cachedBackgroundPaint = paint;
+    return paint;
+  }
+
   private paintBackgroundColor(paint: Painter, size: Size, offset: Vector) {
-    paint.fillStyle = this.decoration.backgroundColor?.rgba;
+    paint.fillStyle = this.getBackgroundStyle(Rect.merge(offset, size));
     if (this.decoration.backgroundColor) {
       paint.beginPath();
       if (
@@ -125,7 +142,7 @@ class BoxDecorationPainter extends BoxPainter {
 
   debugPaint(paint: Painter, offset: Vector, size: Size): void {
     this.paint(paint, offset, size);
-    paint.fillStyle="rgba(162, 118, 196,.5)";
+    paint.fillStyle = "rgba(162, 118, 196,.5)";
     paint.fillRect(offset.x, offset.y, size.width - 1, size.height - 1);
   }
 }

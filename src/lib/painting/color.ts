@@ -45,7 +45,7 @@ export default class Color {
   }
 }
 
-abstract class Colors {
+export abstract class Colors {
   static get black(): Color {
     return new Color(0xff000000);
   }

@@ -106,6 +106,7 @@ import {
 } from "../core/base-types";
 import { CustomClipper, CustomPainter } from "../rendering/custom";
 import Color from "../painting/color";
+import BorderRadius from "../painting/radius";
 export interface ColoredBoxOption {
   color: Color;
 }
@@ -318,14 +319,14 @@ export class ClipRect extends SizedBox {
   }
 }
 export class ClipRRect extends ClipRect {
-  private borderRadius: Radius = 0;
+  private borderRadius: BorderRadius =BorderRadius.zero;
   constructor(
     option: Partial<
       ClipRRectArguments & SizedBoxOption & SingleChildRenderObjectWidget
     >
   ) {
     super(option);
-    this.borderRadius = option?.borderRadius ?? 0;
+    this.borderRadius = option?.borderRadius ?? BorderRadius.zero;
   }
   createRenderObject(): RenderView {
     return new ClipRRectRenderView({

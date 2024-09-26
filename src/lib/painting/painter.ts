@@ -320,7 +320,9 @@ e 和 f 控制上下文的水平和垂直平移。
     // this.paint?.transform(a, b, c, d, e, f);
   }
 
-  createConicGradient() {}
+  createConicGradient(startAngle:number,x:number,y:number):CanvasGradient{
+     return this.paint?.createConicGradient(startAngle,x,y);
+  }
   roundRect(
     x: number,
     y: number,

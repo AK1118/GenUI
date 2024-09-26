@@ -48,6 +48,7 @@ import {
 import { CustomClipper, CustomPainter } from "../rendering/custom";
 import { Path2D } from "../rendering/path-2D";
 import Color from "../painting/color";
+import BorderRadius from "../painting/radius";
 
 export interface RenderViewOption {
   child: RenderBox;
@@ -84,7 +85,7 @@ export interface BoundsRRect extends BoundsRect {
 export interface ClipRectArguments {}
 
 export interface ClipRRectArguments extends ClipRectArguments {
-  borderRadius: Radius;
+  borderRadius: BorderRadius;
 }
 
 export interface FlexOption {
@@ -143,7 +144,6 @@ export class FlexParentData extends ContainerRenderViewParentData<RenderView> {
     return this._flex;
   }
   set flex(value: number) {
-    if(value!==0)console.log("被设置",this)
     this._flex = value;
   }
   constructor() {
@@ -627,7 +627,7 @@ export interface SizedBoxOption {
 }
 
 export class ClipRRectRenderView extends ClipRectRenderView {
-  private _borderRadius: Radius;
+  private _borderRadius: BorderRadius;
   constructor(
     option: Partial<
       SizedBoxOption & ClipRRectArguments & SingleChildRenderViewArguments
@@ -637,10 +637,10 @@ export class ClipRRectRenderView extends ClipRectRenderView {
     super(option);
     this.borderRadius = borderRadius;
   }
-  get borderRadius(): Radius {
+  get borderRadius(): BorderRadius {
     return this._borderRadius;
   }
-  set borderRadius(borderRadius: Radius) {
+  set borderRadius(borderRadius: BorderRadius) {
     this._borderRadius = borderRadius;
     this.markNeedsPaint();
   }
@@ -655,7 +655,7 @@ export class ClipRRectRenderView extends ClipRectRenderView {
         y: offset?.y ?? 0,
         width: this.size.width,
         height: this.size.height,
-        radii: this.borderRadius,
+        radii: this.borderRadius.radius,
       },
       () => {
         super.render(context, offset);
@@ -1062,10 +1062,6 @@ export class FlexRenderView extends MultiChildRenderView {
       } else if (this.direction === Axis.vertical) {
         parentData.offset = new Vector(childCrossPosition, childMainPosition);
       }
-      // if(Math.abs(parentData.offset.x)===Infinity||Math.abs(parentData.offset.y)===Infinity){
-      //   console.log("布局",parentData.offset,child,childMainSize,childMainSize + betweenSpace)
-      // }
-      // console.log("布局",parentData.offset,child,childMainSize,betweenSpace)
       childMainPosition += childMainSize + betweenSpace;
       child = parentData?.nextSibling;
     }
@@ -1091,7 +1087,6 @@ export class FlexRenderView extends MultiChildRenderView {
         child.parentData as ContainerRenderViewParentData<RenderView>;
       let innerConstraint: BoxConstraints = BoxConstraints.zero;
       const flex = this.getFlex(child);
-      if(flex!==0)console.log(child,"有",flex,child.parentData)
       if (flex > 0) {
         totalFlex += flex;
       } else {
@@ -1957,7 +1952,6 @@ export class RenderTransformBox extends SingleChildRenderView {
   /**
    */
   public hitTestChildren(result: HitTestResult, position: Vector): boolean {
-    // console.log(transformedPosition);
     const childParentData = this.child
       ?.parentData as ContainerRenderViewParentData;
     const invertedTransform = this.effectiveTransform.inverted();
@@ -1966,7 +1960,7 @@ export class RenderTransformBox extends SingleChildRenderView {
         invertedTransform,
         position
       );
-      return this.child.hitTest(result, transformedPosition); //this.child.size.contains(transformedPosition);
+      return this.child.hitTest(result, transformedPosition);
     }
     return false;
   }

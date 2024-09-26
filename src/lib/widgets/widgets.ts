@@ -148,6 +148,9 @@ export class Container extends StatelessWidget implements ContainerArguments {
     }
 
     if (this.decoration) {
+      if(this.color){
+        throw new Error("color and decoration can't be used at the same time");
+      }
       result = new DecoratedBox({
         decoration: this.decoration,
         child: result,

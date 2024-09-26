@@ -33,14 +33,15 @@ import {
 import { Column, Container, Row } from "@/lib/widgets/widgets";
 import ScreenUtils from "./screen-utils";
 import { screenUtil } from "./index";
-import Color from "@/lib/painting/color";
+import Color, { Colors } from "@/lib/painting/color";
+import { RadialGradient } from "@/lib/painting/gradient";
 /**
  * 1.Expanded 内的Flex布局文字时会消失文字组件
  */
-const scale=1;
-const sp=(value:number)=>screenUtil.setSp(value*scale);
-const sw=(value:number)=>screenUtil.setWidth(value*scale);
-const sh=(value:number)=>screenUtil.setHeight(value*scale);
+const scale = 1;
+const sp = (value: number) => screenUtil.setSp(value * scale);
+const sw = (value: number) => screenUtil.setWidth(value * scale);
+const sh = (value: number) => screenUtil.setHeight(value * scale);
 
 export default class MyPost extends StatelessWidget {
   // build(context: BuildContext): Widget {
@@ -82,16 +83,21 @@ export default class MyPost extends StatelessWidget {
   // }
   build(context: BuildContext): Widget {
     return new Container({
-      width:sw(252.5),
+      width: sw(252.5),
       // height:sw(341.25),
-      color: new Color(0xfff8f8f8),
+      // color: new Color(0xfff8f8f8),
       decoration: new BoxDecoration({
+        backgroundColor:Colors.white,
+        gradient: new RadialGradient({
+          center: Alignment.center,
+          colors: [Colors.white,new Color(0xffe8e8e8)],
+        }),
         shadows: [
           new BoxShadow({
             shadowColor: new Color(0xffcccccc),
             shadowBlur: sp(3.5),
             shadowOffsetX: sp(3),
-            shadowOffsetY:sp(3),
+            shadowOffsetY: sp(3),
           }),
         ],
       }),
@@ -146,7 +152,9 @@ export default class MyPost extends StatelessWidget {
         new Container({
           width: sw(60),
           height: sw(60),
-          child:new ProductImageBox("https://th.bing.com/th/id/OIP.YWJcKsI2IJFLXbVgS9GnAwHaHZ?w=186&h=186&c=7&r=0&o=5&pid=1.7")
+          child: new ProductImageBox(
+            "https://th.bing.com/th/id/OIP.YWJcKsI2IJFLXbVgS9GnAwHaHZ?w=186&h=186&c=7&r=0&o=5&pid=1.7"
+          ),
         }),
       ],
     });
@@ -218,8 +226,8 @@ export default class MyPost extends StatelessWidget {
     return new Container({
       width: sw(300),
       height: sw(120),
-      padding:{
-        top:sw(40)
+      padding: {
+        top: sw(40),
       },
       // alignment: Alignment.topCenter,
       // color:new Color(0xff000000),
@@ -328,8 +336,9 @@ export default class MyPost extends StatelessWidget {
         new Column({
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            
             new ClipRRect({
-              borderRadius: sp(90) ,
+              borderRadius:BorderRadius.all(sp(90)),
               child: new Container({
                 width: sw(20),
                 height: sw(20),
@@ -338,7 +347,7 @@ export default class MyPost extends StatelessWidget {
                 ),
               }),
             }),
-            new Text("。",{
+            new Text("。", {
               style: new TextStyle({
                 fontSize: sp(8),
               }),
@@ -353,13 +362,13 @@ export default class MyPost extends StatelessWidget {
         new Row({
           children: [
             new ClipRRect({
-              borderRadius: sp(5),
+              borderRadius: BorderRadius.all(sp(5)),
               child: new Container({
-                decoration:new BoxDecoration({
-                  border:Border.all({
-                    color:new Color(0xffcccccc)
+                decoration: new BoxDecoration({
+                  border: Border.all({
+                    color: new Color(0xffcccccc),
                   }),
-                 }),
+                }),
                 width: sw(36),
                 height: sw(36),
                 child: new ProductImageBox(
@@ -368,10 +377,10 @@ export default class MyPost extends StatelessWidget {
               }),
             }),
             new Padding({
-              padding:{
-                left:sw(5),
+              padding: {
+                left: sw(5),
               },
-              child:new Column({
+              child: new Column({
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   new Text("掌上穿越火线", {
@@ -397,7 +406,7 @@ export default class MyPost extends StatelessWidget {
                   }),
                 ],
               }),
-            })
+            }),
           ],
         }),
       ],

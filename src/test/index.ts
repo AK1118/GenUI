@@ -82,7 +82,8 @@ import { Path2D } from "@/lib/rendering/path-2D";
 import GenPlatformConfig from "@/lib/core/platform";
 import MyPost from "./test";
 import ScreenUtils from "./screen-utils";
-import Color from "@/lib/painting/color";
+import Color, { Colors } from "@/lib/painting/color";
+import { LinearGradient, RadialGradient, SweepGradient } from "@/lib/painting/gradient";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
@@ -109,10 +110,10 @@ GenPlatformConfig.InitInstance({
   renderContext: g,
 });
 
-export const screenUtil=new ScreenUtils({
- canvasWidth:canvas.width,
- canvasHeight:canvas.height,
- devicePixelRatio:dev,
+export const screenUtil = new ScreenUtils({
+  canvasWidth: canvas.width,
+  canvasHeight: canvas.height,
+  devicePixelRatio: dev,
 });
 
 class Scaffold extends StatefulWidget {
@@ -220,7 +221,7 @@ class MyClipper extends CustomClipper {
 }
 /**
  * updatePositions时创建一个
- * 
+ *
  */
 class ScaffoldState extends State<Scaffold> {
   private time: number = 1;
@@ -248,11 +249,11 @@ class ScaffoldState extends State<Scaffold> {
       // })
     }, 3000);
     controller.addListener(() => {
-    if(controller.offset>=controller.position.maxScrollExtent-200){
-      this.setState(()=>{
-        this.list.push(...new Array(10).fill(0));
-      })
-    }
+      if (controller.offset >= controller.position.maxScrollExtent - 200) {
+        this.setState(() => {
+          this.list.push(...new Array(10).fill(0));
+        });
+      }
     });
   }
   private animateTo() {
@@ -282,16 +283,15 @@ class ScaffoldState extends State<Scaffold> {
       alignment: Alignment.center,
       decoration: new BoxDecoration({
         backgroundColor: new Color(0xffffffff),
-        
       }),
       child: new Flex({
         direction: Axis.horizontal,
-        mainAxisAlignment:MainAxisAlignment.start,
-        crossAxisAlignment:CrossAxisAlignment.stretch,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           new Expanded({
-            flex:1,
-            child:new Scrollable({
+            flex: 1,
+            child: new Scrollable({
               controller: controller,
               axisDirection: AxisDirection.down,
               physics: new BouncingScrollPhysics(),
@@ -304,7 +304,10 @@ class ScaffoldState extends State<Scaffold> {
                       child: new Container({
                         width: canvas.width,
                         // height: ,
-                        color: ndx % 2 === 0 ? new Color(0xffffffff) : new Color(0xffedf2fa),
+                        color:
+                          ndx % 2 === 0
+                            ? new Color(0xffffffff)
+                            : new Color(0xffedf2fa),
                         child: new Align({
                           alignment: Alignment.center,
                           child: new Button(ndx),
@@ -368,7 +371,10 @@ const app =
   //});
   // new Scaffold();
   new MyPost();
-runApp(app);
+runApp(
+  app
+);
+app
 
 // img2.onload = () => {
 //   // const path = new Path2D();

@@ -1,4 +1,4 @@
-import { Offset, Size } from "../basic/rect";
+import Rect, { Offset, Size } from "../basic/rect";
 import Vector from "../math/vector";
 class Alignment {
   private x: number;
@@ -55,6 +55,15 @@ class Alignment {
     return new Vector(
       halfWidthDelta + halfWidthDelta * this.x,
       halfHeighDelta + halfHeighDelta * this.y
+    );
+  }
+
+  withRect(rect: Rect): Offset {
+    const halfWidth: number = rect.width * 0.5;
+    const halfHeight: number = rect.height * 0.5;
+    return new Offset(
+      rect.x + halfWidth * this.x+halfWidth,
+      rect.y + halfHeight * this.y+halfHeight
     );
   }
 
