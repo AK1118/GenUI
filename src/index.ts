@@ -1,5 +1,7 @@
 import { Binding } from "./lib/basic/binding";
 import { Widget } from "./lib/basic/framework";
+export * from "./lib/painting/radius";
+export * from "./lib/core/base-types";
 export * from "./lib/painting/painter";
 export * from "./lib/basic/binding";
 export * from "./lib/basic/elements";
@@ -34,7 +36,6 @@ export * from "./lib/core/platform";
 export * from "./lib/painting/color";
 export * from "./lib/painting/gradient";
 export * from "./lib/core/platform";
-
 const runApp = (rootWidget: Widget) => {
   const binding = Binding.getInstance();
   binding.elementBinding.attachRootWidget(rootWidget);

@@ -105,8 +105,8 @@ import {
   WrapCrossAlignment,
 } from "../core/base-types";
 import { CustomClipper, CustomPainter } from "../rendering/custom";
-import Color from "../painting/color";
-import BorderRadius from "../painting/radius";
+import {Color } from "../painting/color";
+import {BorderRadius} from "../painting/radius";
 export interface ColoredBoxOption {
   color: Color;
 }

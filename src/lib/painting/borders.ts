@@ -1,8 +1,8 @@
 import { Size } from "../basic/rect";
 import Vector from "../math/vector";
-import Color from "./color";
+import {Color } from "./color";
 import Painter from "./painter";
-import BorderRadius from "./radius";
+import {BorderRadius} from "./radius";
 
 /**
  * 四个边在默认情况下可以自由选填、更改颜色等。

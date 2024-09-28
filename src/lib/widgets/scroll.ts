@@ -12,7 +12,7 @@ import { AnimationController, Curve, Curves } from "../core/animation";
 import { Axis, AxisDirection } from "../core/base-types";
 import { ChangeNotifier } from "../core/change-notifier";
 import { Duration } from "../core/duration";
-import GenPlatformConfig from "../core/platform";
+import {GenPlatformConfig} from "../core/platform";
 import { ScrollPhysics } from "../core/scroll-physics";
 import { GestureDisposition } from "../gesture/arena-manager";
 import { DownPointerEvent } from "../gesture/events";

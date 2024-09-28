@@ -10,7 +10,7 @@ interface BaseConfig {
   renderContext?:CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D 
 }
 
-class GenPlatformConfig {
+export class GenPlatformConfig {
   private static _instance: GenPlatformConfig;
   private baseConfig: BaseConfig;
   constructor(args: BaseConfig) {
@@ -56,5 +56,3 @@ class GenPlatformConfig {
   }
 }
 
-
-export default GenPlatformConfig;

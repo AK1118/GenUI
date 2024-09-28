@@ -1,7 +1,7 @@
 import Rect, { Offset } from "../basic/rect";
 import { Matrix4 } from "../math/matrix";
 import Alignment from "./alignment";
-import Color from "./color";
+import {Color } from "./color";
 import * as ui from "@/lib/native/ui";
 interface GradientArguments {
   colors: Array<Color>;

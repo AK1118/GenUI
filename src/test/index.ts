@@ -48,17 +48,10 @@ import { GlobalKey } from "@/lib/basic/key";
 import { getRandomColor } from "@/lib/utils/utils";
 import { Matrix4 } from "@/lib/math/matrix";
 import { BoxDecoration } from "@/lib/painting/decoration";
-import BorderRadius from "@/lib/painting/radius";
+import {BorderRadius} from "@/lib/painting/radius";
 import { Border, BorderSide } from "@/lib/painting/borders";
 import BoxShadow from "@/lib/painting/shadow";
-import {
-  FontWeight,
-  TextAlign,
-  TextDecoration,
-  TextDecorationStyle,
-  TextStyle,
-} from "@/lib/painting/text-painter";
-import { Container, Scrollable } from "@/lib/widgets/widgets";
+import { Column, Container, Row, Scrollable, SingleChildScrollView } from "@/lib/widgets/widgets";
 import { ImageSource } from "@/lib/painting/image";
 import { BoxFit } from "@/lib/painting/box-fit";
 import { ChangeNotifier } from "@/lib/core/change-notifier";
@@ -79,11 +72,12 @@ import {
 import { ScrollBar, ScrollController } from "@/lib/widgets/scroll";
 import { CustomClipper, CustomPainter } from "@/lib/rendering/custom";
 import { Path2D } from "@/lib/rendering/path-2D";
-import GenPlatformConfig from "@/lib/core/platform";
+import {GenPlatformConfig} from "@/lib/core/platform";
 import MyPost from "./test";
 import ScreenUtils from "./screen-utils";
-import Color, { Colors } from "@/lib/painting/color";
+import { Colors,Color  } from "@/lib/painting/color";
 import { LinearGradient, RadialGradient, SweepGradient } from "@/lib/painting/gradient";
+import { SliverChildBuilderDelegate, SliverChildDelegate, SliverList, SliverMultiBoxAdaptorElement, SliverMultiBoxAdaptorParentData, SliverMultiBoxAdaptorRenderView } from "@/lib/widgets/sliver";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
@@ -371,11 +365,80 @@ const app =
   //});
   // new Scaffold();
   new MyPost();
-runApp(
-  app
-);
-app
 
+class Test extends StatefulWidget {
+  createState(): State {
+    return new TestState();
+  }
+ }
+class TestState extends State<Test> {
+  private controller:AnimationController;
+  public initState(): void {
+    super.initState();
+    this.controller=new AnimationController({
+      duration:new Duration({milliseconds:500}),
+    });
+    this.controller.addListener(()=>{
+      this.setState(()=>{
+        if(this.controller.isCompleted){
+          this.controller.reverse();
+        }
+      })
+    });
+  }
+  build(context: BuildContext): Widget {
+    return new GestureDetector({
+      onTap:()=>{
+        this.controller.forward();
+        console.log("动画开始")
+      },
+      child:new Container({
+        decoration:new BoxDecoration({
+          backgroundColor:Colors.white.lerp(Colors.orange,this.controller.value),
+         }),
+        // width:100,
+        height:this.controller.value*40+40,
+        // color:Colors.white,
+      })
+    })
+  }
+}
+
+
+
+runApp(
+  new Container({
+    width:canvas.width,
+    height:canvas.height,
+    child:new SingleChildScrollView({
+      child:new SliverList(
+        new SliverChildBuilderDelegate({
+          builder:(context, index) =>{
+              return new Container({
+                width:100,
+                height:100,
+                color:Colors.orange,
+              })
+          },
+        })
+      )
+      // child:new Container({
+      //   width:canvas.width,
+      //   child:new Column({
+      //     crossAxisAlignment:CrossAxisAlignment.stretch,
+      //     children:Array.from(new Array(2000)).map(_=>{
+      //         return new Padding({
+      //           padding:{
+      //             bottom:10,
+      //           },
+      //           child: new Test()
+      //         });
+      //       })
+      //   })
+      // })
+    })
+  })
+);
 // img2.onload = () => {
 //   // const path = new Path2D();
 //   // path.rect(0, 0, 100, 100);

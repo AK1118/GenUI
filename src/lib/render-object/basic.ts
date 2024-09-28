@@ -3,7 +3,7 @@ import Alignment from "@/lib/painting/alignment";
 import { Offset, Size } from "@/lib/basic/rect";
 import Constraints, { BoxConstraints } from "@/lib/rendering/constraints";
 import Vector from "@/lib/math/vector";
-import { TextOverflow, TextPainter, TextSpan } from "../painting/text-painter";
+import { TextPainter, TextSpan } from "../painting/text-painter";
 import { PipelineOwner, RendererBinding } from "../basic/binding";
 import { Widget } from "../basic/framework";
 import {
@@ -42,13 +42,14 @@ import {
   MainAxisAlignment,
   Radius,
   StackFit,
+  TextOverflow,
   WrapAlignment,
   WrapCrossAlignment,
 } from "../core/base-types";
 import { CustomClipper, CustomPainter } from "../rendering/custom";
 import { Path2D } from "../rendering/path-2D";
-import Color from "../painting/color";
-import BorderRadius from "../painting/radius";
+import {Color } from "../painting/color";
+import {BorderRadius} from "../painting/radius";
 
 export interface RenderViewOption {
   child: RenderBox;
@@ -810,7 +811,6 @@ export abstract class MultiChildRenderView<
       const isHit = child.hitTest(result, transformed);
       if (isHit) {
         return true;
-        // result.add(new HitTestEntry(child));
       }
       child = parentData?.previousSibling;
     }
@@ -825,9 +825,6 @@ export abstract class MultiChildRenderView<
     //插入兄弟列表
     this.insertIntoList(renderView, after);
     this.childCount += 1;
-    // if (renderView instanceof ParentDataRenderView) {
-    //   renderView?.applyParentData(renderView);
-    // }
   }
   remove(child: RenderView) {
     this.removeFromChildList(child);

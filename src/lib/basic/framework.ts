@@ -184,7 +184,7 @@ export abstract class RenderObjectElement extends Element {
   public mount(parent?: Element, newSlot?: Object): void {
     super.mount(parent, newSlot);
     const built = this.widget;
-    this.renderView = (built as RenderObjectWidget).createRenderObject();
+    this.renderView = (built as RenderObjectWidget).createRenderObject(this);
     this.attachRenderObject(newSlot);
   }
   update(newWidget: Widget): void {
@@ -378,7 +378,7 @@ export abstract class RenderObjectWidget extends Widget {
     super(key);
     this.child = child;
   }
-  abstract createRenderObject(): RenderView;
+  abstract createRenderObject(context?:BuildContext): RenderView;
   abstract updateRenderObject(
     context: BuildContext,
     renderView: RenderView
@@ -456,7 +456,7 @@ export class RootRenderObjectElement extends SingleChildRenderObjectElement {
   }
   public mount(parent?: Element, newSlot?: Object): void {
     const built = this.widget;
-    this.renderView = (built as RenderObjectWidget).createRenderObject();
+    this.renderView = (built as RenderObjectWidget).createRenderObject(this);
     const pipOwner: PipelineOwner = RendererBinding.instance.pipelineOwner;
     this.renderView.attach(pipOwner);
     pipOwner.attachNode(this.renderView);

@@ -1,9 +1,9 @@
 import Painter, { PaintingStyle } from "@/lib/painting/painter";
 import Vector from "@/lib/math/vector";
 import { Size } from "@/lib/basic/rect";
-import GenPlatformConfig from "../core/platform";
-import Color from "./color";
-import { Shadow } from "../core/base-types";
+import {GenPlatformConfig} from "../core/platform";
+import {Color } from "./color";
+import { FontStyle, FontWeight, Shadow, TextAlign, TextDecoration, TextDecorationStyle, TextDirection, TextOverflow } from "../core/base-types";
 
 const _kDefaultFontSize: number = 14.0;
 const _kDefaultEllipsis: string = "…";
@@ -35,21 +35,7 @@ export class ParagraphConstraints {
     return this._width;
   }
 }
-export enum TextDirection {
-  ltr = "ltr",
-  rtl = "rtl",
-}
 
-export enum TextAlign {
-  left = "left",
-  right = "right",
-  center = "center",
-  justify = "justify",
-  start = "start",
-  end = "end",
-  unset = "unset",
-  none = "none",
-}
 
 interface ParagraphStyleOption {
   textAlign?: TextAlign;
@@ -99,34 +85,6 @@ export class ParagraphStyle implements ParagraphStyleOption {
   }
 }
 
-export enum FontWeight {
-  normal = "normal",
-  bold = "bold",
-}
-
-export enum FontStyle {
-  normal = "normal",
-  italic = "italic",
-}
-
-export enum TextDecoration {
-  none = "none",
-  underline = "underline",
-  overline = "overline",
-  lineThrough = "line-through",
-}
-export enum TextDecorationStyle {
-  solid = "solid",
-  dashed = "dashed",
-}
-export enum TextOverflow {
-  /// Clip the overflowing text to fix its container.
-  clip = "clip",
-  /// Use an ellipsis to indicate that the text has overflowed.
-  ellipsis = "ellipsis",
-  /// Render overflowing text outside of its container.
-  visible = "visible",
-}
 interface TextDecorationOption {
   decoration: TextDecoration;
   decorationStyle: TextDecorationStyle;

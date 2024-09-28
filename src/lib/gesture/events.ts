@@ -1,5 +1,5 @@
 import { Offset } from "../basic/rect";
-import GenPlatformConfig from "../core/platform";
+import {GenPlatformConfig} from "../core/platform";
 import { Matrix4 } from "../math/matrix";
 import Vector from "../math/vector";
 

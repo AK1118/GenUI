@@ -347,8 +347,6 @@ export abstract class Element extends BuildContext {
   }
 }
 
-abstract class View extends Element {}
-
 export abstract class RootElement extends Element {
   // private renderView: RenderView;
   private root: Element;

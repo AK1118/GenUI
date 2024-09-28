@@ -8,6 +8,8 @@ import {
 import {
   Axis,
   CrossAxisAlignment,
+  FontStyle,
+  FontWeight,
   MainAxisAlignment,
 } from "@/lib/core/base-types";
 import Alignment from "@/lib/painting/alignment";
@@ -15,9 +17,9 @@ import { Border } from "@/lib/painting/borders";
 import { BoxFit } from "@/lib/painting/box-fit";
 import { BoxDecoration } from "@/lib/painting/decoration";
 import { ImageSource } from "@/lib/painting/image";
-import BorderRadius from "@/lib/painting/radius";
+import {BorderRadius} from "@/lib/painting/radius";
 import BoxShadow from "@/lib/painting/shadow";
-import { FontStyle, FontWeight, TextSpan, TextStyle } from "@/lib/painting/text-painter";
+import { TextSpan, TextStyle } from "@/lib/painting/text-painter";
 import {
   Align,
   ClipRect,
@@ -33,59 +35,16 @@ import {
 import { Column, Container, Row } from "@/lib/widgets/widgets";
 import ScreenUtils from "./screen-utils";
 import { screenUtil } from "./index";
-import Color, { Colors } from "@/lib/painting/color";
+import {Color,Colors } from "@/lib/painting/color";
 import { RadialGradient } from "@/lib/painting/gradient";
-/**
- * 1.Expanded 内的Flex布局文字时会消失文字组件
- */
 const scale = 1;
 const sp = (value: number) => screenUtil.setSp(value * scale);
 const sw = (value: number) => screenUtil.setWidth(value * scale);
-const sh = (value: number) => screenUtil.setHeight(value * scale);
 
 export default class MyPost extends StatelessWidget {
-  // build(context: BuildContext): Widget {
-  //   return new Container({
-  //     width: 300,
-  //     height: 300,
-  //     child: new Flex({
-  //       direction: Axis.vertical,
-  //       children: [
-  //         new Text("1"),
-  //         new Text("2"),
-  //         new Expanded({
-  //           // flex:1,
-  //           child:new Flex({
-  //             direction: Axis.horizontal,
-  //             children:[
-  //               new Text("3"),
-  //               new Text("4"),
-  //               new Expanded({
-  //                 // flex:1,
-  //                 child:new Container({
-  //                   child:new Flex({
-  //                     direction: Axis.vertical,
-  //                     children:[
-  //                       // new Text("5"),
-  //                       // new Text("6"),
-  //                       this.buildContent(),
-  //                     ]
-  //                   })
-  //                 })
-  //               }),
-  //             ]
-  //           })
-  //         }),
-  //         new Text("7")
-  //       ],
-  //     }),
-  //   });
-  // }
   build(context: BuildContext): Widget {
     return new Container({
       width: sw(252.5),
-      // height:sw(341.25),
-      // color: new Color(0xfff8f8f8),
       decoration: new BoxDecoration({
         backgroundColor:Colors.white,
         gradient: new RadialGradient({

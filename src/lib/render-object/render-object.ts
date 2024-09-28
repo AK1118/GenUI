@@ -3,7 +3,7 @@ import Alignment from "@/lib/painting/alignment";
 import { Offset, Size } from "@/lib/basic/rect";
 import Constraints, { BoxConstraints } from "@/lib/rendering/constraints";
 import Vector from "@/lib/math/vector";
-import { TextOverflow, TextPainter, TextSpan } from "../painting/text-painter";
+import { TextPainter, TextSpan } from "../painting/text-painter";
 import { PipelineOwner, RendererBinding } from "../basic/binding";
 import { Widget } from "../basic/framework";
 import {

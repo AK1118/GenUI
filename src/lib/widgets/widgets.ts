@@ -8,6 +8,7 @@
 import { BuildContext } from "../basic/elements";
 import {
   MultiChildRenderObjectWidgetArguments,
+  SingleChildRenderObjectWidget,
   SingleChildRenderObjectWidgetArguments,
   State,
   StatefulWidget,
@@ -42,11 +43,13 @@ import { AlignArguments, RectTLRB } from "../render-object/basic";
 import {
   axisDirectionIsReversed,
   axisDirectionToAxis,
+  RenderSliver,
 } from "../render-object/slivers";
 import { BoxConstraints } from "../rendering/constraints";
 import {
   ScrollPosition,
   ScrollPositionWithSingleContext,
+  ViewPortOffset,
 } from "../render-object/viewport";
 import VelocityTracker from "../utils/velocity-ticker";
 import {
@@ -60,9 +63,11 @@ import {
   Padding,
   SizedBox,
   Text,
+  ViewPort,
+  WidgetToSliverAdapter,
 } from "./basic";
 import { ScrollController } from "./scroll";
-import Color from "../painting/color";
+import { Color } from "../painting/color";
 
 interface ContainerArguments {
   width: number;
@@ -148,7 +153,7 @@ export class Container extends StatelessWidget implements ContainerArguments {
     }
 
     if (this.decoration) {
-      if(this.color){
+      if (this.color) {
         throw new Error("color and decoration can't be used at the same time");
       }
       result = new DecoratedBox({
@@ -269,6 +274,97 @@ class ScrollableState extends State<Scrollable> {
         },
         child: this.widget.viewportBuilder(context, this.position),
       }),
+    });
+  }
+}
+
+interface ScrollViewArguments {
+  controller: ScrollController;
+  axisDirection: AxisDirection;
+  physics: ScrollPhysics;
+}
+
+interface SingleChildScrollViewArguments extends ScrollViewArguments {}
+
+export abstract class ScrollView extends StatelessWidget {
+  private controller: ScrollController;
+  private axisDirection: AxisDirection;
+  private physics: ScrollPhysics;
+  private children: Array<Widget>;
+  constructor(
+    args: Partial<
+      SingleChildScrollViewArguments & MultiChildRenderObjectWidgetArguments
+    >
+  ) {
+    super(args.key);
+    this.controller = args?.controller ?? new ScrollController();
+    this.axisDirection = args?.axisDirection ?? AxisDirection.down;
+    this.physics = args?.physics ?? new SimpleScrollPhysics();
+    this.children = args?.children;
+  }
+  abstract buildSlivers(context: BuildContext): Array<Widget>;
+  protected viewportBuilder(
+    context:BuildContext,
+    offset: ViewPortOffset,
+    axisDirection:AxisDirection,
+    slivers:Array<Widget>
+  ): ViewPort {
+    return new ViewPort({
+      offset: offset,
+      axisDirection: axisDirection,
+      children:slivers,
+    });
+  }
+  build(context: BuildContext): Widget {
+    const slivers = this.buildSlivers(context);
+    return new Scrollable({
+      controller: this.controller,
+      axisDirection: this.axisDirection,
+      physics: this.physics,
+      viewportBuilder: (context: BuildContext, offset: ViewPortOffset) => {
+        return this.viewportBuilder(context,offset,this.axisDirection,slivers);
+      },
+    });
+  }
+}
+
+export class SingleChildScrollView extends StatelessWidget {
+  private controller: ScrollController;
+  private axisDirection: AxisDirection;
+  private physics: ScrollPhysics;
+  private child: Widget;
+  constructor(
+    args: Partial<
+      SingleChildScrollViewArguments & SingleChildRenderObjectWidgetArguments
+    >
+  ) {
+    super(args.key);
+    this.controller = args?.controller ?? new ScrollController();
+    this.axisDirection = args?.axisDirection ?? AxisDirection.down;
+    this.physics = args?.physics ?? new SimpleScrollPhysics();
+    this.child = args?.child;
+  }
+  private viewportBuilder(
+    context: BuildContext,
+    position: ScrollPosition
+  ): ViewPort {
+    return new ViewPort({
+      offset: position,
+      axisDirection: position.axisDirection,
+      children: [
+        this.child
+        // new WidgetToSliverAdapter({
+        //   child: this.child,
+        // }),
+      ],
+    });
+  }
+  build(context: BuildContext): Widget {
+    return new Scrollable({
+      controller: this.controller,
+      axisDirection: this.axisDirection,
+      physics: this.physics,
+      viewportBuilder: this.viewportBuilder.bind(this),
     });
   }
 }

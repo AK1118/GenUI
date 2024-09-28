@@ -1,4 +1,4 @@
-import Color from "../painting/color";
+import {Color } from "../painting/color";
 
 export enum Axis {
   horizontal = "horizontal",
@@ -64,25 +64,63 @@ export enum WrapCrossAlignment {
   center = "center",
 }
 
-
 export enum AxisDirection {
-    up = "up",
-    down = "down",
-    left = "left",
-    right = "right",
-  }
-  
-  export enum GrowthDirection {
-    forward = "forward",
-    reverse = "reverse",
-  }
-  
-  export enum ScrollDirection {
-    idle = "idle",
-    forward = "forward",
-    reverse = "reverse",
-  }
+  up = "up",
+  down = "down",
+  left = "left",
+  right = "right",
+}
 
+export enum GrowthDirection {
+  forward = "forward",
+  reverse = "reverse",
+}
+
+export enum ScrollDirection {
+  idle = "idle",
+  forward = "forward",
+  reverse = "reverse",
+}
+
+export enum FontWeight {
+  normal = "normal",
+  bold = "bold",
+}
+
+export enum FontStyle {
+  normal = "normal",
+  italic = "italic",
+}
+
+export enum TextDecoration {
+  none = "none",
+  underline = "underline",
+  overline = "overline",
+  lineThrough = "line-through",
+}
+export enum TextDecorationStyle {
+  solid = "solid",
+  dashed = "dashed",
+}
+export enum TextOverflow {
+  /// Clip the overflowing text to fix its container.
+  clip = "clip",
+  /// Use an ellipsis to indicate that the text has overflowed.
+  ellipsis = "ellipsis",
+  /// Render overflowing text outside of its container.
+  visible = "visible",
+}
+
+export enum TextAlign {
+  left = "left",
+  right = "right",
+  center = "center",
+  justify = "justify",
+  start = "start",
+  end = "end",
+  unset = "unset",
+  none = "none",
+}
 export interface Shadow {
   shadowColor?: Color;
   shadowBlur?: number;

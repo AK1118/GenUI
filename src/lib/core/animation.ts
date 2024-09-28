@@ -163,15 +163,27 @@ abstract class Animation<T> extends ChangeNotifier {
   get status(): AnimationStatus {
     return this._statusListener.status;
   }
+  /**
+   * 动画开始之前
+   */
   get isDismissed(): boolean {
     return this._statusListener.status === AnimationStatus.dismissed;
   }
+  /**
+   * 动画正向线性中
+   */
   get isForward(): boolean {
     return this._statusListener.status === AnimationStatus.forward;
   }
+  /**
+   * 动画反向线性中
+   */
   get isReverse(): boolean {
     return this._statusListener.status === AnimationStatus.reverse;
   }
+  /**
+   * 动画结束之后
+   */
   get isCompleted(): boolean {
     return this._statusListener.status === AnimationStatus.completed;
   }

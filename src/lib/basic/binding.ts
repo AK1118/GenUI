@@ -13,7 +13,7 @@ import {
 } from "../gesture/hit_test";
 import { GestureBinding } from "../gesture/binding";
 import { AbstractNode, RenderView } from "../render-object/render-object";
-import GenPlatformConfig from "../core/platform";
+import {GenPlatformConfig} from "../core/platform";
 
 type FrameCallback = (timestamp: number) => void;
 type AnimationFrame = (callback: FrameCallback) => void;

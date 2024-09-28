@@ -1,10 +1,10 @@
 import Rect, { Size } from "../basic/rect";
 import Vector from "../math/vector";
 import { BoxBorder } from "./borders";
-import Color from "./color";
+import {Color} from "./color";
 import { Gradient } from "./gradient";
 import Painter from "./painter";
-import BorderRadius from "./radius";
+import {BorderRadius} from "./radius";
 import BoxShadow from "./shadow";
 
 export abstract class Decoration {
@@ -48,6 +48,12 @@ export class BoxDecoration
     this.backgroundColor = option?.backgroundColor;
     this.shadows = option?.shadows;
     this.gradient = option?.gradient;
+    if(this.border&&!(this.border instanceof BoxBorder)){
+      throw new Error("border is not a instance of BoxBorder");
+    }
+    if(this.borderRadius&&!(this.borderRadius instanceof BorderRadius)){
+      throw new Error("borderRadius is not a instance of BorderRadius");
+    }
   }
 
   createBoxPainter(onChanged: VoidFunction): BoxPainter {

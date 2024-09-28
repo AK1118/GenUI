@@ -670,90 +670,90 @@ export class RenderViewPort extends RenderViewPortBase {
     // );
   }
 
-  protected performLayoutSliverChild(
-    child: RenderSliver,
-    //已滚动偏移量,视口top到滚动元素第一个的距离
-    scrollOffset: number,
-    //布局开始偏移量
-    layoutOffset: number,
-    remainingPaintExtent: number,
-    mainAxisExtent: number,
-    crossAxisExtent: number,
-    growthDirection: GrowthDirection,
-    another: (child: RenderSliver) => NonNullable<RenderSliver>,
-    remainingCacheExtent: number,
-    axisDirection: AxisDirection,
-    cacheOrigin: number
-  ): number {
-    let current: RenderSliver = child;
-    let precedingScrollExtent: number = 0;
-    const initialLayoutOffset: number = 0;
-    let _maxScrollExtent = this.lastScrolledMaxScrollExtent;
-    let count = 0;
-    while (current) {
-      const sliverScrollOffset = scrollOffset <= 0.0 ? 0.0 : scrollOffset;
-      const correctedCacheOrigin = Math.max(cacheOrigin, -sliverScrollOffset);
-      const cacheExtentCorrection: number = cacheOrigin - correctedCacheOrigin;
+  // protected performLayoutSliverChild(
+  //   child: RenderSliver,
+  //   //已滚动偏移量,视口top到滚动元素第一个的距离
+  //   scrollOffset: number,
+  //   //布局开始偏移量
+  //   layoutOffset: number,
+  //   remainingPaintExtent: number,
+  //   mainAxisExtent: number,
+  //   crossAxisExtent: number,
+  //   growthDirection: GrowthDirection,
+  //   another: (child: RenderSliver) => NonNullable<RenderSliver>,
+  //   remainingCacheExtent: number,
+  //   axisDirection: AxisDirection,
+  //   cacheOrigin: number
+  // ): number {
+  //   let current: RenderSliver = child;
+  //   let precedingScrollExtent: number = 0;
+  //   const initialLayoutOffset: number = 0;
+  //   let _maxScrollExtent = this.lastScrolledMaxScrollExtent;
+  //   let count = 0;
+  //   while (current) {
+  //     const sliverScrollOffset = scrollOffset <= 0.0 ? 0.0 : scrollOffset;
+  //     const correctedCacheOrigin = Math.max(cacheOrigin, -sliverScrollOffset);
+  //     const cacheExtentCorrection: number = cacheOrigin - correctedCacheOrigin;
 
-      const constraints = new SliverConstraints({
-        axisDirection: axisDirection,
-        growthDirection: growthDirection,
-        userScrollDirection: this.offset.userScrollDirection,
-        scrollOffset: sliverScrollOffset,
-        precedingScrollExtent: precedingScrollExtent,
-        overlap: 0,
-        remainingPaintExtent:
-          remainingPaintExtent - layoutOffset + initialLayoutOffset,
-        crossAxisExtent: crossAxisExtent,
-        crossAxisDirection: this.crossDirection,
-        viewportMainAxisExtent: mainAxisExtent,
-        remainingCacheExtent: Math.max(
-          0.0,
-          remainingCacheExtent + cacheExtentCorrection
-        ),
-        cacheOrigin: correctedCacheOrigin,
-      });
+  //     const constraints = new SliverConstraints({
+  //       axisDirection: axisDirection,
+  //       growthDirection: growthDirection,
+  //       userScrollDirection: this.offset.userScrollDirection,
+  //       scrollOffset: sliverScrollOffset,
+  //       precedingScrollExtent: precedingScrollExtent,
+  //       overlap: 0,
+  //       remainingPaintExtent:
+  //         remainingPaintExtent - layoutOffset + initialLayoutOffset,
+  //       crossAxisExtent: crossAxisExtent,
+  //       crossAxisDirection: this.crossDirection,
+  //       viewportMainAxisExtent: mainAxisExtent,
+  //       remainingCacheExtent: Math.max(
+  //         0.0,
+  //         remainingCacheExtent + cacheExtentCorrection
+  //       ),
+  //       cacheOrigin: correctedCacheOrigin,
+  //     });
 
-      current.layout(constraints, true);
-      const childLayoutGeometry = current.geometry;
-      const isContinue = this.handleUpdateVisualChildOrder(
-        current,
-        childLayoutGeometry,
-        sliverScrollOffset,
-        _maxScrollExtent
-      );
-      if (!isContinue && this.cachedMaxScrollExtent !== 0) {
-        _maxScrollExtent = this.cachedMaxScrollExtent;
-        this.offset.applyContentDimension(
-          this.minScrollExtent,
-          _maxScrollExtent
-        );
-        break;
-      }
-      const effectiveLayoutOffset = layoutOffset;
+  //     current.layout(constraints, true);
+  //     const childLayoutGeometry = current.geometry;
+  //     const isContinue = this.handleUpdateVisualChildOrder(
+  //       current,
+  //       childLayoutGeometry,
+  //       sliverScrollOffset,
+  //       _maxScrollExtent
+  //     );
+  //     if (!isContinue && this.cachedMaxScrollExtent !== 0) {
+  //       _maxScrollExtent = this.cachedMaxScrollExtent;
+  //       this.offset.applyContentDimension(
+  //         this.minScrollExtent,
+  //         _maxScrollExtent
+  //       );
+  //       break;
+  //     }
+  //     const effectiveLayoutOffset = layoutOffset;
 
-      if (childLayoutGeometry.visible || scrollOffset > 0) {
-        this.updateChildLayoutOffset(
-          current,
-          effectiveLayoutOffset,
-          growthDirection
-        );
-      }
-      scrollOffset -= childLayoutGeometry.scrollExtent;
-      //累计视口内可见布局
-      layoutOffset += childLayoutGeometry.layoutExtent;
-      precedingScrollExtent += childLayoutGeometry.scrollExtent;
-      count += 1;
-      _maxScrollExtent += childLayoutGeometry.scrollExtent;
-      current = another(current);
-    }
-    this.center = this.lastScrolledChild;
-    this.maxScrollExtent = _maxScrollExtent;
-    if (this.cachedMaxScrollExtent === 0) {
-      this.cachedMaxScrollExtent = _maxScrollExtent;
-    }
-    return 0;
-  }
+  //     if (childLayoutGeometry.visible || scrollOffset > 0) {
+  //       this.updateChildLayoutOffset(
+  //         current,
+  //         effectiveLayoutOffset,
+  //         growthDirection
+  //       );
+  //     }
+  //     scrollOffset -= childLayoutGeometry.scrollExtent;
+  //     //累计视口内可见布局
+  //     layoutOffset += childLayoutGeometry.layoutExtent;
+  //     precedingScrollExtent += childLayoutGeometry.scrollExtent;
+  //     count += 1;
+  //     _maxScrollExtent += childLayoutGeometry.scrollExtent;
+  //     current = another(current);
+  //   }
+  //   this.center = this.lastScrolledChild;
+  //   this.maxScrollExtent = _maxScrollExtent;
+  //   if (this.cachedMaxScrollExtent === 0) {
+  //     this.cachedMaxScrollExtent = _maxScrollExtent;
+  //   }
+  //   return 0;
+  // }
   //最后一个被item对象时的最大可滚动距离
   private lastScrolledMaxScrollExtent: number = 0;
   //最后一个被item对象
