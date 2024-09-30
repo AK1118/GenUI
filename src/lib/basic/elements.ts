@@ -44,11 +44,7 @@ export class InactiveElement {
   }
   private unmount(element: Element) {
     if (!element) return;
-    element.visitChildren((child) => {
-      this.unmount(child);
-    });
     element.unmount();
-    ElementBinding.decrementElementCount();
   }
 }
 
@@ -186,6 +182,11 @@ export abstract class Element extends BuildContext {
     this.lifecycleState = ElementLifecycle.defunct;
     this.widget = null;
     this.renderView = null;
+    this.visitChildren(child=>{
+      if(!child)return;
+      child.unmount();
+    });
+    ElementBinding.decrementElementCount();
   }
   public static sort(a: Element, b: Element) {
     return a.depth - b.depth;
@@ -343,7 +344,9 @@ export abstract class Element extends BuildContext {
     });
   }
   visitChildren(visitor: ChildVisitorCallback) {
-    visitor(this.child);
+    if(this.child){
+      visitor(this.child);
+    }
   }
 }
 

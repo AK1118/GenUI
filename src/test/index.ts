@@ -376,15 +376,20 @@ class TestState extends State<Test> {
   public initState(): void {
     super.initState();
     this.controller=new AnimationController({
-      duration:new Duration({milliseconds:500}),
+      duration:new Duration({milliseconds:300}),
     });
     this.controller.addListener(()=>{
       this.setState(()=>{
         if(this.controller.isCompleted){
-          this.controller.reverse();
+          // this.controller.reverse();
         }
       })
     });
+    setTimeout(()=>{
+      
+
+    },100)
+    this.controller.forward();
   }
   build(context: BuildContext): Widget {
     return new GestureDetector({
@@ -392,14 +397,18 @@ class TestState extends State<Test> {
         this.controller.forward();
         console.log("动画开始")
       },
-      child:new Container({
-        decoration:new BoxDecoration({
-          backgroundColor:Colors.white.lerp(Colors.orange,this.controller.value),
-         }),
-        // width:100,
-        height:this.controller.value*40+40,
-        // color:Colors.white,
-      })
+      child:Transform.scale({
+      scale:this.controller.value,
+      alignment:Alignment.center,
+        child:new Container({
+          decoration:new BoxDecoration({
+            backgroundColor:Colors.white.lerp(Colors.gray,this.controller.value),
+           }),
+          // width:100,
+          height:this.controller.value*40+40,
+          // color:Colors.white,
+        })
+      }),
     })
   }
 }
@@ -416,8 +425,15 @@ runApp(
           builder:(context, index) =>{
               return new Container({
                 width:100,
-                height:100,
-                color:Colors.orange,
+                height:300,
+                child:new Test(),
+                decoration:new BoxDecoration({
+                  border:Border.all({
+                    color:Colors.black.withOpacity(0.1),
+                  }),
+                  backgroundColor:Colors.white,
+                }),
+                //color:Colors.white,
               })
           },
         })

@@ -785,9 +785,7 @@ export class PaintingContext extends ClipContext {
   }
 }
 
-export abstract class MultiChildRenderView<
-  ChildType extends RenderView = RenderView
-> extends RenderBox {
+export abstract class ContainerRenderViewDelegate<ChildType extends RenderView,ParentDataType extends ContainerRenderViewParentData<ChildType>> extends RenderBox {
   protected lastChild: ChildType;
   protected firstChild: ChildType;
   protected childCount: number = 0;
@@ -805,7 +803,7 @@ export abstract class MultiChildRenderView<
     let child = this.lastChild;
     while (child != null) {
       const parentData =
-        child.parentData as ContainerRenderViewParentData<ChildType>;
+        child.parentData as ParentDataType;
       let transformed = Vector.sub(position, parentData.offset);
       transformed = MatrixUtils.transformPoint(transform, transformed);
       const isHit = child.hitTest(result, transformed);
@@ -832,20 +830,20 @@ export abstract class MultiChildRenderView<
   }
   private removeFromChildList(child: RenderView) {
     const childParentData =
-      child.parentData! as ContainerRenderViewParentData<ChildType>;
+      child.parentData! as ParentDataType;
     if (this.childCount <= 0) return;
     if (childParentData.previousSibling == null) {
       this.firstChild = childParentData.nextSibling;
     } else {
       const childPreviousSiblingParentData = childParentData.previousSibling!
-        .parentData! as ContainerRenderViewParentData<ChildType>;
+        .parentData! as ParentDataType;
       childPreviousSiblingParentData.nextSibling = childParentData.nextSibling;
     }
     if (childParentData.nextSibling == null) {
       this.lastChild = childParentData.previousSibling;
     } else {
       const childNextSiblingParentData = childParentData.nextSibling!
-        .parentData! as ContainerRenderViewParentData<ChildType>;
+        .parentData! as ParentDataType;
       childNextSiblingParentData.previousSibling =
         childParentData.previousSibling;
     }
@@ -855,11 +853,11 @@ export abstract class MultiChildRenderView<
   }
   private insertIntoList(child: ChildType, after?: ChildType) {
     let currentParentData =
-      child.parentData as ContainerRenderViewParentData<ChildType>;
+      child.parentData as ParentDataType;
     let firstChildParentData = this.firstChild
-      ?.parentData as ContainerRenderViewParentData<ChildType>;
+      ?.parentData as ParentDataType;
     let afterParentData =
-      after?.parentData as ContainerRenderViewParentData<ChildType>;
+      after?.parentData as ParentDataType;
     if (after == null) {
       this.firstChild = child;
       this.lastChild = child;
@@ -875,6 +873,22 @@ export abstract class MultiChildRenderView<
       this.lastChild = child;
     }
   }
+  protected parentDataOf(child:RenderView):ParentDataType{
+    return child.parentData as ParentDataType;
+  }
+  visitChildren(visitor: (child: RenderView) => void): void {
+    let child = this.firstChild;
+    while (child != null) {
+      const parentData =
+        child.parentData as ParentDataType;
+      visitor(child);
+      child = parentData?.nextSibling;
+    }
+  }
+}
+
+export abstract class MultiChildRenderView<ChildType extends RenderView=RenderView,ParentDataType extends ContainerRenderViewParentData<ChildType>=ContainerRenderViewParentData<ChildType>> extends ContainerRenderViewDelegate<ChildType,ParentDataType> {
+  
   render(context: PaintingContext, offset?: Vector): void {
     this.defaultRenderChild(context, offset);
   }
@@ -890,8 +904,7 @@ export abstract class MultiChildRenderView<
     this.size = this.constraints.constrain(Size.zero);
     let child = this.firstChild;
     while (child != null) {
-      const parentData =
-        child.parentData as ContainerRenderViewParentData<ChildType>;
+      const parentData =this.parentDataOf(child);
       this.performLayoutChild(child, this.constraints);
       child = parentData?.nextSibling;
     }
@@ -903,8 +916,7 @@ export abstract class MultiChildRenderView<
     const children: RenderView[] = [];
     let child = this.firstChild;
     while (child != null) {
-      const parentData =
-        child.parentData as ContainerRenderViewParentData<ChildType>;
+      const parentData =this.parentDataOf(child);
       children.push(child);
       child = parentData?.nextSibling;
     }
@@ -913,8 +925,7 @@ export abstract class MultiChildRenderView<
   protected defaultRenderChild(context: PaintingContext, offset?: Vector) {
     let child = this.firstChild;
     while (child != null) {
-      const parentData =
-        child.parentData as ContainerRenderViewParentData<ChildType>;
+      const parentData =this.parentDataOf(child);
       context.paintChild(
         child,
         Vector.add(parentData.offset ?? Vector.zero, offset ?? Vector.zero)
@@ -922,20 +933,11 @@ export abstract class MultiChildRenderView<
       child = parentData?.nextSibling;
     }
   }
-  visitChildren(visitor: (child: RenderView) => void): void {
-    let child = this.firstChild;
-    while (child != null) {
-      const parentData =
-        child.parentData as ContainerRenderViewParentData<ChildType>;
-      visitor(child);
-      child = parentData?.nextSibling;
-    }
-  }
+  
   protected defaultRenderChildDebug(context: PaintingContext, offset?: Vector) {
     let child = this.firstChild;
     while (child != null) {
-      const parentData =
-        child.parentData as ContainerRenderViewParentData<ChildType>;
+      const parentData =this.parentDataOf(child);
       context.paintChildDebug(
         child,
         Vector.add(parentData.offset ?? Vector.zero, offset ?? Vector.zero)
@@ -944,7 +946,7 @@ export abstract class MultiChildRenderView<
     }
   }
 }
-export class FlexRenderView extends MultiChildRenderView {
+export class FlexRenderView extends MultiChildRenderView<RenderView,ContainerRenderViewParentData<RenderView>> {
   private overflow: number = 0;
   public _direction: Axis = Axis.horizontal;
   public _mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.start;
