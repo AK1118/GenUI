@@ -297,9 +297,12 @@ export class SliverGeometry implements SliverGeometryArguments {
     this.cacheExtent = args?.cacheExtent ?? this.cacheExtent;
   }
 
-  static zero(): SliverGeometry {
+  static get zero(): SliverGeometry {
     return new SliverGeometry({});
   }
+  // static get zero(){
+  //   return new SliverGeometry({});
+  // }
 }
 
 export abstract class RenderSliver extends RenderView {
@@ -446,7 +449,7 @@ export abstract class RenderSliverToSingleBoxAdapter extends RenderSliver {
 export class RenderSliverBoxAdapter extends RenderSliverToSingleBoxAdapter {
   performLayout(): void {
     if (!this.child) {
-      this.geometry = SliverGeometry.zero();
+      this.geometry = SliverGeometry.zero;
       return; // 没有子节点，提前返回
     }
 

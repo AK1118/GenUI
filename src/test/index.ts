@@ -45,13 +45,19 @@ import {
   sin,
 } from "@/lib/math/math";
 import { GlobalKey } from "@/lib/basic/key";
-import { getRandomColor } from "@/lib/utils/utils";
+import { getRandomColor, getRandomStrKey } from "@/lib/utils/utils";
 import { Matrix4 } from "@/lib/math/matrix";
 import { BoxDecoration } from "@/lib/painting/decoration";
-import {BorderRadius} from "@/lib/painting/radius";
+import { BorderRadius } from "@/lib/painting/radius";
 import { Border, BorderSide } from "@/lib/painting/borders";
 import BoxShadow from "@/lib/painting/shadow";
-import { Column, Container, Row, Scrollable, SingleChildScrollView } from "@/lib/widgets/widgets";
+import {
+  Column,
+  Container,
+  Row,
+  Scrollable,
+  SingleChildScrollView,
+} from "@/lib/widgets/widgets";
 import { ImageSource } from "@/lib/painting/image";
 import { BoxFit } from "@/lib/painting/box-fit";
 import { ChangeNotifier } from "@/lib/core/change-notifier";
@@ -72,12 +78,23 @@ import {
 import { ScrollBar, ScrollController } from "@/lib/widgets/scroll";
 import { CustomClipper, CustomPainter } from "@/lib/rendering/custom";
 import { Path2D } from "@/lib/rendering/path-2D";
-import {GenPlatformConfig} from "@/lib/core/platform";
+import { GenPlatformConfig } from "@/lib/core/platform";
 import MyPost from "./test";
 import ScreenUtils from "./screen-utils";
-import { Colors,Color  } from "@/lib/painting/color";
-import { LinearGradient, RadialGradient, SweepGradient } from "@/lib/painting/gradient";
-import { SliverChildBuilderDelegate, SliverChildDelegate, SliverList, SliverMultiBoxAdaptorElement, SliverMultiBoxAdaptorParentData, SliverMultiBoxAdaptorRenderView } from "@/lib/widgets/sliver";
+import { Colors, Color } from "@/lib/painting/color";
+import {
+  LinearGradient,
+  RadialGradient,
+  SweepGradient,
+} from "@/lib/painting/gradient";
+import {
+  SliverChildBuilderDelegate,
+  SliverChildDelegate,
+  SliverList,
+  SliverMultiBoxAdaptorElement,
+  SliverMultiBoxAdaptorParentData,
+  SliverMultiBoxAdaptorRenderView,
+} from "@/lib/widgets/sliver";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
@@ -370,74 +387,87 @@ class Test extends StatefulWidget {
   createState(): State {
     return new TestState();
   }
- }
+}
 class TestState extends State<Test> {
-  private controller:AnimationController;
+  private controller: AnimationController;
+  private randomColor: Color;
   public initState(): void {
     super.initState();
-    this.controller=new AnimationController({
-      duration:new Duration({milliseconds:300}),
+    this.controller = new AnimationController({
+      duration: new Duration({ milliseconds: 300 }),
     });
-    this.controller.addListener(()=>{
-      this.setState(()=>{
-        if(this.controller.isCompleted){
+    this.randomColor = this.getRandomColor();
+    this.controller.addListener(() => {
+      this.setState(() => {
+        if (this.controller.isCompleted) {
           // this.controller.reverse();
         }
-      })
+      });
     });
-    setTimeout(()=>{
-      
-
-    },100)
-    this.controller.forward();
+    //setTimeout(() => {}, 100);
+    //  this.controller.forward();
+  }
+  private getRandomColor(): Color {
+    return Color.fromRGBA(
+      Math.random() * 256,
+      Math.random() * 256,
+      Math.random() * 256,
+      100
+    );
   }
   build(context: BuildContext): Widget {
     return new GestureDetector({
-      onTap:()=>{
+      onTap: () => {
         this.controller.forward();
-        console.log("动画开始")
+        console.log("动画开始");
       },
-      child:Transform.scale({
-      scale:this.controller.value,
-      alignment:Alignment.center,
-        child:new Container({
-          decoration:new BoxDecoration({
-            backgroundColor:Colors.white.lerp(Colors.gray,this.controller.value),
-           }),
+      child: Transform.scale({
+        scale: this.controller.value,
+        alignment: Alignment.center,
+        child: new Container({
+          decoration: new BoxDecoration({
+            backgroundColor: Colors.white.lerp(
+              Colors.white,
+              this.controller.value
+            ),
+          }),
           // width:100,
-          height:this.controller.value*40+40,
+          height: this.controller.value * 40 + 40,
           // color:Colors.white,
-        })
+          // child:new Text(this.randomColor.toString(),{
+
+          // }),
+        }),
       }),
-    })
+    });
   }
 }
 
-
-
 runApp(
   new Container({
-    width:canvas.width,
-    height:canvas.height,
-    child:new SingleChildScrollView({
-      child:new SliverList(
+    width: canvas.width,
+    height: canvas.height,
+    child: new SingleChildScrollView({
+      // physics: new BouncingScrollPhysics(),
+      child: new SliverList(
         new SliverChildBuilderDelegate({
-          builder:(context, index) =>{
-              return new Container({
-                width:100,
-                height:300,
-                child:new Test(),
-                decoration:new BoxDecoration({
-                  border:Border.all({
-                    color:Colors.black.withOpacity(0.1),
-                  }),
-                  backgroundColor:Colors.white,
+          // childCount: 50,
+          builder: (context, index) => {
+            return new Container({
+              width: 100,
+              height: 50,
+              child: new Text(`${index}    ${getRandomStrKey()}`),
+              decoration: new BoxDecoration({
+                border: Border.all({
+                  color: Colors.black.withOpacity(0.1),
                 }),
-                //color:Colors.white,
-              })
+                backgroundColor: Colors.white,
+              }),
+              //color:Colors.white,
+            });
           },
         })
-      )
+      ),
       // child:new Container({
       //   width:canvas.width,
       //   child:new Column({
@@ -452,7 +482,7 @@ runApp(
       //       })
       //   })
       // })
-    })
+    }),
   })
 );
 // img2.onload = () => {

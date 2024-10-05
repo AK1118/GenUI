@@ -42,7 +42,6 @@ export abstract class ViewPortOffset extends ChangeNotifier {
   }
   public setPixels(value: number): void {
     if(value == this._pixels) return;
-
     this._pixels = value;
     this.notifyListeners();
   }
@@ -319,11 +318,13 @@ export class RenderViewPortBase extends MultiChildRenderView<RenderSliver> {
   private _crossDirection: AxisDirection = AxisDirection.left;
   protected maxScrollExtent: number = 0;
   protected minScrollExtent: number = 0;
+  private markNeedsLayoutBind: () => void;
   private anchor: number = 0;
   constructor(args: Partial<RenderViewPortArguments>) {
     super();
     this.offset = args?.offset;
     this.axisDirection = args?.axisDirection;
+    this.markNeedsLayoutBind=this.markNeedsLayout.bind(this);
   }
   get axisDirection(): AxisDirection {
     return this._axisDirection;
@@ -340,7 +341,8 @@ export class RenderViewPortBase extends MultiChildRenderView<RenderSliver> {
   }
   set offset(value: ViewPortOffset) {
     this._offset = value;
-    this.offset?.addListener(this.markNeedsLayout.bind(this));
+    this.offset?.removeListener(this.markNeedsLayoutBind);
+    this.offset?.addListener(this.markNeedsLayoutBind);
     this.markNeedsLayout();
   }
   get offset(): ViewPortOffset {
@@ -349,7 +351,12 @@ export class RenderViewPortBase extends MultiChildRenderView<RenderSliver> {
   protected setupParentData(child: RenderView): void {
     child.parentData = new SliverPhysicalParentData();
   }
+  private beforeScrollOffset:number=Infinity;
   performLayout(): void {
+    if(this.offset?.pixels==this.beforeScrollOffset){
+      return;
+    }
+    this.beforeScrollOffset=this.offset?.pixels;
     if (!this.center) {
       this.center = this.firstChild;
     }
@@ -389,7 +396,6 @@ export class RenderViewPortBase extends MultiChildRenderView<RenderSliver> {
     crossAxisExtent: number
   ): void {
     const scrollOffset = this.offset.pixels;
-
     const nextChild = (child: RenderSliver) => {
       const parentData: SliverPhysicalParentData =
         child.parentData as SliverPhysicalParentData;
@@ -589,15 +595,15 @@ export class RenderViewPortBase extends MultiChildRenderView<RenderSliver> {
 
 export class RenderViewPort extends RenderViewPortBase {
   private cachedMaxScrollExtent: number = 0;
-  set offset(value: ViewPortOffset) {
-    this._offset = value;
-    this.offset?.addListener(this.markNeedsLayout.bind(this));
-    this.markNeedsLayout();
-    this.cachedMaxScrollExtent = 0;
-  }
-  get offset(): ViewPortOffset {
-    return this._offset;
-  }
+  // set offset(value: ViewPortOffset) {
+  //   this._offset = value;
+  //   this.offset?.addListener(this.markNeedsLayout.bind(this));
+  //   this.markNeedsLayout();
+  //   this.cachedMaxScrollExtent = 0;
+  // }
+  // get offset(): ViewPortOffset {
+  //   return this._offset;
+  // }
   constructor(args: Partial<RenderViewPortArguments>) {
     super(args);
     this.offset = args?.offset;
@@ -664,96 +670,12 @@ export class RenderViewPort extends RenderViewPortBase {
      * 设置滚动器的滚动范围，滚动最小为0，最大为滚动元素的最大高度减去视口高度
      * 必须在 @performLayoutSliverChild 执行完毕后再调用，且 @maxScrollExtent 不为 0
      */
-    // this.offset.applyContentDimension(
-    //   0,
-    //   Math.max(0, this.maxScrollExtent - mainAxisExtent)
-    // );
+    this.offset.applyContentDimension(
+      0,
+      Math.max(0, this.maxScrollExtent - mainAxisExtent)
+    );
   }
 
-  // protected performLayoutSliverChild(
-  //   child: RenderSliver,
-  //   //已滚动偏移量,视口top到滚动元素第一个的距离
-  //   scrollOffset: number,
-  //   //布局开始偏移量
-  //   layoutOffset: number,
-  //   remainingPaintExtent: number,
-  //   mainAxisExtent: number,
-  //   crossAxisExtent: number,
-  //   growthDirection: GrowthDirection,
-  //   another: (child: RenderSliver) => NonNullable<RenderSliver>,
-  //   remainingCacheExtent: number,
-  //   axisDirection: AxisDirection,
-  //   cacheOrigin: number
-  // ): number {
-  //   let current: RenderSliver = child;
-  //   let precedingScrollExtent: number = 0;
-  //   const initialLayoutOffset: number = 0;
-  //   let _maxScrollExtent = this.lastScrolledMaxScrollExtent;
-  //   let count = 0;
-  //   while (current) {
-  //     const sliverScrollOffset = scrollOffset <= 0.0 ? 0.0 : scrollOffset;
-  //     const correctedCacheOrigin = Math.max(cacheOrigin, -sliverScrollOffset);
-  //     const cacheExtentCorrection: number = cacheOrigin - correctedCacheOrigin;
-
-  //     const constraints = new SliverConstraints({
-  //       axisDirection: axisDirection,
-  //       growthDirection: growthDirection,
-  //       userScrollDirection: this.offset.userScrollDirection,
-  //       scrollOffset: sliverScrollOffset,
-  //       precedingScrollExtent: precedingScrollExtent,
-  //       overlap: 0,
-  //       remainingPaintExtent:
-  //         remainingPaintExtent - layoutOffset + initialLayoutOffset,
-  //       crossAxisExtent: crossAxisExtent,
-  //       crossAxisDirection: this.crossDirection,
-  //       viewportMainAxisExtent: mainAxisExtent,
-  //       remainingCacheExtent: Math.max(
-  //         0.0,
-  //         remainingCacheExtent + cacheExtentCorrection
-  //       ),
-  //       cacheOrigin: correctedCacheOrigin,
-  //     });
-
-  //     current.layout(constraints, true);
-  //     const childLayoutGeometry = current.geometry;
-  //     const isContinue = this.handleUpdateVisualChildOrder(
-  //       current,
-  //       childLayoutGeometry,
-  //       sliverScrollOffset,
-  //       _maxScrollExtent
-  //     );
-  //     if (!isContinue && this.cachedMaxScrollExtent !== 0) {
-  //       _maxScrollExtent = this.cachedMaxScrollExtent;
-  //       this.offset.applyContentDimension(
-  //         this.minScrollExtent,
-  //         _maxScrollExtent
-  //       );
-  //       break;
-  //     }
-  //     const effectiveLayoutOffset = layoutOffset;
-
-  //     if (childLayoutGeometry.visible || scrollOffset > 0) {
-  //       this.updateChildLayoutOffset(
-  //         current,
-  //         effectiveLayoutOffset,
-  //         growthDirection
-  //       );
-  //     }
-  //     scrollOffset -= childLayoutGeometry.scrollExtent;
-  //     //累计视口内可见布局
-  //     layoutOffset += childLayoutGeometry.layoutExtent;
-  //     precedingScrollExtent += childLayoutGeometry.scrollExtent;
-  //     count += 1;
-  //     _maxScrollExtent += childLayoutGeometry.scrollExtent;
-  //     current = another(current);
-  //   }
-  //   this.center = this.lastScrolledChild;
-  //   this.maxScrollExtent = _maxScrollExtent;
-  //   if (this.cachedMaxScrollExtent === 0) {
-  //     this.cachedMaxScrollExtent = _maxScrollExtent;
-  //   }
-  //   return 0;
-  // }
   //最后一个被item对象时的最大可滚动距离
   private lastScrolledMaxScrollExtent: number = 0;
   //最后一个被item对象

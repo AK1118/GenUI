@@ -24,6 +24,7 @@ import {
   SliverGeometry,
 } from "../render-object/slivers";
 import { BoxConstraints } from "../rendering/constraints";
+import { getRandomStrKey } from "../utils/utils";
 
 export class SliverMultiBoxAdaptorParentData<
   ChildType extends RenderView
@@ -31,6 +32,7 @@ export class SliverMultiBoxAdaptorParentData<
   public index: number;
   public keepAlive: boolean;
   public layoutOffset: number;
+  public key = getRandomStrKey();
 }
 
 export abstract class RenderSliverBoxChildManager {
@@ -66,13 +68,16 @@ interface SliverChildBuilderDelegateArguments {
 
 export class SliverChildBuilderDelegate extends SliverChildDelegate {
   private builder: SliverChildBuilderDelegateBuilder;
-  private childCount?: number | null;
+  public childCount?: number;
   constructor(args: Partial<SliverChildBuilderDelegateArguments>) {
     super();
     this.builder = args?.builder;
     this.childCount = args?.childCount;
   }
   build(context: BuildContext, index: number): Widget {
+    if (this.childCount != null && index >= this.childCount) {
+      return null;
+    }
     return this.builder(context, index);
   }
 }
@@ -82,14 +87,31 @@ export class SliverMultiBoxAdaptorElement
   implements RenderSliverBoxChildManager
 {
   private childElement: Map<number, Element> = new Map();
-  private currentlyUpdatingChildIndex: number = 0;
+  private _currentlyUpdatingChildIndex: number = 0;
+  set currentlyUpdatingChildIndex(value: number) {
+    this._currentlyUpdatingChildIndex = value;
+  }
+  get currentlyUpdatingChildIndex(): number {
+    return this._currentlyUpdatingChildIndex;
+  }
   private currentBeforeChild: RenderBox;
   constructor(private childDelegate: SliverChildDelegate, widget: Widget) {
     super(widget);
   }
   createChild(index: number, after?: RenderBox): void {
-    const built = this.childDelegate.build(this, index);
+    const built = this.childDelegate.build(
+      this,
+      index
+    ) as SliverMultiBoxAdaptorWidget;
+    if (!built) return;
     const oldChildElement = this.childElement.get(index);
+    const insertFirst = after == null;
+    if (insertFirst) {
+      this.currentBeforeChild = null;
+    } else {
+      this.currentBeforeChild = this.childElement.get(index - 1)
+        ?.renderView as RenderBox;
+    }
     this.currentlyUpdatingChildIndex = index;
     const newChild = this.updateChild(oldChildElement, built, index);
     if (newChild != null) {
@@ -97,15 +119,13 @@ export class SliverMultiBoxAdaptorElement
     } else {
       this.childElement.delete(index);
     }
-    this.currentBeforeChild = newChild.renderView as RenderBox;
   }
   removeChild(child: RenderBox): void {
-    const index=this.renderObject.indexOf(child);
-    const element=this.childElement.get(index);
+    const index = this.renderObject.indexOf(child);
+    const element = this.childElement.get(index);
     element.unmount();
     this.childElement.delete(index);
-    this.currentlyUpdatingChildIndex=index;
-    this.currentBeforeChild= this.renderObject.parentDataOf(this.currentBeforeChild).previousSibling;
+    this.currentlyUpdatingChildIndex = index;
   }
   didAdoptChild(child: RenderBox): void {
     const parentData =
@@ -119,19 +139,42 @@ export class SliverMultiBoxAdaptorElement
     leadingScrollOffset?: number,
     trailingScrollOffset?: number
   ): number {
-    return Infinity;
+    if (!this.childCount) return Infinity;
+    return this.extrapolateMaxScrollOffset(
+      firstIndex ?? 0,
+      lastIndex ?? this.childCount - 1,
+      leadingScrollOffset ?? 0,
+      trailingScrollOffset ?? 0,
+      this.childCount
+    );
+  }
+  private extrapolateMaxScrollOffset(
+    firstIndex: number,
+    lastIndex: number,
+    leadingScrollOffset: number,
+    trailingScrollOffset: number,
+    childCount: number
+  ): number {
+    if (lastIndex == childCount - 1) {
+      return trailingScrollOffset;
+    }
+    const reifiedCount = lastIndex - firstIndex + 1;
+    const averageExtent =
+      (trailingScrollOffset - leadingScrollOffset) / reifiedCount;
+    const remainingCount = childCount - lastIndex - 1;
+    return trailingScrollOffset + averageExtent * remainingCount;
   }
   didStartLayout(): void {
-    throw new Error("Method not implemented.");
+   
   }
   didFinishLayout(): void {
-    throw new Error("Method not implemented.");
+    
   }
   get childCount(): number {
-    throw new Error("Method not implemented.");
+    return (this.childDelegate as SliverChildBuilderDelegate)?.childCount ?? 0;
   }
   setDidUnderflow(value: boolean): void {
-    throw new Error("Method not implemented.");
+    
   }
   get renderObject(): SliverMultiBoxAdaptorRenderView {
     return super.renderView as SliverMultiBoxAdaptorRenderView;
@@ -193,7 +236,7 @@ export class SliverMultiBoxAdaptorRenderView extends RenderSliver {
     this.dropChild(child);
   }
   private removeFromChildList(child: RenderView) {
-    if(!child)return;
+    if (!child) return;
     const childParentData = child.parentData! as ParentDataType;
     if (!childParentData) return;
     if (this.childCount <= 0) return;
@@ -217,26 +260,56 @@ export class SliverMultiBoxAdaptorRenderView extends RenderSliver {
     this.childCount -= 1;
   }
   private insertIntoList(child: ChildType, after?: ChildType) {
-    let currentParentData = child.parentData as ParentDataType;
-    let firstChildParentData = this.firstChild?.parentData as ParentDataType;
-    let afterParentData = after?.parentData as ParentDataType;
+    // let currentParentData = child.parentData as ParentDataType;
+    // let firstChildParentData = this.firstChild?.parentData as ParentDataType;
+    // let afterParentData = after?.parentData as ParentDataType;
+    // if (after == null) {
+    //   this.firstChild = child;
+    //   this.lastChild = child;
+    // } else {
+    //   if (!firstChildParentData?.nextSibling && this.firstChild) {
+    //     firstChildParentData.nextSibling = child;
+    //     this.firstChild.parentData = firstChildParentData!;
+    //   }
+    //   afterParentData.nextSibling = child;
+    //   after.parentData = afterParentData;
+    //   currentParentData.previousSibling = after;
+    //   child.parentData = currentParentData;
+    //   this.lastChild = child;
+    // }
+    const childParentData = child.parentData as ParentDataType;
+    if (childParentData?.previousSibling && childParentData?.nextSibling)
+      return;
+    this.childCount += 1;
     if (after == null) {
-      this.firstChild = child;
-      this.lastChild = child;
-    } else {
-      if (!firstChildParentData?.nextSibling && this.firstChild) {
-        firstChildParentData.nextSibling = child;
-        this.firstChild.parentData = firstChildParentData!;
+      childParentData.nextSibling = this.firstChild;
+      if (this.firstChild) {
+        const firstBuildChildParentData = this.firstChild!
+          .parentData as ParentDataType;
+        firstBuildChildParentData.previousSibling = child;
       }
-      afterParentData.nextSibling = child;
-      after.parentData = afterParentData;
-      currentParentData.previousSibling = after;
-      child.parentData = currentParentData;
-      this.lastChild = child;
+      this.firstChild = child;
+      this.lastChild ??= child;
+    } else {
+      const afterParentData = after.parentData as ParentDataType;
+      if (!afterParentData.nextSibling) {
+        childParentData.previousSibling = after;
+        afterParentData.nextSibling = child;
+        this.lastChild = child;
+      } else {
+        childParentData.nextSibling = afterParentData.nextSibling;
+        childParentData.previousSibling = after;
+        const childPreviousSiblingParentData = childParentData.previousSibling!
+          .parentData as ParentDataType;
+        const childNextSiblingParentData = childParentData.nextSibling!
+          .parentData as ParentDataType;
+        childNextSiblingParentData.previousSibling = child;
+        childPreviousSiblingParentData.nextSibling = child;
+      }
     }
   }
   public parentDataOf(child: RenderView): ParentDataType {
-    return child.parentData as ParentDataType;
+    return child?.parentData as ParentDataType;
   }
   visitChildren(visitor: (child: RenderView) => void): void {
     let child = this.firstChild;
@@ -279,7 +352,22 @@ export class SliverMultiBoxAdaptorRenderView extends RenderSliver {
     if (child && this.indexOf(child) == index) {
       child.layout(childConstraints, parentUseSize);
     }
+    this.childManager.setDidUnderflow(false);
     return child;
+  }
+  protected insertAndLayoutLeadingChild(
+    childConstraints: BoxConstraints,
+    parentUsesSize: boolean = false
+  ): RenderBox {
+    const index = this.indexOf(this.firstChild!) - 1;
+    // if(index<0)return;
+    this.createOrObtainChild(index, null);
+    if (this.indexOf(this.firstChild!) == index) {
+      this.firstChild!.layout(childConstraints, parentUsesSize);
+      return this.firstChild!;
+    }
+    this.childManager.setDidUnderflow(true);
+    return null;
   }
   protected paintExtentOf(child: RenderBox): number {
     switch (this.constraints.axis) {
@@ -361,6 +449,10 @@ export class SliverMultiBoxAdaptorRenderView extends RenderSliver {
     leadingGarbage: number,
     trailingGarbage: number
   ): void {
+    while (leadingGarbage) {
+      this.destroyChild(this.firstChild);
+      leadingGarbage -= 1;
+    }
     while (trailingGarbage) {
       this.destroyChild(this.lastChild);
       trailingGarbage -= 1;
@@ -375,18 +467,43 @@ export class SliverMultiBoxAdaptorRenderView extends RenderSliver {
 export class SliverListRenderView extends SliverMultiBoxAdaptorRenderView {
   performLayout(): void {
     const scrollOffset = this.constraints.scrollOffset;
+   
     const remainingPaintExtent = this.constraints.remainingPaintExtent;
     const targetEndScrollOffset = scrollOffset + remainingPaintExtent;
     const constraints = this.constraints.asBoxConstraints();
-
+    this.childManager.didStartLayout();
+    //至少保证一个节点被布局
     if (!this.firstChild) {
       this.addInitialChild();
     }
 
+    //被卷入(视口上方)节点回收
+    let leadingGarbage = 0;
+    let leadingLayoutChild = this.firstChild;
+    if (this.childScrollOffset(leadingLayoutChild) != null) {
+      while (leadingLayoutChild) {
+        if (
+          this.childScrollOffset(leadingLayoutChild) +
+            this.paintExtentOf(leadingLayoutChild) <
+          scrollOffset
+        ) {
+          leadingGarbage += 1;
+        } else {
+          break;
+        }
+        leadingLayoutChild = this.childAfter(leadingLayoutChild);
+        if (!this.firstChild) {
+          this.addInitialChild();
+        }
+      }
+    }
+    this.garbageCollect(leadingGarbage, 0);
+
     let leadingChildWithLayout: RenderBox, trailingChildWithLayout: RenderBox;
     let earliestUsefulChild: RenderBox = this.firstChild;
 
-    if (scrollOffset === 0) {
+    //偏移量为0时，需要先布局第一个child
+    if (scrollOffset === 0&&this.indexOf(this.firstChild)===0) {
       earliestUsefulChild.layout(constraints, true);
       const parentData = this.parentDataOf(earliestUsefulChild);
       parentData.layoutOffset = 0;
@@ -395,6 +512,59 @@ export class SliverListRenderView extends SliverMultiBoxAdaptorRenderView {
       trailingChildWithLayout = earliestUsefulChild;
     }
 
+    //布局leadingChild,在列表相反方向滚动时，如向下滚动需要将之前已被回收的leadingChild插入到列表中
+    let leadingScrollOffset = this.childScrollOffset(this.firstChild);
+    leadingChildWithLayout = this.firstChild;
+    while (leadingScrollOffset>scrollOffset) {
+      this.insertAndLayoutLeadingChild(constraints);
+      if (this.firstChild) {
+        const parentData = this.parentDataOf(this.firstChild);
+        parentData.layoutOffset = leadingScrollOffset-this.paintExtentOf(this.firstChild);
+        leadingScrollOffset =  parentData.layoutOffset;
+      } else {
+        break;
+      }
+    }
+  //   earliestUsefulChild = this.firstChild;
+  //   for(let earliestScrollOffset=this.childScrollOffset(earliestUsefulChild);
+  //   earliestScrollOffset>scrollOffset;
+  //   earliestScrollOffset=this.childScrollOffset(earliestUsefulChild)){
+  //     earliestUsefulChild=this.insertAndLayoutLeadingChild(constraints,true);
+  //     if(!earliestUsefulChild){
+  //       const childParentData=this.parentDataOf(this.firstChild);
+  //       childParentData.layoutOffset=0;
+  //       if(scrollOffset===0){
+  //         this.firstChild.layout(constraints,true);
+  //         earliestUsefulChild=this.firstChild;
+  //         leadingChildWithLayout=earliestUsefulChild;
+  //         trailingChildWithLayout=earliestUsefulChild;
+  //         break;
+  //       }else{
+  //         this.geometry=new SliverGeometry({
+  //           scrollOffsetCorrection:-scrollOffset
+  //         });
+  //         return;
+  //       }
+  //     }
+
+  //     let firstChildScrollOffset=earliestScrollOffset-this.paintExtentOf(this.firstChild);
+  //     if(firstChildScrollOffset<-1e-10){
+  //       this.geometry=new SliverGeometry({
+  //         scrollOffsetCorrection:-firstChildScrollOffset
+  //       });
+  //       const childParentData=this.parentDataOf(this.firstChild);
+  //       childParentData.layoutOffset=0;
+  //       return;
+  //     }
+
+  //     const childParentData=this.parentDataOf(earliestUsefulChild);
+  //     childParentData.layoutOffset=firstChildScrollOffset;
+  //     leadingChildWithLayout=earliestUsefulChild;
+  //     trailingChildWithLayout=earliestUsefulChild;
+  // }
+
+
+    //正向布局
     let child = earliestUsefulChild;
     let endScrollOffset: number =
       this.paintExtentOf(earliestUsefulChild) +
@@ -411,8 +581,7 @@ export class SliverListRenderView extends SliverMultiBoxAdaptorRenderView {
           trailingChildWithLayout,
           true
         );
-      }else{
-        // console.log(index,"有",child)
+      } else {
       }
       if (!child) break;
       trailingChildWithLayout = child;
@@ -423,17 +592,19 @@ export class SliverListRenderView extends SliverMultiBoxAdaptorRenderView {
         this.childScrollOffset(child) + this.paintExtentOf(child);
     }
 
+    //回收视口底部child
     let trailingGarbage = 0;
-    if(child){
-      child=this.childAfter(child);
+    child = trailingChildWithLayout;
+    if (child) {
+      child = this.childAfter(child);
       while (child != null) {
         child = this.childAfter(child);
         trailingGarbage += 1;
       }
     }
+    this.garbageCollect(0, trailingGarbage);
 
-    this.garbageCollect(0, trailingGarbage );
-
+    //计算该Sliver的几何数据
     let estimatedMaxScrollOffset = 0;
     estimatedMaxScrollOffset = this.childManager.estimateMaxScrollOffset(
       this.constraints,
@@ -448,6 +619,7 @@ export class SliverListRenderView extends SliverMultiBoxAdaptorRenderView {
       maxPaintExtent: estimatedMaxScrollOffset,
       cacheExtent: 50,
     });
+    this.childManager.didFinishLayout();
   }
 }
 

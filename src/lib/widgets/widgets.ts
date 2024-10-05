@@ -304,15 +304,15 @@ export abstract class ScrollView extends StatelessWidget {
   }
   abstract buildSlivers(context: BuildContext): Array<Widget>;
   protected viewportBuilder(
-    context:BuildContext,
+    context: BuildContext,
     offset: ViewPortOffset,
-    axisDirection:AxisDirection,
-    slivers:Array<Widget>
+    axisDirection: AxisDirection,
+    slivers: Array<Widget>
   ): ViewPort {
     return new ViewPort({
       offset: offset,
       axisDirection: axisDirection,
-      children:slivers,
+      children: slivers,
     });
   }
   build(context: BuildContext): Widget {
@@ -322,7 +322,12 @@ export abstract class ScrollView extends StatelessWidget {
       axisDirection: this.axisDirection,
       physics: this.physics,
       viewportBuilder: (context: BuildContext, offset: ViewPortOffset) => {
-        return this.viewportBuilder(context,offset,this.axisDirection,slivers);
+        return this.viewportBuilder(
+          context,
+          offset,
+          this.axisDirection,
+          slivers
+        );
       },
     });
   }
@@ -352,7 +357,7 @@ export class SingleChildScrollView extends StatelessWidget {
       offset: position,
       axisDirection: position.axisDirection,
       children: [
-        this.child
+        this.child,
         // new WidgetToSliverAdapter({
         //   child: this.child,
         // }),
