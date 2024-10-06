@@ -179,16 +179,12 @@ export abstract class RenderView extends AbstractNode implements HitTestTarget {
     } else if (this.parent instanceof RenderView) {
       this.parent?.markNeedsPaint();
     }
-    // if(this instanceof ColoredRender){
-    //   console.log("颜色得到通知",this)
-    // }
     /**
      * 通知Child的重绘，@needsRePaint 在此之前已经被赋值true
      * child 在 @markNeedsPaint 时会调用父 @markNeedsPaint ，但是会判断 @needsRePaint 达到阻止循环调用，
      * 持续向下通知
      */
     this.visitChildren((child) => {
-      // console.log(this,"通知child",child)
       child.markNeedsPaint();
     });
   }

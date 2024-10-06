@@ -179,7 +179,6 @@ export class PipelineOwner {
     nodes.forEach((_, ndx) => {
       const layer = _.layerHandler?.layer;
       if (_.needsRePaint) {
-        // console.log("-----执行渲染-----",_)
         _?.paintWidthContext(
           new PaintingContext(GenPlatformConfig.instance.painter),
           layer?.offset || Vector.zero
@@ -201,11 +200,9 @@ export class PipelineOwner {
     });
   }
   pushNeedingPaint(node: RenderView) {
-    // console.log("标记渲染",node)
     this.needRepaintList.push(node);
   }
   pushNeedingLayout(node: RenderView) {
-    // console.log("构建",node)
     this.needReLayoutList.push(node);
   }
   requestVisualUpdate() {

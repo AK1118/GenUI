@@ -351,12 +351,7 @@ export class RenderViewPortBase extends MultiChildRenderView<RenderSliver> {
   protected setupParentData(child: RenderView): void {
     child.parentData = new SliverPhysicalParentData();
   }
-  private beforeScrollOffset:number=Infinity;
   performLayout(): void {
-    if(this.offset?.pixels==this.beforeScrollOffset){
-      return;
-    }
-    this.beforeScrollOffset=this.offset?.pixels;
     if (!this.center) {
       this.center = this.firstChild;
     }

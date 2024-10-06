@@ -354,7 +354,7 @@ class _ButtonState extends State<Button> {
     this.time = this.widget.index;
   }
   build(context: BuildContext): Widget {
-    return new Container({
+    return  new Container({
       padding: {
         top: 10,
         bottom: 10,
@@ -364,8 +364,16 @@ class _ButtonState extends State<Button> {
       // decoration: new BoxDecoration({
       //   backgroundColor: "#edf2fa",
       // }),
-      child: new Text(`${this.time}`),
-    });
+      child: new GestureDetector({
+        onTap: () => {
+          console.log("点击",this.time);
+          this.setState(() => {
+            this.time += 1;
+          });
+        },
+        child:new Text(`${this.time}`)
+      }),
+    })
   }
 }
 /**
@@ -389,6 +397,7 @@ class Test extends StatefulWidget {
   }
 }
 class TestState extends State<Test> {
+  private count:number=0;
   private controller: AnimationController;
   private randomColor: Color;
   public initState(): void {
@@ -405,7 +414,7 @@ class TestState extends State<Test> {
       });
     });
     //setTimeout(() => {}, 100);
-    //  this.controller.forward();
+    this.controller.forward();
   }
   private getRandomColor(): Color {
     return Color.fromRGBA(
@@ -418,25 +427,32 @@ class TestState extends State<Test> {
   build(context: BuildContext): Widget {
     return new GestureDetector({
       onTap: () => {
-        this.controller.forward();
-        console.log("动画开始");
+        // this.controller.forward();
+        this.setState(()=>{
+          this.randomColor=this.getRandomColor();
+          this.count+=10;
+        })
       },
       child: Transform.scale({
         scale: this.controller.value,
         alignment: Alignment.center,
         child: new Container({
           decoration: new BoxDecoration({
-            backgroundColor: Colors.white.lerp(
-              Colors.white,
-              this.controller.value
-            ),
+            backgroundColor: Colors.white
+              .withOpacity(0)
+              .lerp(this.randomColor, this.controller.value),
           }),
           // width:100,
           height: this.controller.value * 40 + 40,
           // color:Colors.white,
-          // child:new Text(this.randomColor.toString(),{
-
-          // }),
+          child:new Align({
+            child:new Container({
+              width:30+this.count,
+              height:30,
+              child:new Text(`${this.count}`),
+               color:this.getRandomColor(),
+            }),
+          })
         }),
       }),
     });
@@ -445,18 +461,21 @@ class TestState extends State<Test> {
 
 runApp(
   new Container({
-    width: canvas.width,
-    height: canvas.height,
+    width:canvas.width,
+    height:canvas.height,
     child: new SingleChildScrollView({
+      axisDirection: AxisDirection.down,
+      controller,
       // physics: new BouncingScrollPhysics(),
-      child: new SliverList(
-        new SliverChildBuilderDelegate({
-          // childCount: 50,
+      child: new SliverList({
+        autoKeepAlive: true,
+        childDelegate: new SliverChildBuilderDelegate({
+          // childCount: 1,
           builder: (context, index) => {
             return new Container({
               width: 100,
-              height: 50,
-              child: new Text(`${index}    ${getRandomStrKey()}`),
+              height: 300,
+              child: new Test(),//new Test(), //new Text(`${index}    ${getRandomStrKey()}`),
               decoration: new BoxDecoration({
                 border: Border.all({
                   color: Colors.black.withOpacity(0.1),
@@ -466,8 +485,8 @@ runApp(
               //color:Colors.white,
             });
           },
-        })
-      ),
+        }),
+      }),
       // child:new Container({
       //   width:canvas.width,
       //   child:new Column({
@@ -485,6 +504,9 @@ runApp(
     }),
   })
 );
+setTimeout(() => {
+  // controller.jumpTo(1000000);
+}, 1000);
 // img2.onload = () => {
 //   // const path = new Path2D();
 //   // path.rect(0, 0, 100, 100);

@@ -59,7 +59,7 @@ export class ParagraphStyle implements ParagraphStyleOption {
    */
   ellipsis?: string;
   height?: number = 0;
-  fontFamily: string = "serif"; // 默认值为 'serif'
+  fontFamily: string = "serif";
 
   constructor(option?: ParagraphStyleOption) {
     if (option) {
@@ -797,7 +797,6 @@ export class Paragraph {
         currentY - (lineHeight - height) * 0.5 + parentData.baseLineOffsetY;
 
       if (paint.style === PaintingStyle.fill) {
-        // console.log(child.text, currentX, baselineY);
         paint.fillText(child.text, currentX, baselineY);
       } else {
         paint.strokeText(child.text, currentX, baselineY);

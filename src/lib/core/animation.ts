@@ -266,27 +266,6 @@ export class AnimationController extends Animation<number> {
     }
     this.currentValue = value;
     this.notifyListeners();
-    // console.log(timeStamp)
-    // if (!this.isCompleted && !this.isDismissed) {
-    //   let t: number = clamp(
-    //     timeStamp / this.duration.value,
-    //     0,
-    //     1
-    //   );
-    //   if (this.direction == AnimationDirection.reverse) {
-    //     t = 1 - t;
-    //   }
-    //   let value = Curves.easeIn.transformInternal(t);
-    //   if (isNaN(value)) {
-    //     return this.stop();
-    //   }
-    //   if (t >= 1 || t <= 0) {
-    //     this.status = AnimationStatus.completed;
-    //     this.stop();
-    //   }
-    //   this.currentValue = value;
-    //   this.notifyListeners();
-    // }
   }
   private animateToInternal(
     target: number,

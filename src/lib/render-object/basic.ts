@@ -785,7 +785,8 @@ export class PaintingContext extends ClipContext {
   }
 }
 
-export abstract class ContainerRenderViewDelegate<ChildType extends RenderView,ParentDataType extends ContainerRenderViewParentData<ChildType>> extends RenderBox {
+export abstract class ContainerRenderViewDelegate<ChildType extends RenderView,ParentDataType extends ContainerRenderViewParentData<ChildType>> 
+extends RenderBox {
   protected lastChild: ChildType;
   protected firstChild: ChildType;
   protected childCount: number = 0;
@@ -887,7 +888,8 @@ export abstract class ContainerRenderViewDelegate<ChildType extends RenderView,P
   }
 }
 
-export abstract class MultiChildRenderView<ChildType extends RenderView=RenderView,ParentDataType extends ContainerRenderViewParentData<ChildType>=ContainerRenderViewParentData<ChildType>> extends ContainerRenderViewDelegate<ChildType,ParentDataType> {
+export abstract class MultiChildRenderView<ChildType extends RenderView=RenderView,ParentDataType extends ContainerRenderViewParentData<ChildType>=ContainerRenderViewParentData<ChildType>> 
+extends ContainerRenderViewDelegate<ChildType,ParentDataType> {
   
   render(context: PaintingContext, offset?: Vector): void {
     this.defaultRenderChild(context, offset);
@@ -944,6 +946,9 @@ export abstract class MultiChildRenderView<ChildType extends RenderView=RenderVi
       );
       child = parentData?.nextSibling;
     }
+  }
+  public hitTest(result: HitTestResult, position: Vector): boolean {
+    return super.hitTest(result,position)
   }
 }
 export class FlexRenderView extends MultiChildRenderView<RenderView,ContainerRenderViewParentData<RenderView>> {

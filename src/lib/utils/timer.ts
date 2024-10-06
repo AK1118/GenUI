@@ -18,7 +18,6 @@ export default class Timer {
     stop() {
       const now = +new Date();
       this.runTimeDuration -= now - this.startTime;
-      // //console.log("自动上传暂停",this.runTimeDuration)
       this.cancel();
     }
     cancel() {

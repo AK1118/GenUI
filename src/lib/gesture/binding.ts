@@ -72,6 +72,19 @@ export class GestureBinding extends BindingBase implements HitTestTarget {
       this.gestureArena.sweep(event.pointer);
     }
   }
+  /**
+   * @RendererBinding 派生自该类，该方法用于命中测试，@performPointerEventHandle 调用该方法时，会优先调用 @RendererBinding 的 hitTest 方法，
+   * 此处的 @hitTest 方法为事件系统的根部，即，从 @RendererBinding.hitTest 开始, @GestureBinding.hitTest 结束。
+   * 
+   * 命中测试从根部 @PipelineOwner.renderView 开始，子根部向叶子节点递归，叶子节点在调用此方法后如果命中会将自己包裹为 @HitTestEntry 实体后加入命中结果中
+   * 参考
+   * ```
+   * protected hitTest(result: HitTestResult, position: Vector) {
+   *     result.add(new HitTestEntry(this));
+   * }
+   * 
+   * ```
+   */
   protected hitTest(result: HitTestResult, position: Vector) {
     result.add(new HitTestEntry(this));
   }
