@@ -95,13 +95,16 @@ import {
   SliverMultiBoxAdaptorParentData,
   SliverMultiBoxAdaptorRenderView,
 } from "@/lib/widgets/sliver";
+import { NativeEventsBindingHandler } from "@/lib/native/events";
+import EditText, { Editable, EditableText } from "@/lib/widgets/text";
+import { NativeTextInputHandler, TextInput } from "@/lib/native/text-input";
 
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
 
 const dev = window.devicePixelRatio;
 const width = window.innerWidth;
-const height = window.innerHeight;
+const height = 300;
 console.log("DPR：", dev);
 canvas.width = width * dev;
 canvas.height = height * dev;
@@ -116,9 +119,72 @@ GenPlatformConfig.InitInstance({
   screenWidth: width,
   screenHeight: height,
   devicePixelRatio: dev,
-  debug: false,
+  debug: true,
   canvas: canvas,
   renderContext: g,
+});
+
+const eventCaller = new NativeEventsBindingHandler();
+if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+  // Touch events for mobile devices
+  window.addEventListener("touchstart", (e) => {
+    eventCaller.applyEvent("touchstart", e);
+  });
+  window.addEventListener("touchmove", (e) => {
+    eventCaller.applyEvent("touchmove", e);
+  });
+  window.addEventListener("touchend", (e) => {
+    eventCaller.applyEvent("touchend", e);
+  });
+  window.addEventListener("touchcancel", (e) => {
+    eventCaller.applyEvent("touchcancel", e);
+  });
+} else {
+  window.addEventListener("mousedown", (e) => {
+    eventCaller.applyEvent("mousedown", e);
+  });
+  window.addEventListener("mousemove", (e) => {
+    eventCaller.applyEvent("mousemove", e);
+  });
+  window.addEventListener("mouseup", (e) => {
+    eventCaller.applyEvent("mouseup", e);
+  });
+  window.addEventListener("mousedown", (e) => {
+    eventCaller.applyEvent("mousedown", e);
+  });
+  window.addEventListener("wheel", (e) => {
+    eventCaller.applyEvent("wheel", e);
+  });
+}
+
+const nativeTextInputHandler = new NativeTextInputHandler();
+const inputBar = document.querySelector("#inputbar") as HTMLInputElement;
+inputBar.value=`测试,好文本`;
+nativeTextInputHandler.blurHandler(() => {
+  inputBar.blur();
+});
+nativeTextInputHandler.focusHandler(() => {
+  inputBar.focus();
+});
+nativeTextInputHandler.selectionHandler((newSelection) => {
+  inputBar.selectionStart = newSelection.start;
+  inputBar.selectionEnd = newSelection.end;
+  console.log(inputBar.selectionStart, inputBar.selectionEnd);
+});
+inputBar.oninput = (e: InputEvent) => {
+  nativeTextInputHandler.updateEditingValue(
+    inputBar.value,
+    inputBar.selectionStart,
+    inputBar.selectionEnd
+  );
+};
+
+inputBar.addEventListener("selectionchange", function (event) {
+  nativeTextInputHandler.updateEditingValue(
+    inputBar.value,
+    inputBar.selectionStart,
+    inputBar.selectionEnd
+  );
 });
 
 export const screenUtil = new ScreenUtils({
@@ -354,7 +420,7 @@ class _ButtonState extends State<Button> {
     this.time = this.widget.index;
   }
   build(context: BuildContext): Widget {
-    return  new Container({
+    return new Container({
       padding: {
         top: 10,
         bottom: 10,
@@ -366,14 +432,14 @@ class _ButtonState extends State<Button> {
       // }),
       child: new GestureDetector({
         onTap: () => {
-          console.log("点击",this.time);
+          console.log("点击", this.time);
           this.setState(() => {
             this.time += 1;
           });
         },
-        child:new Text(`${this.time}`)
+        child: new Text(`${this.time}`),
       }),
-    })
+    });
   }
 }
 /**
@@ -397,7 +463,8 @@ class Test extends StatefulWidget {
   }
 }
 class TestState extends State<Test> {
-  private count:number=0;
+  private count: number = 0;
+  private text: string = "";
   private controller: AnimationController;
   private randomColor: Color;
   public initState(): void {
@@ -415,6 +482,24 @@ class TestState extends State<Test> {
     });
     //setTimeout(() => {}, 100);
     this.controller.forward();
+    canvas.onclick = () => {
+      const inputDom: HTMLInputElement = document.getElementById(
+        "inputbar"
+      ) as HTMLInputElement;
+      inputDom.focus();
+      inputDom.oninput = (e) => {
+        this.setState(() => {
+          this.text = inputDom.value;
+        });
+      };
+      // inputDom.addEventListener("input",(e)=>{
+      //   console.log("输入",e)
+      // })
+    };
+
+    window.onmousedown = () => {
+      canvas.click();
+    };
   }
   private getRandomColor(): Color {
     return Color.fromRGBA(
@@ -428,10 +513,10 @@ class TestState extends State<Test> {
     return new GestureDetector({
       onTap: () => {
         // this.controller.forward();
-        this.setState(()=>{
-          this.randomColor=this.getRandomColor();
-          this.count+=10;
-        })
+        this.setState(() => {
+          this.randomColor = this.getRandomColor();
+          this.count += 10;
+        });
       },
       child: Transform.scale({
         scale: this.controller.value,
@@ -445,14 +530,14 @@ class TestState extends State<Test> {
           // width:100,
           height: this.controller.value * 40 + 40,
           // color:Colors.white,
-          child:new Align({
-            child:new Container({
-              width:30+this.count,
-              height:30,
-              child:new Text(`${this.count}`),
-               color:this.getRandomColor(),
+          child: new Align({
+            child: new Container({
+              width: 30 + this.count,
+              height: 30,
+              child: new Text(`${this.count} ${this.text}`),
+              color: this.getRandomColor(),
             }),
-          })
+          }),
         }),
       }),
     });
@@ -461,91 +546,13 @@ class TestState extends State<Test> {
 
 runApp(
   new Container({
-    width:canvas.width,
-    height:canvas.height,
+    width: 300,
+    height: 300,
+    color: Colors.white,
     child: new SingleChildScrollView({
-      axisDirection: AxisDirection.down,
-      controller,
-      // physics: new BouncingScrollPhysics(),
-      child: new SliverList({
-        autoKeepAlive: true,
-        childDelegate: new SliverChildBuilderDelegate({
-          // childCount: 1,
-          builder: (context, index) => {
-            return new Container({
-              width: 100,
-              height: 300,
-              child: new Test(),//new Test(), //new Text(`${index}    ${getRandomStrKey()}`),
-              decoration: new BoxDecoration({
-                border: Border.all({
-                  color: Colors.black.withOpacity(0.1),
-                }),
-                backgroundColor: Colors.white,
-              }),
-              //color:Colors.white,
-            });
-          },
-        }),
+      child: new WidgetToSliverAdapter({
+        child: new EditableText(),
       }),
-      // child:new Container({
-      //   width:canvas.width,
-      //   child:new Column({
-      //     crossAxisAlignment:CrossAxisAlignment.stretch,
-      //     children:Array.from(new Array(2000)).map(_=>{
-      //         return new Padding({
-      //           padding:{
-      //             bottom:10,
-      //           },
-      //           child: new Test()
-      //         });
-      //       })
-      //   })
-      // })
     }),
   })
 );
-setTimeout(() => {
-  // controller.jumpTo(1000000);
-}, 1000);
-// img2.onload = () => {
-//   // const path = new Path2D();
-//   // path.rect(0, 0, 100, 100);
-//   // path.arc(50, 50, 25, 0, Math.PI * 2, true);
-
-//   // g.save();
-//   // g.shadowColor = "#000";
-//   // g.shadowBlur = 3;
-//   // g.shadowOffsetX = 3;
-//   // g.shadowOffsetY = 3;
-//   // g.fillStyle = "white";
-//   // g.fill(path);
-//   // g.restore();
-
-//   // g.save();
-//   // g.clip(path);
-//   // g.drawImage(img2, 0, 0, 100, 100);
-//   // g.restore();
-//   // 绘制矩形和圆形路径
-//   g.save();
-//   g.beginPath();
-//   g.rect(0, 0, 100, 100);
-//   g.arc(50, 50, 25, 0, Math.PI * 2,true);
-
-//   // 应用阴影并填充路径
-//   g.shadowColor = "#ccc";
-//   g.shadowBlur = 3;
-//   g.shadowOffsetX = 3;
-//   g.shadowOffsetY = 3;
-//   g.fillStyle = "white";
-//   g.fill();
-//   g.restore();
-
-//   // 使用路径剪裁并绘制图像
-//   g.save();
-//   g.beginPath();
-//   g.rect(0, 0, 100, 100);
-//   g.arc(50, 50, 25, 0, Math.PI * 2, true);
-//   g.clip();
-//   g.drawImage(img2, 0, 0, 100, 100);
-//   g.restore();
-// };

@@ -1,7 +1,37 @@
-class Vector {
-  x: number = 0;
-  y: number = 0;
+
+export class Offset {
+  offsetX: number;
+  offsetY: number;
+  get x(): number {
+    return this.offsetX;
+  }
+  get y(): number {
+    return this.offsetY;
+  }
+  set x(value: number) {
+    this.offsetX = value;
+  }
+  set y(value: number) {
+    this.offsetY = value;
+  }
+  constructor(offsetX: number, offsetY: number) {
+    this.offsetX = offsetX;
+    this.offsetY = offsetY;
+  }
+  static get zero(): Offset {
+    return new Offset(0, 0);
+  }
+  toVector(): Vector {
+    return new Vector(this.offsetX, this.offsetY);
+  }
+  copy(): Offset {
+    return new Offset(this.offsetX, this.offsetY);
+  }
+}
+
+class Vector extends Offset{
   constructor(x: number, y: number) {
+    super(x,y);
     this.x = x;
     this.y = y;
   }

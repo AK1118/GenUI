@@ -1,7 +1,8 @@
 import { Offset } from "../basic/rect";
-import {GenPlatformConfig} from "../core/platform";
+import { GenPlatformConfig } from "../core/platform";
 import { Matrix4 } from "../math/matrix";
 import Vector from "../math/vector";
+import { NativeEventsBinding } from "../native/events";
 
 //两次点击|点击移动的合法距离
 export const G_postAcceptSlopTolerance: number = 18;
@@ -65,28 +66,48 @@ export class PointerEventHandler {
   }
 
   private initializeEventListeners() {
-    //browser event listener
-    if (window) {
-      if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        // Touch events for mobile devices
-        window.addEventListener("touchstart", this.handleTouchStart.bind(this));
-        window.addEventListener("touchmove", this.handleTouchMove.bind(this));
-        window.addEventListener("touchend", this.handleTouchEnd.bind(this));
-        window.addEventListener(
-          "touchcancel",
-          this.handleTouchCancel.bind(this)
-        );
-      } else {
-        window.addEventListener("mousedown", this.handlePointerDown.bind(this));
-        window.addEventListener("mouseup", this.handlePointerUp.bind(this));
-        window.addEventListener("mousemove", this.handlePointerMove.bind(this));
-        window.addEventListener(
-          "mouseout",
-          this.handlePointerCancel.bind(this)
-        );
-        window.addEventListener("wheel", this.handleWheel.bind(this));
-      }
+    if (NativeEventsBinding.instance) {
+      const instance = NativeEventsBinding.instance;
+      instance.addEventListener("touchstart", this.handleTouchStart.bind(this));
+      instance.addEventListener("touchmove", this.handleTouchMove.bind(this));
+      instance.addEventListener("touchend", this.handleTouchEnd.bind(this));
+      instance.addEventListener(
+        "touchcancel",
+        this.handleTouchCancel.bind(this)
+      );
+      instance.addEventListener("mousedown", this.handlePointerDown.bind(this));
+      instance.addEventListener("mouseup", this.handlePointerUp.bind(this));
+      instance.addEventListener("mousemove", this.handlePointerMove.bind(this));
+      instance.addEventListener(
+        "mouseout",
+        this.handlePointerCancel.bind(this)
+      );
+      instance.addEventListener("wheel", this.handleWheel.bind(this));
+    }else{
+      console.warn("NativeEventsBinding.instance is null");
     }
+    //browser event listener
+    // if (window) {
+    //   if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    //     // Touch events for mobile devices
+    //     window.addEventListener("touchstart", this.handleTouchStart.bind(this));
+    //     window.addEventListener("touchmove", this.handleTouchMove.bind(this));
+    //     window.addEventListener("touchend", this.handleTouchEnd.bind(this));
+    //     window.addEventListener(
+    //       "touchcancel",
+    //       this.handleTouchCancel.bind(this)
+    //     );
+    //   } else {
+    //     window.addEventListener("mousedown", this.handlePointerDown.bind(this));
+    //     window.addEventListener("mouseup", this.handlePointerUp.bind(this));
+    //     window.addEventListener("mousemove", this.handlePointerMove.bind(this));
+    //     window.addEventListener(
+    //       "mouseout",
+    //       this.handlePointerCancel.bind(this)
+    //     );
+    //     window.addEventListener("wheel", this.handleWheel.bind(this));
+    //   }
+    // }
   }
 
   private handlePointerDown(event: MouseEvent) {
@@ -261,14 +282,10 @@ export class PanZoomStartPointerEvent extends PointerEvent {}
 export class PanZoomUpdatePointerEvent extends PointerEvent {}
 export class PanZoomEndPointerEvent extends PointerEvent {}
 
-
 export abstract class PointerEventConverter {
   static expand(data: GenPointerData): PointerEvent {
-    const dpr=GenPlatformConfig.instance.devicePixelRatio;
-    const position = new Vector(
-      data.position.x * dpr,
-      data.position.y * dpr
-    ); //data.position;//
+    const dpr = GenPlatformConfig.instance.devicePixelRatio;
+    const position = new Vector(data.position.x * dpr, data.position.y * dpr); //data.position;//
     const delta = new Offset(
       data.delta.offsetX * dpr,
       data.delta.offsetY * dpr

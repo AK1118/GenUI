@@ -62,6 +62,7 @@ import {
   PanZoomEndPointerEvent,
   PanZoomStartPointerEvent,
   PanZoomUpdatePointerEvent,
+  PointerEvent,
   UpPointerEvent,
 } from "../gesture/events";
 import {
@@ -69,6 +70,7 @@ import {
   GestureRecognizerFactory,
 } from "../gesture/recognizers/gesture-recognizer";
 import TapGestureRecognizer, {
+  EventCallback,
   TapGestureRecognizerArguments,
 } from "../gesture/recognizers/tap";
 import DoubleTapGestureRecognizer, {
@@ -569,11 +571,7 @@ export class GestureDetector
 {
   private gestureRecognizers: Map<any, GestureRecognizer> = new Map();
   private child: Widget;
-  onTap: VoidFunction;
-  onTapDown: VoidFunction;
-  onTapUp: VoidFunction;
   onDoubleTap: VoidFunction;
-  onTapCancel: VoidFunction;
   onLongPress: VoidFunction;
   onPanStart: (event: PanZoomStartPointerEvent) => void;
   onPanUpdate: (event: PanZoomUpdatePointerEvent) => void;
@@ -595,6 +593,10 @@ export class GestureDetector
     this.onPanUpdate = option?.onPanUpdate;
     this.onPanEnd = option?.onPanEnd;
   }
+  onTap: EventCallback<PointerEvent>;
+  onTapDown: EventCallback<DownPointerEvent>;
+  onTapUp: EventCallback<UpPointerEvent>;
+  onTapCancel: VoidFunction;
   onLongPressUpdate: (event: UpPointerEvent) => void;
   onLongPressStart: (event: UpPointerEvent) => void;
   onLongPressEnd: (event: UpPointerEvent) => void;

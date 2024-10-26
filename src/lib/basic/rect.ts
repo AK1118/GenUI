@@ -1,4 +1,5 @@
-import Vector from "../math/vector";
+import Vector, { Offset } from "../math/vector";
+export { Offset } from "../math/vector";
 
 export class Size {
   private _width: number;
@@ -51,34 +52,13 @@ export class Size {
       height: this._height,
     };
   }
-  contains(offset: Vector): boolean {
+  contains(offset: Offset): boolean {
     return (
       offset.x >= 0.0 &&
       offset.x < this.width &&
       offset.y >= 0.0 &&
       offset.y < this.height
     );
-  }
-}
-
-export class Offset {
-  offsetX: number;
-  offsetY: number;
-  get x(): number {
-    return this.offsetX;
-  }
-  get y(): number {
-    return this.offsetY;
-  }
-  constructor(offsetX: number, offsetY: number) {
-    this.offsetX = offsetX;
-    this.offsetY = offsetY;
-  }
-  static get zero(): Offset {
-    return new Offset(0, 0);
-  }
-  toVector(): Vector {
-    return new Vector(this.offsetX, this.offsetY);
   }
 }
 
@@ -121,6 +101,18 @@ class Rect {
   get height(): number {
     return this._height;
   }
+  set x(value: number) {
+    this._x = value;
+  }
+  set y(value: number) {
+    this._y = value;
+  }
+  set width(value: number) {
+    this._width = value;
+  }
+  set height(value: number) {
+    this._height = value;
+  }
   static get zero(): Rect {
     return new Rect(0, 0, 0, 0);
   }
@@ -136,7 +128,7 @@ class Rect {
   get bottom(): number {
     return this._y + this._height;
   }
-  public contains(point: Vector) {
+  public contains(point: Offset): boolean {
     return (
       point.x >= this.left &&
       point.x < this.right &&
@@ -146,6 +138,13 @@ class Rect {
   }
   get size(): Size {
     return new Size(this._width, this._height);
+  }
+  get offset(): Offset {
+    return new Offset(this._x, this._y);
+  }
+  set offset(value: Offset) {
+    this._x = value.offsetX;
+    this._y = value.offsetY;
   }
   static merge(offset: Offset | Vector, size: Size): Rect {
     return new Rect(offset.x, offset.y, size.width, size.height);
@@ -162,6 +161,9 @@ class Rect {
    */
   get longestSide(): number {
     return Math.max(Math.abs(this.width), Math.abs(this.height));
+  }
+  copy() {
+    return new Rect(this._x, this._y, this._width, this._height);
   }
 }
 

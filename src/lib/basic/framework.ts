@@ -149,6 +149,9 @@ export abstract class State<T extends StatefulWidget = StatefulWidget> {
   set element(element: Element) {
     this._element = element;
   }
+  get mounted(): boolean {
+    return this.element != null;
+  }
   public initState(): void {}
   protected setState(fn: VoidFunction): void {
     fn();

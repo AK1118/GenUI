@@ -7,7 +7,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0,user-scalable=no"
     />
-    <script src="https://cdn.jsdelivr.net/npm/eruda@3.2.1/eruda.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/eruda@3.2.1/eruda.min.js"></script> -->
     <!-- <script>eruda.init();</script> -->
     <title>Document</title>
     <style>
@@ -68,6 +68,12 @@
 .test::before{
   content: '\e89e';
 }
+/* input{
+  width: 0px;
+  height: 0px;
+  position: fixed;
+  z-index: -1;
+} */
     </style>
   </head>
 
@@ -77,8 +83,10 @@
     <button id="continue">继续</button> -->
     <div>
       <img src="./img/bg.jpg" id="bg" alt="" />
+      
       <div>
         <canvas id="canvas" width="300" height="300"></canvas>
       </div>
+      <input type="text" id="inputbar"></div>
   </body>
 </html>

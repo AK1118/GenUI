@@ -1,9 +1,18 @@
 import Painter, { PaintingStyle } from "@/lib/painting/painter";
-import Vector from "@/lib/math/vector";
-import { Size } from "@/lib/basic/rect";
-import {GenPlatformConfig} from "../core/platform";
-import {Color } from "./color";
-import { FontStyle, FontWeight, Shadow, TextAlign, TextDecoration, TextDecorationStyle, TextDirection, TextOverflow } from "../core/base-types";
+import Rect, { Offset, Size } from "@/lib/basic/rect";
+import { GenPlatformConfig } from "../core/platform";
+import { Color } from "./color";
+import {
+  FontStyle,
+  FontWeight,
+  Shadow,
+  TextAlign,
+  TextDecoration,
+  TextDecorationStyle,
+  TextDirection,
+  TextOverflow,
+} from "../core/base-types";
+import { TextSelection } from "../services/text-editing";
 
 const _kDefaultFontSize: number = 14.0;
 const _kDefaultEllipsis: string = "…";
@@ -35,7 +44,6 @@ export class ParagraphConstraints {
     return this._width;
   }
 }
-
 
 interface ParagraphStyleOption {
   textAlign?: TextAlign;
@@ -220,44 +228,26 @@ export class TextStyle
   }
 }
 
-class TextBox {
-  width: number;
-  height: number;
-  left: number;
-  right: number;
-  top: number;
-  bottom: number;
+class TextBox extends Rect{
   direction: TextDirection;
   lineHeight: number;
-
-  constructor(
-    width: number,
-    height: number,
-    left: number,
-    right: number,
-    top: number,
-    bottom: number,
-    direction: TextDirection
-  ) {
-    this.width = width;
-    this.height = height;
-    this.left = left;
-    this.top = top;
-    this.bottom = bottom;
-    this.right = right;
+  constructor(width: number, height: number, direction: TextDirection) {
+    super(0,0,width,height);
     this.direction = direction;
   }
-
   static fromLTRBD(
     width: number,
     height: number,
-    left: number,
-    right: number,
-    top: number,
-    bottom: number,
     direction: TextDirection
   ): TextBox {
-    return new TextBox(width, height, left, right, top, bottom, direction);
+    return new TextBox(width, height, direction);
+  }
+
+  copy(): TextBox {
+    const newTextBox = new TextBox(this.width, this.height, this.direction);
+    newTextBox.lineHeight = this.lineHeight;
+    newTextBox.offset=this.offset;
+    return newTextBox;
   }
 }
 
@@ -268,8 +258,14 @@ abstract class TreeNode<T> {
 }
 
 class TextPointParentData extends TreeNode<TextPoint> {
+  public index: number = 0;
   public column: number;
-  public offset: Vector = Vector.zero;
+  get offset(): Offset {
+    return this.box.offset;
+  }
+  set offset(value: Offset) {
+    this.box.offset = value;
+  }
   public box: TextBox;
   public broCount: number = 1;
   public wordCountWidth: number = 0;
@@ -315,17 +311,26 @@ interface Rowed {
 
 class ParagraphParentData extends TreeNode<Paragraph> {}
 
+abstract class ParagraphControl {
+  getTextPointForOffset(offset: Offset): TextPoint {
+    return null;
+  }
+  getTextBoxesForRange(selection:TextSelection): Array<TextBox>{
+    return [];
+  }
+}
+
 /**
  * 段落
  */
-export class Paragraph {
+export class Paragraph extends ParagraphControl {
   public parentData: ParagraphParentData = new ParagraphParentData();
   public textStyle: TextStyle = new TextStyle();
   public text: string;
   private textPoints: TextPoint[] = [];
   private linePoints: Array<{
-    start: Vector;
-    end: Vector;
+    start: Offset;
+    end: Offset;
   }>;
   private lastTextPoint: TextPoint;
   private firstTextPoint: TextPoint;
@@ -355,8 +360,9 @@ export class Paragraph {
   layout(
     constraints: ParagraphConstraints,
     paint: Painter,
-    startOffset: Vector = Vector.zero
+    startOffset: Offset = Offset.zero
   ) {
+    if (!this.text.length) return;
     //初始化切割文字
     this.performLayoutTextOffset(paint, startOffset);
     //合成单词
@@ -438,13 +444,15 @@ export class Paragraph {
       const currentTextCodePoint = current?.charCodePoint;
       //遇到空格中文跳过
       if (
-        TextPainter.isNewline(currentTextCodePoint)||TextPainter.isSpace(currentTextCodePoint)||currentTextCodePoint > 256 
+        TextPainter.isNewline(currentTextCodePoint) ||
+        TextPainter.isSpace(currentTextCodePoint) ||
+        currentTextCodePoint > 256
       ) {
         current = parentData.nextNode;
         currentHead = current;
         wordCount = 0;
         continue;
-      }else{
+      } else {
         current = parentData.nextNode;
         currentHead.parentData.broCount = ++wordCount;
         //词缀无实际broCount
@@ -516,7 +524,7 @@ export class Paragraph {
     wordList.forEach((_, ndx) => {
       const parentData = _.parentData;
       if (parentData.broCount) {
-        parentData.offset = new Vector(positionX, parentData.offset.y);
+        parentData.offset = new Offset(positionX, parentData.offset.y);
         positionX += parentData.wordCountWidth || parentData.box.width;
         positionX += betweenSpace;
         this.performLayoutRow(_, parentData.offset, parentData.broCount);
@@ -540,11 +548,11 @@ export class Paragraph {
     lastColumn: number = 1,
     maxLine: number = Infinity
   ) {
-    let current=this.firstTextPoint;
+    let current = this.firstTextPoint;
     while (current != null) {
       const parentData = current.parentData;
       const currentTextCodePoint = current?.charCodePoint;
-      current=parentData.nextNode;
+      current = parentData.nextNode;
     }
     if (lastColumn > maxLine)
       return {
@@ -560,7 +568,7 @@ export class Paragraph {
       const codePoint = textPoint.text.charCodeAt(0);
       const parentData = textPoint?.parentData;
       const broCount = parentData.broCount;
-      const offset = parentData.offset;
+      let offset = parentData.offset;
       const box = parentData.box;
       let wordWidth = (parentData.wordCountWidth || box.width) + offset.x;
       const textOffsetX = wordWidth + subDeltaX;
@@ -582,11 +590,11 @@ export class Paragraph {
       }
       const deltaY = 0;
       let deltaX = subDeltaX + offset.x;
-     
-      offset.setXY(deltaX, deltaY);
+
+      offset = new Offset(deltaX, deltaY);
       parentData.column = lastColumn;
       index += broCount || 1;
-      if(broCount!==0){
+      if (broCount !== 0) {
         this.performLayoutRow(textPoint, offset, broCount);
       }
       textPoint.parentData = parentData;
@@ -627,7 +635,7 @@ export class Paragraph {
       const parentData = currentPoint?.parentData;
       const column = parentData.column;
       const y = column * parentData.box.lineHeight + lastHeight;
-      parentData.offset.setXY(parentData.offset.x, y);
+      parentData.offset = new Offset(parentData.offset.x, y);
       maxHeight = Math.max(isNaN(y) ? 0 : y, maxHeight);
       maxWidth = Math.max(maxWidth, parentData.offset.x + parentData.box.width);
       currentPoint = parentData.nextNode;
@@ -638,7 +646,7 @@ export class Paragraph {
   /**
    *  将文字处理为[TextBox]并计算每个文字的offset
    */
-  public performLayoutTextOffset(paint: Painter, startOffset: Vector) {
+  public performLayoutTextOffset(paint: Painter, startOffset: Offset) {
     // this.textPoints = [];
     // this.firstTextPoint = null;
     // this.lastTextPoint = null;
@@ -661,7 +669,7 @@ export class Paragraph {
    */
   public performLayoutRow(
     textPoint: TextPoint,
-    parentOffset?: Vector,
+    parentOffset?: Offset,
     maxRange?: number,
     initRow?: boolean
   ) {
@@ -675,7 +683,7 @@ export class Paragraph {
       currentPoint.enable();
       if (maxRange && (range += 1) > maxRange) return;
       const parentData = currentPoint?.parentData;
-      const offset = Vector.zero;
+      let offset = Offset.zero;
       const box = parentData.box;
       if (initRow) {
         box.lineHeight = lineHeight;
@@ -684,32 +692,35 @@ export class Paragraph {
         }
       }
       const offsetY = headTextPointParentData.offset.y;
-      offset.setXY(x, offsetY);
-      parentData.offset.set(offset);
+      offset = new Offset(x, offsetY);
+      parentData.offset = offset;
       parentData.column = headTextPointParentData.column;
       currentPoint = parentData.nextNode;
       x += box.width;
       this.lastTextPoint = currentPoint ?? this.lastTextPoint;
     }
   }
-  public getNextStartOffset(): Vector {
-    if (this.textPoints.length === 0) return Vector.zero;
+  public getNextStartOffset(): Offset {
+    if (this.textPoints.length === 0) return Offset.zero;
     const parentData = this.lastTextPoint?.parentData;
-    if (!parentData) return Vector.zero;
+    if (!parentData) return Offset.zero;
     const lastOffset = parentData.offset.copy();
-    const continueOffset = Vector.zero;
-    continueOffset.add(lastOffset);
-    continueOffset.add(
-      new Vector(
-        this.textStyle.fontSize,
-        -(
-          this.textStyle.fontSize +
-          Math.max(0, this.textStyle.height - this.textStyle.fontSize)
-        )
+    const continueOffset = Offset.zero;
+    continueOffset.x += lastOffset.x;
+    continueOffset.y += lastOffset.y;
+    const deltaOffset = new Offset(
+      this.textStyle.fontSize,
+      -(
+        this.textStyle.fontSize +
+        Math.max(0, this.textStyle.height - this.textStyle.fontSize)
       )
     );
+    continueOffset.x += deltaOffset.x;
+    continueOffset.y += deltaOffset.y;
     return continueOffset;
   }
+  //文字序号从0开始
+  private currentInsertTextPointIndex: number = 0;
   private insertTextToList(
     text: string,
     paint: Painter,
@@ -724,9 +735,11 @@ export class Paragraph {
       textPoint.parentData.preNode = after;
       after.parentData.nextNode = textPoint;
     }
+    parentData.index = this.currentInsertTextPointIndex;
     textPoint.parentData = parentData;
     textPoint.disable();
     this.textPoints.push(textPoint);
+    this.currentInsertTextPointIndex++;
     return textPoint;
   }
   private getTextBox(textMetrics: any): TextBox {
@@ -734,11 +747,11 @@ export class Paragraph {
     const isFirstChar = this.textPoints.length == 0;
     return TextBox.fromLTRBD(
       textMetrics.width + letterSpacing, //(isFirstChar ? 0 : letterSpacing),
-      textMetrics.hangingBaseline??textMetrics.width,
-      textMetrics.actualBoundingBoxLeft,
-      textMetrics.actualBoundingBoxRight,
-      textMetrics.actualBoundingBoxDescent,
-      textMetrics.actualBoundingBoxAscent,
+      textMetrics.hangingBaseline ?? textMetrics.width,
+      // textMetrics.actualBoundingBoxLeft,
+      // textMetrics.actualBoundingBoxRight,
+      // textMetrics.actualBoundingBoxDescent,
+      // textMetrics.actualBoundingBoxAscent,
       this.textStyle.textDirection
     );
   }
@@ -747,9 +760,9 @@ export class Paragraph {
   }
   public paint(
     paint: Painter,
-    offset: Vector = Vector.zero,
+    offset: Offset = Offset.zero,
     debugRect: boolean = false
-  ): Vector {
+  ): Offset {
     if (this.textPoints) {
       this.applyTextStyle(paint, (paint) => {
         if (this.textStyle.decorationStyle === TextDecorationStyle.dashed) {
@@ -771,7 +784,7 @@ export class Paragraph {
     }
     return this.getNextStartOffset();
   }
-  private performPaintLines(paint: Painter, offset: Vector) {
+  private performPaintLines(paint: Painter, offset: Offset) {
     if (!this.linePoints) return;
     paint.beginPath();
     this.linePoints.forEach((_) => {
@@ -781,7 +794,7 @@ export class Paragraph {
     paint.stroke();
     paint.closePath();
   }
-  private performPaint(paint: Painter, offset: Vector, debugRect: boolean) {
+  private performPaint(paint: Painter, offset: Offset, debugRect: boolean) {
     let child = this.firstTextPoint;
     while (child != null) {
       const parentData = child.parentData;
@@ -795,7 +808,7 @@ export class Paragraph {
       }
       let baselineY =
         currentY - (lineHeight - height) * 0.5 + parentData.baseLineOffsetY;
-
+      paint.strokeRect(x, currentY - lineHeight, width, height);
       if (paint.style === PaintingStyle.fill) {
         paint.fillText(child.text, currentX, baselineY);
       } else {
@@ -820,6 +833,49 @@ export class Paragraph {
 
       child = parentData.nextNode;
     }
+  }
+  public visitTexts(visitor: (textPoint: TextPoint) => boolean) {
+    let child = this.firstTextPoint;
+    while (child != null) {
+      //为true则继续
+      const isContinue = visitor(child);
+      if (!isContinue) break;
+      child = child.parentData?.nextNode;
+    }
+  }
+  getTextPointForOffset(offset: Offset): TextPoint {
+    let result: TextPoint;
+    this.visitTexts((_textPoint) => {
+      const parentData = _textPoint.parentData;
+      const lineHeight = parentData.box.lineHeight;
+      const textRect = _textPoint?.parentData?.box;
+      const rect = new Rect(
+        textRect.x,
+        textRect.y - lineHeight,
+        textRect.width,
+        lineHeight
+      );
+      const isContains = rect?.contains(offset);
+      if (isContains) {
+        result = _textPoint;
+        return false;
+      }
+      return true;
+    });
+    return result;
+  }
+  getTextBoxesForRange(selection:TextSelection): Array<TextBox>{
+    const result = new Array();
+    this.visitTexts((textPoint) => {
+      const parentData = textPoint.parentData;
+      const index = parentData.index;
+      if (index >= selection.start && index <= selection.end) {
+        const box = parentData.box;
+        result.push(box);
+      }
+      return index <= selection.end;
+    });
+    return result;
   }
 }
 
@@ -869,7 +925,7 @@ export class MulParagraph extends Paragraph {
   layout(
     constraints: ParagraphConstraints,
     paint: Painter,
-    startOffset?: Vector
+    startOffset?: Offset
   ) {
     this.applyPerformLayoutHorizontalOffset(paint, startOffset);
     const maxColumn = this.applyPerformLayoutConstraints(
@@ -915,7 +971,7 @@ export class MulParagraph extends Paragraph {
         if (offsetBaseLineY != 0) {
           parentData.baseLineOffsetY = offsetBaseLineY * 0.5;
         }
-        parentData.offset.setXY(parentData.offset.x, y);
+        parentData.offset = new Offset(parentData.offset.x, y);
         const deltaWidth = parentData.offset.x + box.width;
         maxWidth = Math.max(maxWidth, isNaN(deltaWidth) ? 0 : deltaWidth);
       });
@@ -972,10 +1028,10 @@ export class MulParagraph extends Paragraph {
   }
   private applyPerformLayoutHorizontalOffset(
     paint: Painter,
-    startOffset: Vector = Vector.zero
+    startOffset: Offset = Offset.zero
   ) {
     let child = this.firstChild;
-    let lastedOffset: Vector = startOffset;
+    let lastedOffset: Offset = startOffset;
     while (child != null) {
       const parentData = child.parentData;
       child.performLayoutTextOffset(paint, lastedOffset);
@@ -986,17 +1042,17 @@ export class MulParagraph extends Paragraph {
   }
   public paint(
     paint: Painter,
-    offset: Vector = Vector.zero,
+    offset: Offset = Offset.zero,
     debug: boolean = false
-  ): Vector {
+  ): Offset {
     let child = this.firstChild;
-    let lastedOffset: Vector = Vector.zero;
+    let lastedOffset: Offset = Offset.zero;
     while (child != null) {
       const parentData = child.parentData;
       lastedOffset = child.paint(paint, offset, debug);
       child = parentData.nextNode;
     }
-    return Vector.zero;
+    return Offset.zero;
   }
 }
 
@@ -1063,7 +1119,7 @@ class ParagraphBuilder {
     }
 
     // resultParagraphs.pushStyle(resultParagraphs.textStyle);
-    resultParagraphs.pushStyle({
+    resultParagraphs?.pushStyle({
       ...resultParagraphs.textStyle,
       ...this.paragraphStyle,
     } as TextStyle);
@@ -1086,7 +1142,7 @@ export class TextSpan extends InlineSpan {
     const { textStyle, children, text } = option;
     this.style = textStyle ?? new TextStyle();
     this.children = children;
-    this.text = text ?? "";
+    this.text = text ?? " ";
   }
 
   build(builder: ParagraphBuilder): void {
@@ -1094,7 +1150,7 @@ export class TextSpan extends InlineSpan {
     if (hasStyle) {
       builder.pushStyle(this.style.getTextStyle());
     }
-    if (this.text) {
+    if (this.text !== null) {
       builder.addText(this.text);
     }
     if (this.children) {
@@ -1117,7 +1173,7 @@ export class TextSpan extends InlineSpan {
   }
 }
 
-export class TextPainter {
+export class TextPainter extends ParagraphControl {
   private text: TextSpan;
   private preTextSpan: TextSpan;
   private paragraph: Paragraph;
@@ -1129,7 +1185,11 @@ export class TextPainter {
   get height(): number {
     return this.size.height;
   }
-  constructor(text: TextSpan, painter: Painter = GenPlatformConfig.instance.painter) {
+  constructor(
+    text: TextSpan,
+    painter: Painter = GenPlatformConfig.instance.painter
+  ) {
+    super();
     this.text = text;
     this.painter = painter;
   }
@@ -1152,11 +1212,11 @@ export class TextPainter {
     this.size.setHeight(this.paragraph.height);
     this.preTextSpan = this.text;
   }
-  paint(paint: Painter, offset: Vector = Vector.zero, debug: boolean = false) {
+  paint(paint: Painter, offset: Offset = Offset.zero, debug: boolean = false) {
     this.paragraph.paint(paint, offset, debug);
   }
   private isEqualsTextSpan(): boolean {
-    if(this.preTextSpan == null)return false;
+    if (this.preTextSpan == null) return false;
     if (this.text === this.preTextSpan) {
       return true;
     }
@@ -1277,5 +1337,16 @@ export class TextPainter {
       default:
         return false;
     }
+  }
+  getTextPointForOffset(offset: Offset): TextPoint {
+    return this.paragraph.getTextPointForOffset(offset);
+  }
+  getTextBoxesForRange(selection:TextSelection): Array<TextBox> {
+    return this.paragraph.getTextBoxesForRange(selection).map((box) => {
+      const textBox = box.copy();;
+      textBox.y -= textBox.lineHeight;
+      textBox.height= textBox.lineHeight;
+      return textBox;
+    });
   }
 }

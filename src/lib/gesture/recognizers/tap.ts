@@ -8,11 +8,13 @@ import {
 } from "../events";
 import { PrimaryPointerTapGestureRecognizer } from "./gesture-recognizer";
 
+export type EventCallback<T extends PointerEvent = PointerEvent> = (event: T) => void;
+
 export interface TapGestureRecognizerArguments {
-  onTap: VoidFunction;
-  onTapDown: VoidFunction;
-  onTapUp: VoidFunction;
-  onTapCancel: VoidFunction;
+  onTap: EventCallback;
+  onTapDown: EventCallback<DownPointerEvent>;
+  onTapUp: EventCallback<UpPointerEvent>;
+  onTapCancel:VoidFunction;
 }
 
 /**
@@ -23,12 +25,13 @@ export default class TapGestureRecognizer
   extends PrimaryPointerTapGestureRecognizer
   implements TapGestureRecognizerArguments
 {
-  onTapCancel: VoidFunction;
-  onTap: VoidFunction;
-  onTapDown: VoidFunction;
-  onTapUp: VoidFunction;
+  onTap: EventCallback;
+  onTapDown: EventCallback<DownPointerEvent>;
+  onTapUp: EventCallback<UpPointerEvent>;
+  onTapCancel:VoidFunction;
   private sentDown: boolean = false;
   private up: UpPointerEvent;
+  private down: DownPointerEvent;
   constructor() {
     super(
       new Duration({
@@ -44,6 +47,9 @@ export default class TapGestureRecognizer
     return !!(this.onTap || this.onTapDown || this.onTapUp || this.onTapCancel);
   }
   handlePrimaryPointerDown(event: PointerEvent): void {
+    if(event instanceof DownPointerEvent) {
+      this.down = event;
+    }
     if (event instanceof UpPointerEvent) {
       this.up = event;
       this.checkUp();
@@ -56,16 +62,20 @@ export default class TapGestureRecognizer
     }
   }
   protected didExceedDeadline(): void {
-      this.checkDown();
+    this.checkDown();
   }
   handleEventDown() {
     this.sentDown = true;
-    this.invokeCallback("onTapDown", this.onTapDown);
+    this.invokeCallback("onTapDown", () => {
+      this.onTapDown?.(this.down);
+    });
   }
-  
+
   private checkDown() {
     if (this.sentDown) return;
-    this.invokeCallback("onTapDown", this.onTapDown);
+    this.invokeCallback("onTapDown", () => {
+      this.onTapDown?.(this.down);
+    });
     this.sentDown = true;
   }
   private checkCancel() {
@@ -73,13 +83,18 @@ export default class TapGestureRecognizer
   }
   private checkUp() {
     if (!this.sentDown || !this.up) return;
-    this.invokeCallback("onTapUp", this.onTapUp);
-    this.invokeCallback("onTap", this.onTap);
+    this.invokeCallback("onTapUp", ()=>{
+      this.onTapUp?.(this.up);
+    });
+    this.invokeCallback("onTap", ()=>{
+      this.onTap?.(this.down);
+    });
     this.reset();
   }
   private reset() {
     this.sentDown = false;
     this.up = null;
+    this.down = null;
   }
   acceptGesture(pointer: number): void {
     super.acceptGesture(pointer);
