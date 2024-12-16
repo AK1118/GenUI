@@ -40,6 +40,7 @@ export class TextSelection extends TextRange {
   static get empty(): TextSelection {
     return new TextSelection(-1, -1);
   }
+  
 }
 
 export class TextInputConfiguration {}

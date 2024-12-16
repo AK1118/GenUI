@@ -37,7 +37,7 @@ import ScreenUtils from "./screen-utils";
 import { screenUtil } from "./index";
 import {Color,Colors } from "@/lib/painting/color";
 import { RadialGradient } from "@/lib/painting/gradient";
-const scale = 1;
+const scale = 2;
 const sp = (value: number) => screenUtil.setSp(value * scale);
 const sw = (value: number) => screenUtil.setWidth(value * scale);
 

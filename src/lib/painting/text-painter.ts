@@ -445,12 +445,13 @@ export class Paragraph extends ParagraphControl {
       //遇到空格中文跳过
       if (
         TextPainter.isNewline(currentTextCodePoint) ||
-        TextPainter.isSpace(currentTextCodePoint) ||
+        TextPainter.isSpace(currentTextCodePoint) 
+        ||
         currentTextCodePoint > 256
       ) {
         current = parentData.nextNode;
         currentHead = current;
-        wordCount = 0;
+        wordCount = 1;
         continue;
       } else {
         current = parentData.nextNode;
@@ -660,7 +661,15 @@ export class Paragraph extends ParagraphControl {
         this.firstTextPoint = textPoint;
       }
     }
+    //新换行符不应该包含宽度，所以需要特殊处理
+    this.visitTexts((_=>{
+      if(TextPainter.isNewline(_.charCodePoint)){
+        _.parentData.box.width=0;
+      }
+      return true;
+    }))
     this.performLayoutRow(this.firstTextPoint, startOffset, null, true);
+    
   }
   /**
    * 该方法只会出现在初始化布局时或布局单词链表对象时。在初始化时会负责将line-height、word-space计算入排版中
@@ -802,13 +811,13 @@ export class Paragraph extends ParagraphControl {
       const currentX = x + offset.x,
         currentY = y + offset.y;
       const { width, height, lineHeight } = parentData.box;
-      if (child.hidden) {
+      if (child.hidden||TextPainter.isNewline(child.charCodePoint)) {
         child = parentData.nextNode;
         continue;
       }
+
       let baselineY =
         currentY - (lineHeight - height) * 0.5 + parentData.baseLineOffsetY;
-      paint.strokeRect(x, currentY - lineHeight, width, height);
       if (paint.style === PaintingStyle.fill) {
         paint.fillText(child.text, currentX, baselineY);
       } else {

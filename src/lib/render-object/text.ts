@@ -2,8 +2,9 @@ import Rect, { Size } from "../basic/rect";
 import { AnimationController } from "../core/animation";
 import { Clip, TextOverflow } from "../core/base-types";
 import { Duration } from "../core/duration";
-import { DownPointerEvent, PointerEvent } from "../gesture/events";
+import { DownPointerEvent, PanZoomEndPointerEvent, PanZoomStartPointerEvent, PanZoomUpdatePointerEvent, PointerEvent } from "../gesture/events";
 import { HitTestEntry } from "../gesture/hit_test";
+import PanDragGestureRecognizer from "../gesture/recognizers/pan-drag";
 import TapGestureRecognizer from "../gesture/recognizers/tap";
 import Vector, { Offset } from "../math/vector";
 import { Color, Colors } from "../painting/color";
@@ -20,12 +21,22 @@ import { PaintingContext, SingleChildRenderView } from "./basic";
 import { AbstractNode } from "./render-object";
 
 export class EditTextRenderView extends SingleChildRenderView {
-  private textPainter: TextPainter;
+  private _textPainter: TextPainter;
   private hightLightPainter: EditTextHightLightPainter;
   private insertionCaretPainter: EditTextInsertionCaretPainter;
   private _editingConnection: TextEditingConnection;
   private needClip: boolean;
   private onTap: TapGestureRecognizer;
+  private onDrag:PanDragGestureRecognizer;
+  private selection: TextSelection=TextSelection.empty;
+  get textPainter(): TextPainter {
+    return this._textPainter;
+  }
+
+  set textPainter(value: TextPainter) {
+    this._textPainter = value;
+    super.markNeedsLayout();
+  }
   constructor( _editingConnection: TextEditingConnection,insertionCaretPainter: EditTextInsertionCaretPainter,textPainter: TextPainter) {
     super();
     this._editingConnection = _editingConnection;
@@ -35,26 +46,45 @@ export class EditTextRenderView extends SingleChildRenderView {
   protected dropChild(child: AbstractNode): void {
     super.dropChild(child);
     this.onTap = new TapGestureRecognizer();
-    this.onTap.onTap = this.handleTapDown.bind(this);
+    this.onTap.onTapDown = this.handleTapDown.bind(this);
+    this.onDrag=new PanDragGestureRecognizer();
+    this.onDrag.onPanStart=this.handleDragStart.bind(this);
+    this.onDrag.onPanUpdate=this.handleDragUpdate.bind(this);
+    this.onDrag.onPanEnd=this.handleDragEnd.bind(this);
   }
-  private handleTapDown(event: DownPointerEvent) {
+  private handleDragStart(event:PanZoomStartPointerEvent){
+  }
+  private handleDragUpdate(event:PanZoomUpdatePointerEvent){
+    const pointer_position=event.position;
+    const currently_textPoint=this.textPainter.getTextPointForOffset(pointer_position);
+    if(!currently_textPoint)return;
+    let selectionIndex = currently_textPoint.parentData.index;
+    this.selection=TextSelection.fromPosition(new Offset(this.selection.baseOffset,selectionIndex))
+  }
+  private handleDragEnd(event:PanZoomEndPointerEvent){
+    
+  }
+  private handleTapDown(event: DownPointerEvent){
     const textPoint = this.textPainter.getTextPointForOffset(event.position);
     if (!textPoint) return;
+    console.log(textPoint.text);
     let selectionIndex = textPoint.parentData.index;
     this._editingConnection.show();
     const selection=new TextSelection(selectionIndex, selectionIndex);
     this._editingConnection.setSelection(selection);
     const [box]=this.textPainter.getTextBoxesForRange(selection);
     if(box){
+      this.selection=new TextSelection(selectionIndex,selectionIndex);
       if(this.handleSetInsertionCaretPositionByRect(box,event.position)){
         selectionIndex+=1;
-        this._editingConnection.setSelection(new TextSelection(selectionIndex, selectionIndex));
+        this.selection=new TextSelection(selectionIndex,selectionIndex);
+        this._editingConnection.setSelection(this.selection);
       };
     }
   }
   private handleSetInsertionCaretPositionByRect(rect: Rect,position:Offset):boolean{
     let selectionOffset=false;
-    const boxWidth=rect.width*.75;
+    const boxWidth=rect.width*.5;
     const offset=rect.offset;
     if(position.x-rect.x>boxWidth){
       offset.x=rect.right;
@@ -64,12 +94,13 @@ export class EditTextRenderView extends SingleChildRenderView {
     this.insertionCaretPainter.height=rect.height;
     return selectionOffset;
   }
-  handleEvent(event: PointerEvent, entry: HitTestEntry): void {
-    super.handleEvent(event, entry);
-    if (event instanceof DownPointerEvent) {
-      this.onTap.addPointer(event);
-    }
-  }
+  // handleEvent(event: PointerEvent, entry: HitTestEntry): void {
+  //   super.handleEvent(event, entry);
+  //   if (event instanceof DownPointerEvent) {
+  //     this.onTap.addPointer(event);
+  //     this.onDrag.addPointer(event);  
+  //   }
+  // }
   get isRepaintBoundary(): boolean {
     return true;
   }
@@ -86,6 +117,7 @@ export class EditTextRenderView extends SingleChildRenderView {
     );
     const textSize = this.textPainter.size;
     this.size = this.constraints.constrain(textSize);
+    console.log("文字大小",this.size)
   }
   render(context: PaintingContext, offset?: Offset): void {
     if (!context.paint) return;
@@ -101,11 +133,13 @@ export class EditTextRenderView extends SingleChildRenderView {
         () => {
           this.hightLightPainter.render(context?.paint, this.size);
           this.textPainter.paint(context?.paint, offset);
+          this.insertionCaretPainter.render(context?.paint, this.size);
         }
       );
     } else {
       this.hightLightPainter.render(context?.paint, this.size);
       this.textPainter.paint(context?.paint, offset);
+      this.insertionCaretPainter.render(context?.paint, this.size);
     }
   }
   debugRender(context: PaintingContext, offset?: Offset): void {

@@ -72,7 +72,7 @@ export default class TapGestureRecognizer
   }
 
   private checkDown() {
-    if (this.sentDown) return;
+    if (this.sentDown||!this.down) return;
     this.invokeCallback("onTapDown", () => {
       this.onTapDown?.(this.down);
     });

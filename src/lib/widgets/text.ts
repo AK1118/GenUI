@@ -9,6 +9,7 @@ import {
 import { Key } from "../basic/key";
 import Rect, { Size } from "../basic/rect";
 import { AnimationController } from "../core/animation";
+import { TextAlign } from "../core/base-types";
 import { Duration } from "../core/duration";
 import { Offset } from "../math/vector";
 import { TextEditingValue, TextInput } from "../native/text-input";
@@ -53,7 +54,7 @@ export class Editable extends SingleChildRenderObjectWidget {
     context: BuildContext,
     renderView: EditTextRenderView
   ): void {
-
+    renderView.textPainter=this.textPainter;
   }
 }
 
@@ -68,7 +69,7 @@ class EditableTextState extends State<EditableText> implements TextInputClient {
   private insertionCaretPainter: EditTextInsertionCaretPainter =
     new EditTextInsertionCaretPainter();
   private textPainter: TextPainter;
-  private text: string = `测试,好文本`;
+  private text: string = ``;
   public initState(): void {
     super.initState();
     this.editingConnection = TextInput.attach(this, null);
@@ -81,32 +82,39 @@ class EditableTextState extends State<EditableText> implements TextInputClient {
       this.textPainter=new TextPainter(this.textSpan);
     });
     let selection: TextSelection = value.selection;
-    console.log("二年至",this.textPainter);
     if (selection.single) {
+      
       const [box] = this.textPainter?.getTextBoxesForRange(selection);
       if (box) {
-        this.handleSetInsertionCaretPositionByRect(box);
+        this.handleSetInsertionCaretPositionByRect(box,selection);
       }
+      console.log("改变",selection,box)
     }
   }
   /**
    * 随输入框输入位置变化而变化
    */
-  private handleSetInsertionCaretPositionByRect(rect: Rect) {
+  private handleSetInsertionCaretPositionByRect(rect: Rect,selection: TextSelection) {
+    this.setState(()=>{
+    const currently_selection = selection.baseOffset;;
     const offset = rect.offset;
+    if(currently_selection!==0){
+    //  offset.x+=rect.width;
+    }
     this.insertionCaretPainter.offset = offset;
     this.insertionCaretPainter.height = rect.height;
+    })
   }
   get textSpan(): TextSpan {
     return new TextSpan({
       text: this.text,
       textStyle: new TextStyle({
-        fontSize: 20,
+        fontSize: 15,
+        textAlign:TextAlign.unset
       }),
     });
   }
   build(context: BuildContext): Widget {
-    
     return new Editable({
       editingConnection: this.editingConnection,
       textPainter: this.textPainter,
