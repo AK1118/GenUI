@@ -33,10 +33,9 @@ import {
   Transform,
 } from "@/lib/widgets/basic";
 import { Column, Container, Row } from "@/lib/widgets/widgets";
-import ScreenUtils from "./screen-utils";
-import { screenUtil } from "./index";
 import {Color,Colors } from "@/lib/painting/color";
 import { RadialGradient } from "@/lib/painting/gradient";
+import { screenUtil } from "./demos/template";
 const scale = 2;
 const sp = (value: number) => screenUtil.setSp(value * scale);
 const sw = (value: number) => screenUtil.setWidth(value * scale);

@@ -94,13 +94,13 @@ export class EditTextRenderView extends SingleChildRenderView {
     this.insertionCaretPainter.height=rect.height;
     return selectionOffset;
   }
-  // handleEvent(event: PointerEvent, entry: HitTestEntry): void {
-  //   super.handleEvent(event, entry);
-  //   if (event instanceof DownPointerEvent) {
-  //     this.onTap.addPointer(event);
-  //     this.onDrag.addPointer(event);  
-  //   }
-  // }
+  handleEvent(event: PointerEvent, entry: HitTestEntry): void {
+    super.handleEvent(event, entry);
+    if (event instanceof DownPointerEvent) {
+      this.onTap.addPointer(event);
+      this.onDrag.addPointer(event);  
+    }
+  }
   get isRepaintBoundary(): boolean {
     return true;
   }
