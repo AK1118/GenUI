@@ -67,20 +67,26 @@ export class EditTextRenderView extends SingleChildRenderView {
   private handleTapDown(event: DownPointerEvent){
     const textPoint = this.textPainter.getTextPointForOffset(event.position);
     if (!textPoint) return;
-    console.log(textPoint.text);
     let selectionIndex = textPoint.parentData.index;
+    console.log("选中文字",textPoint.text,"选择Selection",selectionIndex);
     this._editingConnection.show();
+
+    const textGeometry = textPoint.parentData.box;
+    const isRightIndicator=this.isRightIndicator(textGeometry,event.position);
+    if(!isRightIndicator){
+      selectionIndex=Math.max(0,selectionIndex-1);
+    }
     const selection=new TextSelection(selectionIndex, selectionIndex);
     this._editingConnection.setSelection(selection);
     const [box]=this.textPainter.getTextBoxesForRange(selection);
     if(box){
-      this.selection=new TextSelection(selectionIndex,selectionIndex);
-      if(this.handleUpdateIndicatorPositionByRect(box,event.position)){
-        selectionIndex+=1;
-        this.selection=new TextSelection(selectionIndex,selectionIndex);
-        this._editingConnection.setSelection(this.selection);
-      };
+      this.handleUpdateIndicatorPositionByRect(box,event.position);
     }
+  }
+  //指示器是否在文字右边
+  private isRightIndicator(rect: Rect,position:Offset):boolean{
+    const boxWidth=rect.width*.5;
+    return position.x-rect.x>boxWidth;
   }
   private handleUpdateIndicatorPositionByRect(rect: Rect,position:Offset):boolean{
     let selectionOffset=false;
@@ -92,7 +98,6 @@ export class EditTextRenderView extends SingleChildRenderView {
     }
     this.indicatorPainter.offset = offset;
     this.indicatorPainter.height=rect.height;
-    console.log("哇嘎嘎",offset)
     return selectionOffset;
   }
   handleEvent(event: PointerEvent, entry: HitTestEntry): void {

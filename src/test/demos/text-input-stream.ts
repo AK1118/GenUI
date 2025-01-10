@@ -86,7 +86,7 @@ export class TextNativeInputAdapter extends ChangeNotifier{
   private stream: Stream<string>;
   private value: string = "";
   //(s,e]
-  private selection: TextSelection = new TextSelection(1,1);
+  private selection: TextSelection = new TextSelection(5,5);
   constructor(stream: Stream<string>,defaultValue:string) {
     super();
     this.stream = stream;
@@ -101,7 +101,9 @@ export class TextNativeInputAdapter extends ChangeNotifier{
 
   private handleDiffText(newValue: string) {
     const diff = newValue.length - this.value.length; // 计算增量，判断是插入还是删除
-    if (newValue.length === 0) return this.handleWhenValueIsEmpty();
+    if (newValue.length === 0&&this.selection.lastOffset>=0){
+      return this.handleWhenValueIsEmpty();
+    }
     // 处理删除操作
     if (diff < 0) {
       if (this.selection.single) this.performDeleteTextSingle(newValue, diff);
@@ -118,29 +120,8 @@ export class TextNativeInputAdapter extends ChangeNotifier{
   private performDeleteTextSingle(newValue: string, diff: number) {
     const selection = this.selection;
     const oldValue = this.value;
-    if (selection.lastOffset <= 0) {
-      this.handleUpdateElementTextValue(oldValue);
-      return;
-    }
-    // 删除操作意味着值被截断
-    const deleteCount = Math.abs(diff);
-    // 将文本分割成 FSL 和 RSL（分别代表光标前后的文本）
-    const fst = oldValue.slice(0, selection.baseOffset-1);
-    const lst = oldValue.slice(
-      -1+selection.extentOffset + deleteCount
-    ); // 删除操作后剩余的部分
-
-    // 更新值
-    const value = fst + lst;
-
-    let newSelection = Math.max(0, selection.baseOffset - deleteCount); // 防止光标越界
-    this.handleSetSelection(new TextSelection(newSelection, newSelection));
-    this.handleUpdateElementTextValue(value);
-  }
-  private performDeleteText(newValue: string, diff: number) {
-    const selection = this.selection;
-    const oldValue = this.value;
-    if (selection.lastOffset <= 0) {
+    if (selection.lastOffset < 0) {
+      
       this.handleUpdateElementTextValue(oldValue);
       return;
     }
@@ -149,14 +130,37 @@ export class TextNativeInputAdapter extends ChangeNotifier{
     // 将文本分割成 FSL 和 RSL（分别代表光标前后的文本）
     const fst = oldValue.slice(0, selection.baseOffset);
     const lst = oldValue.slice(
-      selection.extentOffset + deleteCount-1,
+      selection.extentOffset + deleteCount
+    ); // 删除操作后剩余的部分
+
+    // 更新值
+    const value = fst + lst;
+    console.log("删除单个",selection,fst,lst,value);
+
+    let newSelection = Math.max(-1, selection.baseOffset - deleteCount); // 防止光标越界
+    this.handleSetSelection(new TextSelection(newSelection, newSelection));
+    this.handleUpdateElementTextValue(value);
+  }
+  private performDeleteText(newValue: string, diff: number) {
+    const selection = this.selection;
+    const oldValue = this.value;
+    if (selection.lastOffset < 0) {
+      this.handleUpdateElementTextValue(oldValue);
+      return;
+    }
+    // 删除操作意味着值被截断
+    const deleteCount = Math.abs(diff);
+    // 将文本分割成 FSL 和 RSL（分别代表光标前后的文本）
+    const fst = oldValue.slice(0, selection.baseOffset);
+    const lst = oldValue.slice(
+      selection.extentOffset + deleteCount,
       oldValue.length
     ); // 删除操作后剩余的部分
 
     // 更新值
     const value = fst + lst;
 
-    let newSelection = Math.max(0, selection.baseOffset); // 防止光标越界
+    let newSelection = Math.max(-1, selection.baseOffset- deleteCount); // 防止光标越界
     this.handleSetSelection(new TextSelection(newSelection, newSelection));
     this.handleUpdateElementTextValue(value);
   }
@@ -172,16 +176,15 @@ export class TextNativeInputAdapter extends ChangeNotifier{
     const insert = newValue.slice(oldValue.length, oldValue.length + diff);
 
     // 插入新的文本
-    const fst = oldValue.slice(0, selection.baseOffset); // 光标前的文本
-    const lst = oldValue.slice(selection.extentOffset); // 光标后的文本
+    const fst = oldValue.slice(0, selection.baseOffset+1); // 光标前的文本
+    const lst = oldValue.slice(selection.extentOffset+1); // 光标后的文本
 
     // 更新值
     const value = fst + insert + lst;
-    this.handleUpdateElementTextValue(value);
-
     const lastOffset: number = selection.lastOffset + diff;
     const newSelection = new TextSelection(lastOffset, lastOffset);
     this.handleSetSelection(newSelection);
+    this.handleUpdateElementTextValue(value);
   }
 
   private handleUpdateElementTextValue(value: string) {
@@ -198,95 +201,95 @@ export class TextNativeInputAdapter extends ChangeNotifier{
     };
   }
   public updateSelection(selectionStart: number, selectionEnd: number) {
-    console.log("更新Selection", selectionStart, selectionEnd);
+    console.log("改变Selection",selectionEnd,selectionStart)
     this.handleSetSelection(new TextSelection(selectionStart, selectionEnd));
   }
 }
 
 export const TextInputStreamDemo = () => {
   const syncStream = Stream.withAsync<string>(NativeInputStream());
-  const handler: TextNativeInputAdapter = new TextNativeInputAdapter(
-    syncStream,
-    "123456"
-  );
-  // const inputStream = syncStream;
-  // let value = "123456";
-  // let selection = 3;
-  // let nextEpochAccept = true;
+  // const handler: TextNativeInputAdapter = new TextNativeInputAdapter(
+  //   syncStream,
+  //   "123456"
+  // );
+  const inputStream = syncStream;
+  let value = "";
+  let selection = 0;
+  let nextEpochAccept = true;
 
-  // // setTimeout(() => {
-  // //   selection = 3;
-  // //   console.log("改变Selection为3");
-  // // }, 4000);
+  setTimeout(() => {
+    selection = 5;
+    console.log("改变Selection为3");
+  }, 4000);
 
-  // // 监听并处理键盘输入
-  // (async () => {
-  //   let i = 0;
-  //   let key: string;
+  // 监听并处理键盘输入
+  (async () => {
+    let i = 0;
+    let key: string;
 
-  //   for await (key of inputStream) {
-  //     if (i++ > 100) {
-  //       console.error("死循环");
-  //       break;
-  //     }
+    for await (key of inputStream) {
+      if (i++ > 100) {
+        console.error("死循环");
+        break;
+      }
 
-  //     const newValue: string = key;
-  //     const diff = newValue.length - value.length; // 计算增量，判断是插入还是删除
+      const newValue: string = key;
+      const diff = newValue.length - value.length; // 计算增量，判断是插入还是删除
 
-  //     if (!nextEpochAccept) {
-  //       nextEpochAccept = true;
-  //       continue;
-  //     }
+      if (!nextEpochAccept) {
+        nextEpochAccept = true;
+        continue;
+      }
 
-  //     // 处理删除操作
-  //     if (diff < 0) {
-  //       console.log("删除操作", selection);
-  //       if (selection <= 0) {
-  //         const text: HTMLInputElement = document.querySelector("#inputbar");
-  //         text.value = value;
-  //         continue;
-  //       }
-  //       // 删除操作意味着值被截断
-  //       const deleteCount = Math.abs(diff);
-  //       // 将文本分割成 FSL 和 RSL（分别代表光标前后的文本）
-  //       const fst = value.slice(0, selection - 1);
-  //       const lst = value.slice(-1 + selection + deleteCount); // 删除操作后剩余的部分
+      // 处理删除操作
+      if (diff < 0) {
+        console.log("删除操作", selection);
+        if (selection <= 0) {
+          const text: HTMLInputElement = document.querySelector("#inputbar");
+          text.value = value;
+          continue;
+        }
+        // 删除操作意味着值被截断
+        const deleteCount = Math.abs(diff);
+        // 将文本分割成 FSL 和 RSL（分别代表光标前后的文本）
+        const fst = value.slice(0, selection - 1);
+        const lst = value.slice(-1 + selection + deleteCount); // 删除操作后剩余的部分
 
-  //       // 更新值
-  //       value = fst + lst;
+        // 更新值
+        value = fst + lst;
 
-  //       // 调整 selection 位置
-  //       selection = Math.max(0, selection - deleteCount); // 防止光标越界
-  //       console.log("删除后的值", value);
-  //     } else {
-  //       // 输入操作
-  //       console.log("输入操作");
+        // 调整 selection 位置
+        selection = Math.max(0, selection - deleteCount); // 防止光标越界
+        console.log("删除后的值", value);
+      } else {
+        // 输入操作
+        console.log("输入操作");
 
-  //       // 获取新增的字符
-  //       const insert = newValue.slice(value.length, value.length + diff);
+        // 获取新增的字符
+        const insert = newValue.slice(value.length, value.length + diff);
 
-  //       // 插入新的文本
-  //       const fst = value.slice(0, selection); // 光标前的文本
-  //       const lst = value.slice(selection); // 光标后的文本
+        // 插入新的文本
+        const fst = value.slice(0, selection); // 光标前的文本
+        const lst = value.slice(selection); // 光标后的文本
 
-  //       // 更新值
-  //       value = fst + insert + lst;
+        // 更新值
+        value = fst + insert + lst;
 
-  //       // 更新光标位置
-  //       selection += diff;
+        // 更新光标位置
+        selection += diff;
 
-  //       console.log("新增了", insert);
-  //       console.log("当前值", value);
-  //     }
+        console.log("新增了", insert);
+        console.log("当前值", value);
+      }
 
-  //     // 更新 input 元素的值
-  //     const text: HTMLInputElement = document.querySelector("#inputbar");
-  //     text.value = value;
+      // 更新 input 元素的值
+      const text: HTMLInputElement = document.querySelector("#inputbar");
+      text.value = value;
 
-  //     // 打印当前的光标位置
-  //     console.log("改变Selection", selection);
-  //   }
-  // })();
+      // 打印当前的光标位置
+      console.log("改变Selection", selection);
+    }
+  })();
 };
 
 /**

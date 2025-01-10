@@ -84,10 +84,7 @@ class EditableTextState extends State<EditableText> implements TextInputClient {
     let selection: TextSelection = value.selection;
     if (selection.single) {
       const [box] = this.textPainter?.getTextBoxesForRange(selection);
-      console.log("该Selection有",box)
-      if (box) {
-        this.handleUpdateIndicatorPosition(box, selection);
-      }
+      this.handleUpdateIndicatorPosition(box, selection);
     }
   }
   /**
@@ -95,10 +92,11 @@ class EditableTextState extends State<EditableText> implements TextInputClient {
    */
   private handleUpdateIndicatorPosition(rect: Rect, selection: TextSelection) {
     this.setState(() => {
+      rect??=Rect.zero;
       const currently_selection = selection.baseOffset;
       const offset = rect.offset;
-      if (currently_selection !== 0) {
-        // offset.x += rect.width;
+      if (currently_selection !==-1) {
+        offset.x += rect.width;
       }
       this.insertionCaretPainter.offset = offset;
       this.insertionCaretPainter.height = rect.height;
