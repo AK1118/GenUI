@@ -21,45 +21,79 @@
  *
  */
 
+import { Offset } from "@/lib/basic/rect";
+import { ChangeNotifier } from "@/lib/core/change-notifier";
 import Stream from "@/lib/core/stream";
+import { TextRange } from "@/lib/services/text-editing";
 //@ts-ignore
 import eruda from "eruda";
 
 eruda.init();
-async function* asyncGenerator() {
-  for (let i = 0; i < 10; i++) {
-    yield new Promise((r) => {
-      return setTimeout(() => {
-        r(i);
-      }, i * 100);
-    });
-  }
-  // yield Promise.resolve(10);
-}
 
-async function* keyboardInputStream(): AsyncGenerator<string> {
+export async function* NativeInputStream(): AsyncGenerator<string> {
   const text: HTMLInputElement = document.querySelector("#inputbar");
-  text.value = "123456";
+  let isComposition=false;
   while (true) {
     const key = await new Promise<string>((resolve) => {
-      text.addEventListener("input", (e) => {
+      text.addEventListener("compositionstart", (e) => {
+        isComposition=true;
+        resolve(text.value);
+      },{once:true});
+      text.addEventListener("compositionend", (e) => {
+        isComposition=false;
         resolve((e.target as HTMLInputElement).value);
-      });
+      },{once:true});
+      if(!isComposition){
+        text.addEventListener("input", (e) => {
+          resolve((e.target as HTMLInputElement).value);
+        },{once:true});
+      }
     });
     yield key; // 将按键返回给消费者
   }
 }
 
-class TextNativeInputHandler {
+export class TextSelection {
+  public readonly baseOffset: number;
+  public readonly extentOffset: number;
+  constructor(baseOffset: number, extentOffset: number) {
+    this.baseOffset = Math.min(baseOffset, extentOffset);
+    this.extentOffset = Math.max(baseOffset, extentOffset);
+  }
+  static fromPosition(offset: Offset): TextSelection {
+    return new TextSelection(offset.x, offset.y);
+  }
+  static get empty(): TextSelection {
+    return new TextSelection(0, 0);
+  }
+  get lastOffset(): number {
+    const forwardOffset = Math.max(this.baseOffset, this.extentOffset);
+    const backwardOffset = Math.min(this.baseOffset, this.extentOffset);
+    if (forwardOffset === backwardOffset) return forwardOffset;
+    if (backwardOffset - forwardOffset === 1) return forwardOffset;
+    return backwardOffset;
+  }
+  get single(): boolean {
+    return this.baseOffset === this.extentOffset;
+  }
+}
+export interface TextNativeInputStreamPayload{
+  value:string,
+  selectionStart:number,
+  selectionEnd:number,
+}
+export class TextNativeInputAdapter extends ChangeNotifier{
   private stream: Stream<string>;
-  private value: string = "123456";
-  private selection = 3;
-  constructor(stream: Stream<string>) {
+  private value: string = "";
+  //(s,e]
+  private selection: TextSelection = new TextSelection(1,1);
+  constructor(stream: Stream<string>,defaultValue:string) {
+    super();
     this.stream = stream;
+    this.value = defaultValue;
     this.handleListenInput();
   }
   public async handleListenInput() {
-    let i = 0;
     for await (const value of this.stream) {
       this.handleDiffText(value);
     }
@@ -67,43 +101,68 @@ class TextNativeInputHandler {
 
   private handleDiffText(newValue: string) {
     const diff = newValue.length - this.value.length; // 计算增量，判断是插入还是删除
-    if(newValue.length === 0) return this.handleWhenValueIsEmpty();
+    if (newValue.length === 0) return this.handleWhenValueIsEmpty();
     // 处理删除操作
     if (diff < 0) {
-      this.performDeleteText(newValue, diff);
+      if (this.selection.single) this.performDeleteTextSingle(newValue, diff);
+      else this.performDeleteText(newValue, diff);
     } else {
       this.performInsertText(newValue, diff);
     }
   }
-  private handleWhenValueIsEmpty(){
-    this.handleUpdateElementTextValue("")
-    this.value = ""
-    this.selection = 0
+  private handleWhenValueIsEmpty() {
+    this.value = "";
+    this.handleSetSelection(TextSelection.empty);
+    this.handleUpdateElementTextValue("");
   }
-  private performDeleteText(newValue: string, diff: number) {
+  private performDeleteTextSingle(newValue: string, diff: number) {
     const selection = this.selection;
     const oldValue = this.value;
-    if (selection <= 0) {
+    if (selection.lastOffset <= 0) {
       this.handleUpdateElementTextValue(oldValue);
       return;
     }
     // 删除操作意味着值被截断
     const deleteCount = Math.abs(diff);
     // 将文本分割成 FSL 和 RSL（分别代表光标前后的文本）
-    const fst = oldValue.slice(0, selection - 1);
-    const lst = oldValue.slice(-1 + selection + deleteCount); // 删除操作后剩余的部分
+    const fst = oldValue.slice(0, selection.baseOffset-1);
+    const lst = oldValue.slice(
+      -1+selection.extentOffset + deleteCount
+    ); // 删除操作后剩余的部分
 
     // 更新值
     const value = fst + lst;
 
-    // 调整 selection 位置
-    const newSelection = Math.max(0, selection - deleteCount); // 防止光标越界
-    this.handleSetSelection(newSelection);
+    let newSelection = Math.max(0, selection.baseOffset - deleteCount); // 防止光标越界
+    this.handleSetSelection(new TextSelection(newSelection, newSelection));
     this.handleUpdateElementTextValue(value);
   }
-  private handleSetSelection(selection: number) {
+  private performDeleteText(newValue: string, diff: number) {
+    const selection = this.selection;
+    const oldValue = this.value;
+    if (selection.lastOffset <= 0) {
+      this.handleUpdateElementTextValue(oldValue);
+      return;
+    }
+    // 删除操作意味着值被截断
+    const deleteCount = Math.abs(diff);
+    // 将文本分割成 FSL 和 RSL（分别代表光标前后的文本）
+    const fst = oldValue.slice(0, selection.baseOffset);
+    const lst = oldValue.slice(
+      selection.extentOffset + deleteCount-1,
+      oldValue.length
+    ); // 删除操作后剩余的部分
+
+    // 更新值
+    const value = fst + lst;
+
+    let newSelection = Math.max(0, selection.baseOffset); // 防止光标越界
+    this.handleSetSelection(new TextSelection(newSelection, newSelection));
+    this.handleUpdateElementTextValue(value);
+  }
+  private handleSetSelection(selection: TextSelection) {
     // 调整 selection 位置
-    this.selection = Math.max(0, selection); // 防止光标越界
+    this.selection = selection;
   }
   private performInsertText(newValue: string, diff: number) {
     const oldValue = this.value;
@@ -113,26 +172,42 @@ class TextNativeInputHandler {
     const insert = newValue.slice(oldValue.length, oldValue.length + diff);
 
     // 插入新的文本
-    const fst = oldValue.slice(0, selection); // 光标前的文本
-    const lst = oldValue.slice(selection); // 光标后的文本
+    const fst = oldValue.slice(0, selection.baseOffset); // 光标前的文本
+    const lst = oldValue.slice(selection.extentOffset); // 光标后的文本
 
     // 更新值
     const value = fst + insert + lst;
     this.handleUpdateElementTextValue(value);
-    this.handleSetSelection(selection + diff);
+
+    const lastOffset: number = selection.lastOffset + diff;
+    const newSelection = new TextSelection(lastOffset, lastOffset);
+    this.handleSetSelection(newSelection);
   }
 
   private handleUpdateElementTextValue(value: string) {
-    this.value=value;
+    this.value = value;
     const text: HTMLInputElement = document.querySelector("#inputbar");
     text.value = value;
+    this.notifyListeners();
+  }
+  get payload(): TextNativeInputStreamPayload {
+    return {
+      value: this.value,
+      selectionStart: this.selection.baseOffset,
+      selectionEnd: this.selection.extentOffset,
+    };
+  }
+  public updateSelection(selectionStart: number, selectionEnd: number) {
+    console.log("更新Selection", selectionStart, selectionEnd);
+    this.handleSetSelection(new TextSelection(selectionStart, selectionEnd));
   }
 }
 
 export const TextInputStreamDemo = () => {
-  const syncStream = Stream.withAsync<string>(keyboardInputStream());
-  const handler: TextNativeInputHandler = new TextNativeInputHandler(
-    syncStream
+  const syncStream = Stream.withAsync<string>(NativeInputStream());
+  const handler: TextNativeInputAdapter = new TextNativeInputAdapter(
+    syncStream,
+    "123456"
   );
   // const inputStream = syncStream;
   // let value = "123456";

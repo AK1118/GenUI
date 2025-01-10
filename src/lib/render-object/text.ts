@@ -16,14 +16,14 @@ import {
   TextRange,
   TextSelection,
 } from "../services/text-editing";
-import { EditTextInsertionCaretPainter } from "../widgets/text";
+import { EditTextIndicatorPainter } from "../widgets/text";
 import { PaintingContext, SingleChildRenderView } from "./basic";
 import { AbstractNode } from "./render-object";
 
 export class EditTextRenderView extends SingleChildRenderView {
   private _textPainter: TextPainter;
   private hightLightPainter: EditTextHightLightPainter;
-  private insertionCaretPainter: EditTextInsertionCaretPainter;
+  private indicatorPainter: EditTextIndicatorPainter;
   private _editingConnection: TextEditingConnection;
   private needClip: boolean;
   private onTap: TapGestureRecognizer;
@@ -37,10 +37,10 @@ export class EditTextRenderView extends SingleChildRenderView {
     this._textPainter = value;
     super.markNeedsLayout();
   }
-  constructor( _editingConnection: TextEditingConnection,insertionCaretPainter: EditTextInsertionCaretPainter,textPainter: TextPainter) {
+  constructor( _editingConnection: TextEditingConnection,indicatorPainter: EditTextIndicatorPainter,textPainter: TextPainter) {
     super();
     this._editingConnection = _editingConnection;
-    this.insertionCaretPainter=insertionCaretPainter;
+    this.indicatorPainter=indicatorPainter;
     this.textPainter=textPainter;
   }
   protected dropChild(child: AbstractNode): void {
@@ -75,14 +75,14 @@ export class EditTextRenderView extends SingleChildRenderView {
     const [box]=this.textPainter.getTextBoxesForRange(selection);
     if(box){
       this.selection=new TextSelection(selectionIndex,selectionIndex);
-      if(this.handleSetInsertionCaretPositionByRect(box,event.position)){
+      if(this.handleUpdateIndicatorPositionByRect(box,event.position)){
         selectionIndex+=1;
         this.selection=new TextSelection(selectionIndex,selectionIndex);
         this._editingConnection.setSelection(this.selection);
       };
     }
   }
-  private handleSetInsertionCaretPositionByRect(rect: Rect,position:Offset):boolean{
+  private handleUpdateIndicatorPositionByRect(rect: Rect,position:Offset):boolean{
     let selectionOffset=false;
     const boxWidth=rect.width*.5;
     const offset=rect.offset;
@@ -90,8 +90,9 @@ export class EditTextRenderView extends SingleChildRenderView {
       offset.x=rect.right;
       selectionOffset=true;
     }
-    this.insertionCaretPainter.offset = offset;
-    this.insertionCaretPainter.height=rect.height;
+    this.indicatorPainter.offset = offset;
+    this.indicatorPainter.height=rect.height;
+    console.log("哇嘎嘎",offset)
     return selectionOffset;
   }
   handleEvent(event: PointerEvent, entry: HitTestEntry): void {
@@ -110,6 +111,9 @@ export class EditTextRenderView extends SingleChildRenderView {
       this.hightLightPainter.addListener(() => {
         this.markNeedsPaint();
       });
+      this.indicatorPainter.addListener(() => {
+        this.markNeedsPaint();
+      });
     }
     this.textPainter.layout(
       this.constraints.minWidth,
@@ -117,7 +121,6 @@ export class EditTextRenderView extends SingleChildRenderView {
     );
     const textSize = this.textPainter.size;
     this.size = this.constraints.constrain(textSize);
-    console.log("文字大小",this.size)
   }
   render(context: PaintingContext, offset?: Offset): void {
     if (!context.paint) return;
@@ -133,13 +136,13 @@ export class EditTextRenderView extends SingleChildRenderView {
         () => {
           this.hightLightPainter.render(context?.paint, this.size);
           this.textPainter.paint(context?.paint, offset);
-          this.insertionCaretPainter.render(context?.paint, this.size);
+          this.indicatorPainter.render(context?.paint, this.size);
         }
       );
     } else {
       this.hightLightPainter.render(context?.paint, this.size);
       this.textPainter.paint(context?.paint, offset);
-      this.insertionCaretPainter.render(context?.paint, this.size);
+      this.indicatorPainter.render(context?.paint, this.size);
     }
   }
   debugRender(context: PaintingContext, offset?: Offset): void {
@@ -156,13 +159,13 @@ export class EditTextRenderView extends SingleChildRenderView {
         () => {
           this.hightLightPainter.render(context?.paint, this.size);
           this.textPainter.paint(context?.paint, offset, true);
-          this.insertionCaretPainter.render(context?.paint, this.size);
+          this.indicatorPainter.render(context?.paint, this.size);
         }
       );
     } else {
       this.hightLightPainter.render(context?.paint, this.size);
       this.textPainter.paint(context?.paint, offset, true);
-      this.insertionCaretPainter.render(context?.paint, this.size);
+      this.indicatorPainter.render(context?.paint, this.size);
     }
   }
 }

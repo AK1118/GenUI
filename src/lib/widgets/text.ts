@@ -29,13 +29,13 @@ interface EditableArguments {
   text: TextSpan;
   editingConnection: TextEditingConnection;
   key: Key;
-  insertionCaretPainter: EditTextInsertionCaretPainter;
+  insertionCaretPainter: EditTextIndicatorPainter;
   textPainter: TextPainter;
 }
 
 export class Editable extends SingleChildRenderObjectWidget {
   private editingConnection: TextEditingConnection;
-  private insertionCaretPainter: EditTextInsertionCaretPainter;
+  private insertionCaretPainter: EditTextIndicatorPainter;
   private textPainter: TextPainter;
   constructor(args: Partial<EditableArguments>) {
     super(null, args?.key);
@@ -54,7 +54,7 @@ export class Editable extends SingleChildRenderObjectWidget {
     context: BuildContext,
     renderView: EditTextRenderView
   ): void {
-    renderView.textPainter=this.textPainter;
+    renderView.textPainter = this.textPainter;
   }
 }
 
@@ -66,51 +66,50 @@ export class EditableText extends StatefulWidget {
 
 class EditableTextState extends State<EditableText> implements TextInputClient {
   private editingConnection: TextEditingConnection;
-  private insertionCaretPainter: EditTextInsertionCaretPainter =
-    new EditTextInsertionCaretPainter();
+  private insertionCaretPainter: EditTextIndicatorPainter =
+    new EditTextIndicatorPainter();
   private textPainter: TextPainter;
   private text: string = ``;
   public initState(): void {
     super.initState();
     this.editingConnection = TextInput.attach(this, null);
-    this.textPainter=new TextPainter(this.textSpan);
+    this.textPainter = new TextPainter(this.textSpan);
   }
   updateEditingValue(value: TextEditingValue): void {
-    if(!this.mounted)return;
+    if (!this.mounted) return;
     this.setState(() => {
       this.text = value.value;
-      this.textPainter=new TextPainter(this.textSpan);
+      this.textPainter = new TextPainter(this.textSpan);
     });
     let selection: TextSelection = value.selection;
     if (selection.single) {
-      
       const [box] = this.textPainter?.getTextBoxesForRange(selection);
+      console.log("该Selection有",box)
       if (box) {
-        this.handleSetInsertionCaretPositionByRect(box,selection);
+        this.handleUpdateIndicatorPosition(box, selection);
       }
-      console.log("改变",selection,box)
     }
   }
   /**
    * 随输入框输入位置变化而变化
    */
-  private handleSetInsertionCaretPositionByRect(rect: Rect,selection: TextSelection) {
-    this.setState(()=>{
-    const currently_selection = selection.baseOffset;;
-    const offset = rect.offset;
-    if(currently_selection!==0){
-    //  offset.x+=rect.width;
-    }
-    this.insertionCaretPainter.offset = offset;
-    this.insertionCaretPainter.height = rect.height;
-    })
+  private handleUpdateIndicatorPosition(rect: Rect, selection: TextSelection) {
+    this.setState(() => {
+      const currently_selection = selection.baseOffset;
+      const offset = rect.offset;
+      if (currently_selection !== 0) {
+        // offset.x += rect.width;
+      }
+      this.insertionCaretPainter.offset = offset;
+      this.insertionCaretPainter.height = rect.height;
+    });
   }
   get textSpan(): TextSpan {
     return new TextSpan({
       text: this.text,
       textStyle: new TextStyle({
         fontSize: 15,
-        textAlign:TextAlign.unset
+        textAlign: TextAlign.unset,
       }),
     });
   }
@@ -125,7 +124,7 @@ class EditableTextState extends State<EditableText> implements TextInputClient {
 
 export default EditableText;
 
-export class EditTextInsertionCaretPainter extends CustomPainter {
+export class EditTextIndicatorPainter extends CustomPainter {
   private _color: Color = Colors.black;
   private _thickness: number = 2;
   private _offset: Offset = Offset.zero;
