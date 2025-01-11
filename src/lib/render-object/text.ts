@@ -65,10 +65,11 @@ export class EditTextRenderView extends SingleChildRenderView {
     
   }
   private handleTapDown(event: DownPointerEvent){
+    
     const textPoint = this.textPainter.getTextPointForOffset(event.position);
+    console.log("点击",textPoint)
     if (!textPoint) return;
     let selectionIndex = textPoint.parentData.index;
-    console.log("选中文字",textPoint.text,"选择Selection",selectionIndex);
     this._editingConnection.show();
 
     const textGeometry = textPoint.parentData.box;

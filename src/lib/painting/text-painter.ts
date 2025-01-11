@@ -228,11 +228,11 @@ export class TextStyle
   }
 }
 
-class TextBox extends Rect{
+class TextBox extends Rect {
   direction: TextDirection;
   lineHeight: number;
   constructor(width: number, height: number, direction: TextDirection) {
-    super(0,0,width,height);
+    super(0, 0, width, height);
     this.direction = direction;
   }
   static fromLTRBD(
@@ -246,7 +246,7 @@ class TextBox extends Rect{
   copy(): TextBox {
     const newTextBox = new TextBox(this.width, this.height, this.direction);
     newTextBox.lineHeight = this.lineHeight;
-    newTextBox.offset=this.offset;
+    newTextBox.offset = this.offset;
     return newTextBox;
   }
 }
@@ -270,6 +270,11 @@ class TextPointParentData extends TreeNode<TextPoint> {
   public broCount: number = 1;
   public wordCountWidth: number = 0;
   public baseLineOffsetY: number = 0;
+  /**
+   * 在渲染上的盒子，某些特定字符与box可能不太一致
+   * 例如：换行符 参考 @Paragraph.performLayoutTextOffset 方法内的  _.parentData.visualBox.width=constraints.width;
+   */
+  public visualBox:TextBox;
 }
 
 class TextPoint {
@@ -315,7 +320,7 @@ abstract class ParagraphControl {
   getTextPointForOffset(offset: Offset): TextPoint {
     return null;
   }
-  getTextBoxesForRange(selection:TextSelection): Array<TextBox>{
+  getTextBoxesForRange(selection: TextSelection): Array<TextBox> {
     return [];
   }
 }
@@ -364,7 +369,7 @@ export class Paragraph extends ParagraphControl {
   ) {
     if (!this.text.length) return;
     //初始化切割文字
-    this.performLayoutTextOffset(paint, startOffset);
+    this.performLayoutTextOffset(paint, startOffset,constraints);
     //合成单词
     this.handleCompileWord();
     this.performConstraintsWidth(constraints, 0, 1, this.textStyle.maxLines);
@@ -445,20 +450,22 @@ export class Paragraph extends ParagraphControl {
       //遇到空格中文跳过
       if (
         TextPainter.isNewline(currentTextCodePoint) ||
-        TextPainter.isSpace(currentTextCodePoint) 
-        ||
+        TextPainter.isSpace(currentTextCodePoint) ||
         currentTextCodePoint > 256
       ) {
+        //遇到空格或换行符，则重新开始计算单词宽度
+        //所以wordCount = 0; 且该ParentData.broCount 默认为1，参考 @TextPointParentData.broCount
+        parentData.broCount = 1;
         current = parentData.nextNode;
         currentHead = current;
-        wordCount = 1;
+        wordCount = 0;
         continue;
       } else {
         current = parentData.nextNode;
         currentHead.parentData.broCount = ++wordCount;
         //词缀无实际broCount
         if (wordCount >= 1 && current?.isWord) {
-          current.parentData.broCount = 0;
+          current.parentData.broCount = 1;
         }
         currentHead.parentData.wordCountWidth += parentData.box.width;
       }
@@ -549,21 +556,23 @@ export class Paragraph extends ParagraphControl {
     lastColumn: number = 1,
     maxLine: number = Infinity
   ) {
-    let current = this.firstTextPoint;
-    while (current != null) {
-      const parentData = current.parentData;
-      const currentTextCodePoint = current?.charCodePoint;
-      current = parentData.nextNode;
-    }
+    // let current = this.firstTextPoint;
+    // while (current != null) {
+    //   const parentData = current.parentData;
+    //   const currentTextCodePoint = current?.charCodePoint;
+    //   current = parentData.nextNode;
+    // }
     if (lastColumn > maxLine)
       return {
         column: lastColumn,
         subDeltaX: lastSubDeltaX,
       };
-    let column = 1,
-      subDeltaX = lastSubDeltaX;
+
+    let subDeltaX = lastSubDeltaX;
     const constraintsWidth = constraints.width;
     const len = this.textPoints.length;
+    let forwardColumnLastX=0;
+    //遍历所有字符串，且index随每个字符的兄弟字符(broCount)增长，broCount最小为1，即每个字符至少占据一个位置
     for (let index = 0; index < len; index) {
       const textPoint = this.textPoints[index];
       const codePoint = textPoint.text.charCodeAt(0);
@@ -574,9 +583,16 @@ export class Paragraph extends ParagraphControl {
       let wordWidth = (parentData.wordCountWidth || box.width) + offset.x;
       const textOffsetX = wordWidth + subDeltaX;
       const overflow = constraintsWidth - textOffsetX;
+
+      const nextTextPoint = this.textPoints[index + broCount];
+      const nextCodePoint = nextTextPoint?.text?.charCodeAt(0);
+      // if(TextPainter.isNewline(codePoint)){
+      //   console.log("换行",parentData.index,broCount);
+      // }else{
+      //   console.log("不换行",textPoint.text,parentData.index,broCount,);
+      // }
       if (overflow < 0 || TextPainter.isNewline(codePoint)) {
         subDeltaX = offset.x * -1;
-        column++;
         if (lastColumn >= maxLine) {
           if (this.textStyle?.overflow === TextOverflow.ellipsis) {
             this.replaceEllipsis(textPoint.parentData.preNode);
@@ -589,16 +605,23 @@ export class Paragraph extends ParagraphControl {
         }
         lastColumn += 1;
       }
-      const deltaY = 0;
       let deltaX = subDeltaX + offset.x;
-
-      offset = new Offset(deltaX, deltaY);
+      offset = new Offset(deltaX, 0);
       parentData.column = lastColumn;
+      if (TextPainter.isNewline(codePoint)) {
+        parentData.column -= 1;
+        offset.x=forwardColumnLastX;
+        subDeltaX-=box.width;
+      }
       index += broCount || 1;
       if (broCount !== 0) {
         this.performLayoutRow(textPoint, offset, broCount);
       }
+      if(parentData.wordCountWidth===0){
+        parentData.wordCountWidth=box.width;
+      }
       textPoint.parentData = parentData;
+      forwardColumnLastX=deltaX+parentData.wordCountWidth;
     }
 
     return {
@@ -647,7 +670,7 @@ export class Paragraph extends ParagraphControl {
   /**
    *  将文字处理为[TextBox]并计算每个文字的offset
    */
-  public performLayoutTextOffset(paint: Painter, startOffset: Offset) {
+  public performLayoutTextOffset(paint: Painter, startOffset: Offset,constraints:ParagraphConstraints) {
     // this.textPoints = [];
     // this.firstTextPoint = null;
     // this.lastTextPoint = null;
@@ -662,14 +685,14 @@ export class Paragraph extends ParagraphControl {
       }
     }
     //新换行符不应该包含宽度，所以需要特殊处理
-    this.visitTexts((_=>{
-      if(TextPainter.isNewline(_.charCodePoint)){
-        _.parentData.box.width=0;
+    this.visitTexts((_) => {
+      if (TextPainter.isNewline(_.charCodePoint)) {
+        _.parentData.box.width = 0;
+        _.parentData.visualBox.width=constraints.width;
       }
       return true;
-    }))
+    });
     this.performLayoutRow(this.firstTextPoint, startOffset, null, true);
-    
   }
   /**
    * 该方法只会出现在初始化布局时或布局单词链表对象时。在初始化时会负责将line-height、word-space计算入排版中
@@ -682,12 +705,10 @@ export class Paragraph extends ParagraphControl {
     maxRange?: number,
     initRow?: boolean
   ) {
-    const symbolRegex = /\.|\(|\)|\（|\）|\!|\！/;
     let x: number = parentOffset?.x ?? 0;
     let currentPoint = textPoint;
     let range: number = 0;
     const headTextPointParentData = textPoint.parentData;
-    const lineHeight: number = this.textStyle.height;
     while (currentPoint != null) {
       currentPoint.enable();
       if (maxRange && (range += 1) > maxRange) return;
@@ -695,7 +716,6 @@ export class Paragraph extends ParagraphControl {
       let offset = Offset.zero;
       const box = parentData.box;
       if (initRow) {
-        box.lineHeight = lineHeight;
         if (TextPainter.isSpace(currentPoint.charCodePoint)) {
           box.width += this.textStyle.wordSpacing;
         }
@@ -735,11 +755,14 @@ export class Paragraph extends ParagraphControl {
     paint: Painter,
     after?: TextPoint
   ): TextPoint {
+    const lineHeight: number = this.textStyle.height;
     const textMetrics = this.getMeasureText(paint, text);
     const box = this.getTextBox(textMetrics);
     const textPoint = new TextPoint(text);
     const parentData = textPoint.parentData;
+    box.lineHeight=lineHeight;
     parentData.box = box;
+    parentData.visualBox= box.copy();
     if (after) {
       textPoint.parentData.preNode = after;
       after.parentData.nextNode = textPoint;
@@ -810,8 +833,8 @@ export class Paragraph extends ParagraphControl {
       const { x, y } = parentData.offset;
       const currentX = x + offset.x,
         currentY = y + offset.y;
-      const { width, height, lineHeight } = parentData.box;
-      if (child.hidden||TextPainter.isNewline(child.charCodePoint)) {
+      const { width, height, lineHeight } = parentData.visualBox;
+      if (child.hidden) {
         child = parentData.nextNode;
         continue;
       }
@@ -823,12 +846,18 @@ export class Paragraph extends ParagraphControl {
       } else {
         paint.strokeText(child.text, currentX, baselineY);
       }
-
       if (debugRect) {
-        if (TextPainter.isSpace(child.charCodePoint)) {
+        if (
+          TextPainter.isSpace(child.charCodePoint) ||
+          TextPainter.isNewline(child.charCodePoint)
+        ) {
           paint.beginPath();
           paint.rect(currentX, currentY - lineHeight, width, lineHeight);
-          paint.strokeStyle = "orange";
+          if (TextPainter.isSpace(child.charCodePoint)) {
+            paint.strokeStyle = "orange";
+          } else {
+            paint.strokeStyle = "skyblue";
+          }
           paint.stroke();
           paint.closePath();
         } else {
@@ -856,12 +885,13 @@ export class Paragraph extends ParagraphControl {
     let result: TextPoint;
     this.visitTexts((_textPoint) => {
       const parentData = _textPoint.parentData;
-      const lineHeight = parentData.box.lineHeight;
+      const lineHeight = parentData.visualBox.lineHeight;
       const textRect = _textPoint?.parentData?.box;
+      const rectWidth=_textPoint?.parentData?.visualBox.width;
       const rect = new Rect(
         textRect.x,
         textRect.y - lineHeight,
-        textRect.width,
+        rectWidth,
         lineHeight
       );
       const isContains = rect?.contains(offset);
@@ -871,21 +901,46 @@ export class Paragraph extends ParagraphControl {
       }
       return true;
     });
+    if(TextPainter.isNewline(result?.charCodePoint)){
+      const preNode= result.parentData?.preNode;
+      if(preNode) return preNode;
+    }
+    if(!result){
+      const lastNode= this.lastTextPoint;
+      if(lastNode) return lastNode;
+    }
     return result;
   }
-  getTextBoxesForRange(selection:TextSelection): Array<TextBox>{
+  getTextBoxesForRange(selection: TextSelection): Array<TextBox> {
     const result = new Array();
+
+    /**
+     * 使用过滤返回规则
+     * 例如回车符的偏移坐标需要永远保持x在0处
+     * 返回的Box决定 textIndicator的渲染位置。
+     * 参见 @EditTextRenderView
+     */
+    const customFilterRule=(textPoint:TextPoint):TextBox=>{
+      const parentData = textPoint.parentData;
+      const box = parentData.box.copy();
+      if(TextPainter.isNewline(textPoint.text.charCodeAt(0))){
+        box.offset=new Offset(0,box.offset.y+box.lineHeight);
+      }
+      return box;
+    }
+
     this.visitTexts((textPoint) => {
       const parentData = textPoint.parentData;
       const index = parentData.index;
       if (index >= selection.start && index <= selection.end) {
-        const box = parentData.box;
-        result.push(box);
+        result.push(customFilterRule(textPoint));
       }
       return index <= selection.end;
     });
     return result;
   }
+
+
 }
 
 /**
@@ -936,7 +991,7 @@ export class MulParagraph extends Paragraph {
     paint: Painter,
     startOffset?: Offset
   ) {
-    this.applyPerformLayoutHorizontalOffset(paint, startOffset);
+    this.applyPerformLayoutHorizontalOffset(paint, startOffset,constraints);
     const maxColumn = this.applyPerformLayoutConstraints(
       constraints,
       this.textStyle.maxLines
@@ -1037,13 +1092,14 @@ export class MulParagraph extends Paragraph {
   }
   private applyPerformLayoutHorizontalOffset(
     paint: Painter,
-    startOffset: Offset = Offset.zero
+    startOffset: Offset = Offset.zero,
+    constraints:ParagraphConstraints
   ) {
     let child = this.firstChild;
     let lastedOffset: Offset = startOffset;
     while (child != null) {
       const parentData = child.parentData;
-      child.performLayoutTextOffset(paint, lastedOffset);
+      child.performLayoutTextOffset(paint, lastedOffset,constraints);
       child.handleCompileWord();
       lastedOffset = child.getNextStartOffset();
       child = parentData.nextNode;
@@ -1350,11 +1406,11 @@ export class TextPainter extends ParagraphControl {
   getTextPointForOffset(offset: Offset): TextPoint {
     return this.paragraph.getTextPointForOffset(offset);
   }
-  getTextBoxesForRange(selection:TextSelection): Array<TextBox> {
+  getTextBoxesForRange(selection: TextSelection): Array<TextBox> {
     return this.paragraph.getTextBoxesForRange(selection).map((box) => {
-      const textBox = box.copy();;
+      const textBox = box.copy();
       textBox.y -= textBox.lineHeight;
-      textBox.height= textBox.lineHeight;
+      textBox.height = textBox.lineHeight;
       return textBox;
     });
   }

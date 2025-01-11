@@ -135,7 +135,6 @@ export class TextNativeInputAdapter extends ChangeNotifier{
 
     // 更新值
     const value = fst + lst;
-    console.log("删除单个",selection,fst,lst,value);
 
     let newSelection = Math.max(-1, selection.baseOffset - deleteCount); // 防止光标越界
     this.handleSetSelection(new TextSelection(newSelection, newSelection));

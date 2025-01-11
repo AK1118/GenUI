@@ -107,7 +107,8 @@ class EditableTextState extends State<EditableText> implements TextInputClient {
       text: this.text,
       textStyle: new TextStyle({
         fontSize: 15,
-        textAlign: TextAlign.unset,
+        textAlign: TextAlign.center,
+
       }),
     });
   }

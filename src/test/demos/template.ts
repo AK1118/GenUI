@@ -73,6 +73,7 @@ import {
   CrossAxisAlignment,
   MainAxisAlignment,
   StackFit,
+  TextAlign,
 } from "@/lib/core/base-types";
 import { ScrollBar, ScrollController } from "@/lib/widgets/scroll";
 import { CustomClipper, CustomPainter } from "@/lib/rendering/custom";
@@ -101,7 +102,7 @@ import Stream from "@/lib/core/stream";
 import ScreenUtils from "../screen-utils";
 import MyPost from "../test";
 import { NativeInputStream, TextNativeInputAdapter } from "./text-input-stream";
-
+import {TextStyle} from "@/lib/painting/text-painter"
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
 
@@ -122,7 +123,7 @@ GenPlatformConfig.InitInstance({
   screenWidth: width,
   screenHeight: height,
   devicePixelRatio: dev,
-  debug: false,
+  debug: true,
   canvas: canvas,
   renderContext: g,
 });
@@ -162,12 +163,14 @@ if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
 
 const nativeTextInputHandler = new NativeTextInputHandler();
 const inputBar = document.querySelector("#inputbar") as HTMLInputElement;
-inputBar.value = `123456`;
+inputBar.value = `111`;
 nativeTextInputHandler.blurHandler(() => {
   inputBar.blur();
 });
 nativeTextInputHandler.focusHandler(() => {
-  inputBar.focus();
+  setTimeout(()=>{
+    inputBar.focus();
+  },100)
 });
 
 const syncStream = Stream.withAsync<string>(NativeInputStream());
@@ -197,7 +200,13 @@ runApp(
     width: canvas.width,
     height: canvas.height,
     color: Colors.white,
-    child: new EditableText(),
+    // child:new EditableText()
+    child:new Text("11111111",{
+      style:new TextStyle({
+        color:Colors.darkGray,
+        textAlign:TextAlign.center
+      })
+    })
   })
 );
 nativeTextInputHandler.updateEditingValue(inputBar.value, 0, 0);
@@ -206,7 +215,6 @@ nativeTextInputHandler.updateEditingValue(inputBar.value, 0, 0);
 //     return new ScaffoldState();
 //   }
 // }
-
 // class MyListener extends ChangeNotifier {
 //   public counter: number = 0;
 //   trigger() {
