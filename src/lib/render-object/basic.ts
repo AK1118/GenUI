@@ -2014,6 +2014,10 @@ export class RenderTransformBox extends SingleChildRenderView {
     }
     return result;
   }
+
+  applyPaintTransform(child: RenderView, transform: Matrix4): void {
+      transform.multiply(this.effectiveTransform);
+  }
 }
 
 export class BoxDecorationRenderView extends SingleChildRenderView {

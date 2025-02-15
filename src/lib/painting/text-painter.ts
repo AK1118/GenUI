@@ -465,7 +465,7 @@ export class Paragraph extends ParagraphControl {
         currentHead.parentData.broCount = ++wordCount;
         //词缀无实际broCount
         if (wordCount >= 1 && current?.isWord) {
-          current.parentData.broCount = 1;
+          current.parentData.broCount = 0;
         }
         currentHead.parentData.wordCountWidth += parentData.box.width;
       }
@@ -1407,7 +1407,7 @@ export class TextPainter extends ParagraphControl {
     return this.paragraph.getTextPointForOffset(offset);
   }
   getTextBoxesForRange(selection: TextSelection): Array<TextBox> {
-    return this.paragraph.getTextBoxesForRange(selection).map((box) => {
+    return this.paragraph?.getTextBoxesForRange(selection).map((box) => {
       const textBox = box.copy();
       textBox.y -= textBox.lineHeight;
       textBox.height = textBox.lineHeight;

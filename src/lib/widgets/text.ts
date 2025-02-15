@@ -24,29 +24,31 @@ import {
   TextInputClient,
   TextSelection,
 } from "../services/text-editing";
+import { ColoredBox, SizedBox, Text } from "./basic";
+import { Column, Container } from "./widgets";
 
 interface EditableArguments {
   text: TextSpan;
   editingConnection: TextEditingConnection;
   key: Key;
-  insertionCaretPainter: EditTextIndicatorPainter;
+  indicatorPainter: EditTextIndicatorPainter;
   textPainter: TextPainter;
 }
 
 export class Editable extends SingleChildRenderObjectWidget {
   private editingConnection: TextEditingConnection;
-  private insertionCaretPainter: EditTextIndicatorPainter;
+  private indicatorPainter: EditTextIndicatorPainter;
   private textPainter: TextPainter;
   constructor(args: Partial<EditableArguments>) {
     super(null, args?.key);
     this.editingConnection = args?.editingConnection;
-    this.insertionCaretPainter = args?.insertionCaretPainter;
+    this.indicatorPainter = args?.indicatorPainter;
     this.textPainter = args?.textPainter;
   }
   createRenderObject(context?: BuildContext): RenderView {
     return new EditTextRenderView(
       this.editingConnection,
-      this.insertionCaretPainter,
+      this.indicatorPainter,
       this.textPainter
     );
   }
@@ -66,7 +68,7 @@ export class EditableText extends StatefulWidget {
 
 class EditableTextState extends State<EditableText> implements TextInputClient {
   private editingConnection: TextEditingConnection;
-  private insertionCaretPainter: EditTextIndicatorPainter =
+  private indicatorPainter: EditTextIndicatorPainter =
     new EditTextIndicatorPainter();
   private textPainter: TextPainter;
   private text: string = ``;
@@ -83,7 +85,7 @@ class EditableTextState extends State<EditableText> implements TextInputClient {
     });
     let selection: TextSelection = value.selection;
     if (selection.single) {
-      const [box] = this.textPainter?.getTextBoxesForRange(selection);
+      const [box] = this.textPainter?.getTextBoxesForRange(selection) ?? [];
       this.handleUpdateIndicatorPosition(box, selection);
     }
   }
@@ -92,14 +94,14 @@ class EditableTextState extends State<EditableText> implements TextInputClient {
    */
   private handleUpdateIndicatorPosition(rect: Rect, selection: TextSelection) {
     this.setState(() => {
-      rect??=Rect.zero;
+      rect ??= Rect.zero;
       const currently_selection = selection.baseOffset;
       const offset = rect.offset;
-      if (currently_selection !==-1) {
+      if (currently_selection !== -1) {
         offset.x += rect.width;
       }
-      this.insertionCaretPainter.offset = offset;
-      this.insertionCaretPainter.height = rect.height;
+      this.indicatorPainter.offset = offset;
+      this.indicatorPainter.height = rect.height;
     });
   }
   get textSpan(): TextSpan {
@@ -107,17 +109,17 @@ class EditableTextState extends State<EditableText> implements TextInputClient {
       text: this.text,
       textStyle: new TextStyle({
         fontSize: 15,
-        textAlign: TextAlign.center,
-
+        textAlign: TextAlign.justify,
       }),
     });
   }
   build(context: BuildContext): Widget {
     return new Editable({
-      editingConnection: this.editingConnection,
-      textPainter: this.textPainter,
-      insertionCaretPainter: this.insertionCaretPainter,
-    });
+        editingConnection: this.editingConnection,
+        textPainter: this.textPainter,
+        indicatorPainter: this.indicatorPainter,
+      });
+    // return new Text("测试文本输入框");
   }
 }
 

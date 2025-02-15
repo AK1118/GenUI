@@ -1,7 +1,7 @@
 import { clamp } from "../math/math";
 
 export class Color {
-  constructor(private value: number) {
+  constructor(private value: number=0) {
     if (value < 0 || value > 0xffffffff) {
       throw new Error(
         `Color value must be between 0 and 4294967295.But got ${value}`
@@ -37,30 +37,31 @@ export class Color {
    * @param alpha - 新的 alpha 值 (0~255)
    */
   withAlpha(alpha: number): Color {
-    const newValue = (this.value & 0x00ffffff) | ((alpha & 0xff) << 24);
+    const newValue = ((this.value & 0x00ffffff) | ((alpha & 0xff) << 24))>>>0;
     return new Color(newValue);
   }
   /**
    * 通过指定 opacity 来创建一个新的颜色实例
-   * @param opacity - 新的 opacity 值 (0~1)
+   * @param opacity - 新的 opacity 值 [0~1]
    */
   withOpacity(opacity: number): Color {
+    opacity=Math.min(1,Math.max(0,opacity));
     return this.withAlpha(opacity * 0xff);
   }
   /**
-   * 通过指定 red 来创建一个新的颜色实例，值范围0~255
+   * 通过指定 red 来创建一个新的颜色实例，值范围[0~255]
    */
   withRed(red: number): Color {
     return Color.fromRGBA(red, this.green, this.blue, this.alpha);
   }
   /** 
-   * 通过指定 green 来创建一个新的颜色实例,值范围0~255
+   * 通过指定 green 来创建一个新的颜色实例,值范围[0~255]
    * */
   withGreen(green: number): Color {
     return Color.fromRGBA(this.red, green, this.blue, this.alpha);
   }
   /**
-   * 通过指定 blue 来创建一个新的颜色实例，值范围0~255
+   * 通过指定 blue 来创建一个新的颜色实例，值范围[0~255]
    */
   withBlue(blue: number): Color {
     return Color.fromRGBA(this.red, this.green, blue, this.alpha);

@@ -23,13 +23,7 @@ import {
   // ViewPort,
   Wrap,
 } from "@/lib/widgets/basic";
-import {
-  MultiChildRenderObjectWidget,
-  State,
-  StatefulWidget,
-  StatelessWidget,
-  Widget,
-} from "@/lib/basic/framework";
+
 import Alignment from "@/lib/painting/alignment";
 import { BoxConstraints } from "@/lib/rendering/constraints";
 import Vector from "@/lib/math/vector";
@@ -103,6 +97,13 @@ import ScreenUtils from "../screen-utils";
 import MyPost from "../test";
 import { NativeInputStream, TextNativeInputAdapter } from "./text-input-stream";
 import {TextStyle} from "@/lib/painting/text-painter"
+import {
+  MultiChildRenderObjectWidget,
+  State,
+  StatefulWidget,
+  StatelessWidget,
+  Widget,
+} from "@/lib/basic/framework";
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
 
@@ -123,7 +124,7 @@ GenPlatformConfig.InitInstance({
   screenWidth: width,
   screenHeight: height,
   devicePixelRatio: dev,
-  debug: true,
+  debug: false,
   canvas: canvas,
   renderContext: g,
 });
@@ -163,7 +164,7 @@ if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
 
 const nativeTextInputHandler = new NativeTextInputHandler();
 const inputBar = document.querySelector("#inputbar") as HTMLInputElement;
-inputBar.value = `111`;
+inputBar.value = `123`;
 nativeTextInputHandler.blurHandler(() => {
   inputBar.blur();
 });
@@ -195,18 +196,54 @@ export const screenUtil = new ScreenUtils({
   devicePixelRatio: dev,
 });
 
+
+class Test extends StatefulWidget{
+  createState(): State {
+    return new TestState();
+  }
+}
+
+class TestState extends State<Test>{
+  build(context: BuildContext): Widget {
+    return new Container({
+      width: canvas.width,
+      height: canvas.height,
+      color: Colors.white,
+      // alignment:Alignment.center,
+      child:Transform.rotate({
+        alignment:Alignment.center,
+        angle:Math.PI/8,
+        child:Transform.translate({
+          
+          // angle:Math.PI/8,
+          x:100,
+          y:100,
+         
+          child: new ColoredBox(
+            {
+              color:Colors.gray.withOpacity(0.2),
+              child:new EditText()
+            }
+          )
+        })
+      })
+     
+    })
+  }
+}
+
 runApp(
   new Container({
     width: canvas.width,
     height: canvas.height,
-    color: Colors.white,
-    // child:new EditableText()
-    child:new Text("11111111",{
-      style:new TextStyle({
-        color:Colors.darkGray,
-        textAlign:TextAlign.center
-      })
-    })
+    color: Colors.orange,
+    child:new Test()
+    // child:new Text("11111111",{
+    //   style:new TextStyle({
+    //     color:Colors.darkGray,
+    //     textAlign:TextAlign.center
+    //   })
+    // })
   })
 );
 nativeTextInputHandler.updateEditingValue(inputBar.value, 0, 0);

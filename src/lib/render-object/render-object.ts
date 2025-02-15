@@ -241,6 +241,11 @@ export abstract class RenderView extends AbstractNode implements HitTestTarget {
     return;
   }
   handleEvent(event: PointerEvent, entry: HitTestEntry): void {}
+  /**
+   * 获取相对于ancestor的变换矩阵，如果没有指定ancestor则默认相对于root节点。
+   * 子节点通过调用该方法获取所有父节点使用的变换矩阵，然后通过将I矩阵变换矩阵计算。
+   * @applyPaintTransform 使用方法参考 @RenderTransformBox
+   */
   getTransformTo(ancestor?: RenderView): Matrix4 {
     const ancestorSpecified = ancestor !== undefined;
     if (!this.attached) {

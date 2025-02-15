@@ -27,6 +27,9 @@ export class Offset {
   copy(): Offset {
     return new Offset(this.offsetX, this.offsetY);
   }
+  add(offset:Offset):Offset{
+    return new Offset(this.offsetX + offset.x, this.offsetY + offset.y);
+  }
 }
 
 class Vector extends Offset{

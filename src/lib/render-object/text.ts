@@ -3,9 +3,10 @@ import { AnimationController } from "../core/animation";
 import { Clip, TextOverflow } from "../core/base-types";
 import { Duration } from "../core/duration";
 import { DownPointerEvent, PanZoomEndPointerEvent, PanZoomStartPointerEvent, PanZoomUpdatePointerEvent, PointerEvent } from "../gesture/events";
-import { HitTestEntry } from "../gesture/hit_test";
+import { HitTestEntry, HitTestResult } from "../gesture/hit_test";
 import PanDragGestureRecognizer from "../gesture/recognizers/pan-drag";
 import TapGestureRecognizer from "../gesture/recognizers/tap";
+import { Matrix4 } from "../math/matrix";
 import Vector, { Offset } from "../math/vector";
 import { Color, Colors } from "../painting/color";
 import Painter from "../painting/painter";
@@ -16,9 +17,10 @@ import {
   TextRange,
   TextSelection,
 } from "../services/text-editing";
+import MatrixUtils from "../utils/matrixUtils";
 import { EditTextIndicatorPainter } from "../widgets/text";
-import { PaintingContext, SingleChildRenderView } from "./basic";
-import { AbstractNode } from "./render-object";
+import { BoxParentData, PaintingContext, SingleChildRenderView } from "./basic";
+import { AbstractNode, RenderView } from "./render-object";
 
 export class EditTextRenderView extends SingleChildRenderView {
   private _textPainter: TextPainter;
@@ -64,16 +66,29 @@ export class EditTextRenderView extends SingleChildRenderView {
   private handleDragEnd(event:PanZoomEndPointerEvent){
     
   }
+  get isRepaintBoundary(): boolean {
+      return false;
+  }
   private handleTapDown(event: DownPointerEvent){
+
+    const parentData:BoxParentData=this.parentData as BoxParentData; 
+    if(!parentData)return;
+    const parentOffset:Vector=this.localToGlobal(Vector.zero);
+    console.log("原始",this.getTransformTo());
+    const parent=this.parent as RenderView;
+    const tapPosition:Vector=event.position;
+    const transform:Matrix4=this.getTransformTo().inverted();
+    console.log("父变换后",transform,parentOffset)
+    const transformedPosition=MatrixUtils.transformPoint(transform,tapPosition);
+    console.log("点击",tapPosition,transformedPosition)
+    const textPoint = this.textPainter.getTextPointForOffset(transformedPosition);
     
-    const textPoint = this.textPainter.getTextPointForOffset(event.position);
-    console.log("点击",textPoint)
     if (!textPoint) return;
     let selectionIndex = textPoint.parentData.index;
     this._editingConnection.show();
 
     const textGeometry = textPoint.parentData.box;
-    const isRightIndicator=this.isRightIndicator(textGeometry,event.position);
+    const isRightIndicator=this.isRightIndicator(textGeometry,transformedPosition);
     if(!isRightIndicator){
       selectionIndex=Math.max(0,selectionIndex-1);
     }
@@ -81,7 +96,7 @@ export class EditTextRenderView extends SingleChildRenderView {
     this._editingConnection.setSelection(selection);
     const [box]=this.textPainter.getTextBoxesForRange(selection);
     if(box){
-      this.handleUpdateIndicatorPositionByRect(box,event.position);
+      this.handleUpdateIndicatorPositionByRect(box,transformedPosition);
     }
   }
   //指示器是否在文字右边
@@ -89,27 +104,43 @@ export class EditTextRenderView extends SingleChildRenderView {
     const boxWidth=rect.width*.5;
     return position.x-rect.x>boxWidth;
   }
-  private handleUpdateIndicatorPositionByRect(rect: Rect,position:Offset):boolean{
-    let selectionOffset=false;
-    const boxWidth=rect.width*.5;
-    const offset=rect.offset;
-    if(position.x-rect.x>boxWidth){
-      offset.x=rect.right;
-      selectionOffset=true;
+  private handleUpdateIndicatorPositionByRect(rect: Rect, position: Offset): boolean {
+    let selectionOffset = false;
+    const boxWidth = rect.width * 0.5;
+    const offset = rect.offset;
+
+    // 判断偏移逻辑
+    if (position.x - rect.x > boxWidth) {
+        offset.x = rect.right;
+        selectionOffset = true;
     }
-    this.indicatorPainter.offset = offset;
-    this.indicatorPainter.height=rect.height;
+
+    // 获取父组件的变换矩阵
+    const parentTransformMatrix = this.getTransformTo();
+
+    // 如果存在旋转中心偏差，调整 offset 的基准点
+    const rotationCenter = new Vector(rect.x + rect.width / 2, rect.y + rect.height / 2); // 中心点
+    const relativeOffset = offset.toVector().sub(rotationCenter); // 相对中心点的偏移
+
+    // 应用父矩阵变换
+    const transformedOffset = MatrixUtils.transformPoint(parentTransformMatrix, relativeOffset.toVector());
+
+    // 转回原坐标系
+    const finalOffset = transformedOffset.add(rotationCenter);
+
+    // 更新指示器的偏移和高度
+    this.indicatorPainter.offset = finalOffset;
+    this.indicatorPainter.height = rect.height;
+
     return selectionOffset;
-  }
+}
+
   handleEvent(event: PointerEvent, entry: HitTestEntry): void {
     super.handleEvent(event, entry);
     if (event instanceof DownPointerEvent) {
       this.onTap.addPointer(event);
       this.onDrag.addPointer(event);  
     }
-  }
-  get isRepaintBoundary(): boolean {
-    return true;
   }
   performLayout(): void {
     if (!this.hightLightPainter) {
@@ -128,7 +159,7 @@ export class EditTextRenderView extends SingleChildRenderView {
     const textSize = this.textPainter.size;
     this.size = this.constraints.constrain(textSize);
   }
-  render(context: PaintingContext, offset?: Offset): void {
+  render(context: PaintingContext, offset?: Vector): void {
     if (!context.paint) return;
     if (this.needClip) {
       context.clipRectAndPaint(
