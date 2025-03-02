@@ -104,12 +104,13 @@ import {
   StatelessWidget,
   Widget,
 } from "@/lib/basic/framework";
+import ScrollSliverListExample from "./scroll-sliver";
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
 
 const dev = window.devicePixelRatio;
 const width = 300;
-const height = 300;
+const height = 600;
 console.log("DPR：", dev);
 canvas.width = width * dev;
 canvas.height = height * dev;
@@ -232,21 +233,60 @@ class TestState extends State<Test>{
   }
 }
 
+const controller = new ScrollController();
+
 runApp(
   new Container({
-    width: canvas.width,
-    height: canvas.height,
-    color: Colors.orange,
-    child:new Test()
-    // child:new Text("11111111",{
-    //   style:new TextStyle({
-    //     color:Colors.darkGray,
-    //     textAlign:TextAlign.center
-    //   })
-    // })
+    width:canvas.width,
+    height:canvas.height,
+    child:new ScrollSliverListExample(),
+    // child: new SingleChildScrollView({
+    //   axisDirection: AxisDirection.down,
+    //   controller,
+    //   // physics: new BouncingScrollPhysics(),
+    //   child: new SliverList({
+    //     autoKeepAlive: true,
+    //     childDelegate: new SliverChildBuilderDelegate({
+    //       builder: (context, index) => {
+    //         return new Text(`${index}`)
+    //       },
+    //     }),
+    //   }),
+    //   // child:new Container({
+    //   //   width:canvas.width,
+    //   //   child:new Column({
+    //   //     crossAxisAlignment:CrossAxisAlignment.stretch,
+    //   //     children:Array.from(new Array(2000)).map(_=>{
+    //   //         return new Padding({
+    //   //           padding:{
+    //   //             bottom:10,
+    //   //           },
+    //   //           child: new Test()
+    //   //         });
+    //   //       })
+    //   //   })
+    //   // })
+    // }),
   })
 );
-nativeTextInputHandler.updateEditingValue(inputBar.value, 0, 0);
+// runApp(
+//   new Container({
+//     width: canvas.width,
+//     height: canvas.height,
+//     color: Colors.orange,
+//     child:new Test()
+//     // child:new Text("11111111",{
+//     //   style:new TextStyle({
+//     //     color:Colors.darkGray,
+//     //     textAlign:TextAlign.center
+//     //   })
+//     // })
+//   })
+// );
+// nativeTextInputHandler.updateEditingValue(inputBar.value, 0, 0);
+
+
+
 // class Scaffold extends StatefulWidget {
 //   createState(): State<Scaffold> {
 //     return new ScaffoldState();
@@ -497,90 +537,3 @@ nativeTextInputHandler.updateEditingValue(inputBar.value, 0, 0);
 //   }
 // }
 // const app =new MyPost();
-
-// class Test extends StatefulWidget {
-//   createState(): State {
-//     return new TestState();
-//   }
-// }
-// class TestState extends State<Test> {
-//   private count: number = 0;
-//   private text: string = "";
-//   private controller: AnimationController;
-//   private randomColor: Color;
-//   public initState(): void {
-//     super.initState();
-//     this.controller = new AnimationController({
-//       duration: new Duration({ milliseconds: 300 }),
-//     });
-//     this.randomColor = this.getRandomColor();
-//     this.controller.addListener(() => {
-//       this.setState(() => {
-//         if (this.controller.isCompleted) {
-//           // this.controller.reverse();
-//         }
-//       });
-//     });
-//     //setTimeout(() => {}, 100);
-//     this.controller.forward();
-//     canvas.onclick = () => {
-//       const inputDom: HTMLInputElement = document.getElementById(
-//         "inputbar"
-//       ) as HTMLInputElement;
-//       inputDom.focus();
-//       inputDom.oninput = (e) => {
-//         this.setState(() => {
-//           this.text = inputDom.value;
-//         });
-//       };
-//       // inputDom.addEventListener("input",(e)=>{
-//       //   console.log("输入",e)
-//       // })
-//     };
-
-//     window.onmousedown = () => {
-//       canvas.click();
-//     };
-//   }
-//   private getRandomColor(): Color {
-//     return Color.fromRGBA(
-//       Math.random() * 256,
-//       Math.random() * 256,
-//       Math.random() * 256,
-//       100
-//     );
-//   }
-//   build(context: BuildContext): Widget {
-//     return new GestureDetector({
-//       onTap: () => {
-//         // this.controller.forward();
-//         this.setState(() => {
-//           this.randomColor = this.getRandomColor();
-//           this.count += 10;
-//         });
-//       },
-//       child: Transform.scale({
-//         scale: this.controller.value,
-//         alignment: Alignment.center,
-//         child: new Container({
-//           decoration: new BoxDecoration({
-//             backgroundColor: Colors.white
-//               .withOpacity(0)
-//               .lerp(this.randomColor, this.controller.value),
-//           }),
-//           // width:100,
-//           height: this.controller.value * 40 + 40,
-//           // color:Colors.white,
-//           child: new Align({
-//             child: new Container({
-//               width: 30 + this.count,
-//               height: 30,
-//               child: new Text(`${this.count} ${this.text}`),
-//               color: this.getRandomColor(),
-//             }),
-//           }),
-//         }),
-//       }),
-//     });
-//   }
-// }
