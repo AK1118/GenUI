@@ -15,6 +15,7 @@ import { Align, Expanded, GestureDetector, Padding, Positioned, SizedBox, Stack,
 import { ScrollBar, ScrollController } from "@/lib/widgets/scroll";
 import { SliverChildBuilderDelegate, SliverList } from "@/lib/widgets/sliver";
 import { Column, Container, Row, SingleChildScrollView } from "@/lib/widgets/widgets";
+import MyPost from "../test";
 
 
 /**
@@ -23,11 +24,11 @@ import { Column, Container, Row, SingleChildScrollView } from "@/lib/widgets/wid
  */
 export default class ScrollSliverListExample extends StatelessWidget {
     private _controller: ScrollController = new ScrollController();
-    private get autoKeepAlive():boolean{
+    private get autoKeepAlive(): boolean {
         return false;
     };
 
-    private get itemCount():number{
+    private get itemCount(): number {
         return 1000;
     }
     build(context: BuildContext): Widget {
@@ -67,19 +68,20 @@ export default class ScrollSliverListExample extends StatelessWidget {
                                 height: Infinity,
                                 child: new ScrollBar({
                                     controller: this._controller,
-                                    child:new SingleChildScrollView({
+                                    child: new SingleChildScrollView({
                                         axisDirection: AxisDirection.down,
                                         controller: this._controller,
                                         // physics: new BouncingScrollPhysics(),
                                         child: new SliverList({
                                             autoKeepAlive: this.autoKeepAlive,
                                             childDelegate: new SliverChildBuilderDelegate({
-                                                childCount:this.itemCount,
+                                                childCount: this.itemCount,
                                                 builder: (context, index) => {
+                                                    // if(index % 2 === 0) return new MyPost();
                                                     return new AnimatedColorBox(index)
                                                 },
                                             }),
-                                            
+
                                         }),
                                     })
                                 })
@@ -161,6 +163,7 @@ class AnimatedColorBoxState extends State<AnimatedColorBox> {
     private text: string = "";
     private controller: AnimationController;
     private randomColor: Color;
+    private selected: boolean = false;
     public initState(): void {
         super.initState();
         this.controller = new AnimationController({
@@ -214,7 +217,14 @@ class AnimatedColorBoxState extends State<AnimatedColorBox> {
                         // height: 80,
                         // color:Colors.white,
                         child: new Align({
-                            child: this.buildUser(),
+                            child: new GestureDetector({
+                                onTap: () => {
+                                    this.setState(()=>{
+                                        this.randomColor=this.getRandomColor()
+                                    });
+                                },
+                                child: this.buildUser()
+                            }),
                         }),
 
                     }),
@@ -258,7 +268,7 @@ class AnimatedColorBoxState extends State<AnimatedColorBox> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                                new Text("联系人" + this.widget.index, {
+                                new Text(`联系人` + this.widget.index, {
                                     style: new TextStyle({
                                         color: Colors.black,
                                         fontWeight: FontWeight.bold,
