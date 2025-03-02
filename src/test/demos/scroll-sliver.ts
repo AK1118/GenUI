@@ -12,7 +12,7 @@ import { BorderRadius } from "@/lib/painting/radius";
 import BoxShadow from "@/lib/painting/shadow";
 import { TextStyle } from "@/lib/painting/text-painter";
 import { Align, Expanded, GestureDetector, Padding, Positioned, SizedBox, Stack, Text, Transform } from "@/lib/widgets/basic";
-import { ScrollController } from "@/lib/widgets/scroll";
+import { ScrollBar, ScrollController } from "@/lib/widgets/scroll";
 import { SliverChildBuilderDelegate, SliverList } from "@/lib/widgets/sliver";
 import { Column, Container, Row, SingleChildScrollView } from "@/lib/widgets/widgets";
 
@@ -23,6 +23,13 @@ import { Column, Container, Row, SingleChildScrollView } from "@/lib/widgets/wid
  */
 export default class ScrollSliverListExample extends StatelessWidget {
     private _controller: ScrollController = new ScrollController();
+    private get autoKeepAlive():boolean{
+        return false;
+    };
+
+    private get itemCount():number{
+        return 1000;
+    }
     build(context: BuildContext): Widget {
         return new Column({
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -36,7 +43,7 @@ export default class ScrollSliverListExample extends StatelessWidget {
                     },
                     child: new Row({
                         children: [
-                            new Text("虚拟列表滚动滚动")
+                            new Text(`虚拟列表滚动滚动${this.itemCount}条`)
                         ]
                     }),
                     decoration: new BoxDecoration({
@@ -58,19 +65,23 @@ export default class ScrollSliverListExample extends StatelessWidget {
                             new SizedBox({
                                 width: Infinity,
                                 height: Infinity,
-                                child: new SingleChildScrollView({
-                                    axisDirection: AxisDirection.down,
+                                child: new ScrollBar({
                                     controller: this._controller,
-                                    // physics: new BouncingScrollPhysics(),
-
-                                    child: new SliverList({
-                                        autoKeepAlive: true,
-                                        childDelegate: new SliverChildBuilderDelegate({
-                                            builder: (context, index) => {
-                                                return new AnimatedColorBox(index)
-                                            },
+                                    child:new SingleChildScrollView({
+                                        axisDirection: AxisDirection.down,
+                                        controller: this._controller,
+                                        // physics: new BouncingScrollPhysics(),
+                                        child: new SliverList({
+                                            autoKeepAlive: this.autoKeepAlive,
+                                            childDelegate: new SliverChildBuilderDelegate({
+                                                childCount:this.itemCount,
+                                                builder: (context, index) => {
+                                                    return new AnimatedColorBox(index)
+                                                },
+                                            }),
+                                            
                                         }),
-                                    }),
+                                    })
                                 })
                             }),
                             new Positioned({
