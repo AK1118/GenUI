@@ -94,7 +94,7 @@ import { NativeTextInputHandler, TextInput } from "@/lib/native/text-input";
 import eruda from "eruda";
 import Stream from "@/lib/core/stream";
 import ScreenUtils from "../screen-utils";
-import MyPost from "../test";
+import MyPost from "../poster";
 import { NativeInputStream, TextNativeInputAdapter } from "./text-input-stream";
 import {TextStyle} from "@/lib/painting/text-painter"
 import {
@@ -110,7 +110,7 @@ const img2: HTMLImageElement = document.querySelector("#bg");
 
 const dev = window.devicePixelRatio;
 const width = 300;
-const height = 600;
+const height = 300;
 console.log("DPR：", dev);
 canvas.width = width * dev;
 canvas.height = height * dev;
@@ -207,19 +207,23 @@ class Test extends StatefulWidget{
 class TestState extends State<Test>{
   build(context: BuildContext): Widget {
     return new Container({
+      constraints:new BoxConstraints({
+        maxWidth:100,
+      }),
       width: canvas.width,
       height: canvas.height,
       color: Colors.white,
+      padding:{
+        left:10,
+        top:30,
+      },
       // alignment:Alignment.center,
       child:Transform.rotate({
-        alignment:Alignment.center,
-        angle:Math.PI/8,
+        angle:Math.PI*0,
+
         child:Transform.translate({
-          
-          // angle:Math.PI/8,
-          x:100,
-          y:100,
-         
+          x:10,
+          y:10,
           child: new ColoredBox(
             {
               color:Colors.gray.withOpacity(0.2),
@@ -235,54 +239,54 @@ class TestState extends State<Test>{
 
 const controller = new ScrollController();
 
-runApp(
-  new Container({
-    width:canvas.width,
-    height:canvas.height,
-    child:new ScrollSliverListExample(),
-    // child: new SingleChildScrollView({
-    //   axisDirection: AxisDirection.down,
-    //   controller,
-    //   // physics: new BouncingScrollPhysics(),
-    //   child: new SliverList({
-    //     autoKeepAlive: true,
-    //     childDelegate: new SliverChildBuilderDelegate({
-    //       builder: (context, index) => {
-    //         return new Text(`${index}`)
-    //       },
-    //     }),
-    //   }),
-    //   // child:new Container({
-    //   //   width:canvas.width,
-    //   //   child:new Column({
-    //   //     crossAxisAlignment:CrossAxisAlignment.stretch,
-    //   //     children:Array.from(new Array(2000)).map(_=>{
-    //   //         return new Padding({
-    //   //           padding:{
-    //   //             bottom:10,
-    //   //           },
-    //   //           child: new Test()
-    //   //         });
-    //   //       })
-    //   //   })
-    //   // })
-    // }),
-  })
-);
 // runApp(
 //   new Container({
-//     width: canvas.width,
-//     height: canvas.height,
-//     color: Colors.orange,
-//     child:new Test()
-//     // child:new Text("11111111",{
-//     //   style:new TextStyle({
-//     //     color:Colors.darkGray,
-//     //     textAlign:TextAlign.center
-//     //   })
-//     // })
+//     width:canvas.width,
+//     height:canvas.height,
+//     child:new ScrollSliverListExample(),
+//     // child: new SingleChildScrollView({
+//     //   axisDirection: AxisDirection.down,
+//     //   controller,
+//     //   // physics: new BouncingScrollPhysics(),
+//     //   child: new SliverList({
+//     //     autoKeepAlive: true,
+//     //     childDelegate: new SliverChildBuilderDelegate({
+//     //       builder: (context, index) => {
+//     //         return new Text(`${index}`)
+//     //       },
+//     //     }),
+//     //   }),
+//     //   // child:new Container({
+//     //   //   width:canvas.width,
+//     //   //   child:new Column({
+//     //   //     crossAxisAlignment:CrossAxisAlignment.stretch,
+//     //   //     children:Array.from(new Array(2000)).map(_=>{
+//     //   //         return new Padding({
+//     //   //           padding:{
+//     //   //             bottom:10,
+//     //   //           },
+//     //   //           child: new Test()
+//     //   //         });
+//     //   //       })
+//     //   //   })
+//     //   // })
+//     // }),
 //   })
 // );
+runApp(
+  new Container({
+    width: canvas.width,
+    height: canvas.height,
+    color: Colors.orange,
+    child:new Test()
+    // child:new Text("11111111",{
+    //   style:new TextStyle({
+    //     color:Colors.darkGray,
+    //     textAlign:TextAlign.center
+    //   })
+    // })
+  })
+);
 // nativeTextInputHandler.updateEditingValue(inputBar.value, 0, 0);
 
 

@@ -11,7 +11,7 @@ import Rect, { Size } from "../basic/rect";
 import { AnimationController } from "../core/animation";
 import { TextAlign } from "../core/base-types";
 import { Duration } from "../core/duration";
-import { Offset } from "../math/vector";
+import Vector, { Offset } from "../math/vector";
 import { TextEditingValue, TextInput } from "../native/text-input";
 import { Color, Colors } from "../painting/color";
 import Painter from "../painting/painter";
@@ -24,8 +24,8 @@ import {
   TextInputClient,
   TextSelection,
 } from "../services/text-editing";
-import { ColoredBox, SizedBox, Text } from "./basic";
-import { Column, Container } from "./widgets";
+import { ColoredBox, SizedBox, Text, WidgetToSliverAdapter } from "./basic";
+import { Column, Container, SingleChildScrollView } from "./widgets";
 
 interface EditableArguments {
   text: TextSpan;
@@ -115,10 +115,10 @@ class EditableTextState extends State<EditableText> implements TextInputClient {
   }
   build(context: BuildContext): Widget {
     return new Editable({
-        editingConnection: this.editingConnection,
-        textPainter: this.textPainter,
-        indicatorPainter: this.indicatorPainter,
-      });
+      editingConnection: this.editingConnection,
+      textPainter: this.textPainter,
+      indicatorPainter: this.indicatorPainter,
+    });
     // return new Text("测试文本输入框");
   }
 }
@@ -130,9 +130,14 @@ export class EditTextIndicatorPainter extends CustomPainter {
   private _thickness: number = 2;
   private _offset: Offset = Offset.zero;
   private _height: number = 13;
+  // 保存上一帧Box的偏移量
+  private _parentOffset: Offset = Offset.zero;
   private animationController = new AnimationController({
     duration: new Duration({ milliseconds: 500 }),
   });
+  set parentOffset(value: Offset) {
+    this._parentOffset = value;
+  }
   set color(value: Color) {
     this._color = value;
     this.notifyListeners();
@@ -152,13 +157,14 @@ export class EditTextIndicatorPainter extends CustomPainter {
   constructor() {
     super();
   }
-  show() {}
-  hide() {}
+  show() { }
+  hide() { }
   render(painter: Painter, size: Size): void {
     painter.fillStyle = this._color.rgba;
+    const offset = this._parentOffset.add(this._offset);
     painter.fillRect(
-      this._offset.x,
-      this._offset.y,
+      offset.x,
+      offset.y,
       this._thickness,
       this._height
     );

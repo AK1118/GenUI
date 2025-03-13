@@ -15,7 +15,7 @@ import { Align, Expanded, GestureDetector, Padding, Positioned, SizedBox, Stack,
 import { ScrollBar, ScrollController } from "@/lib/widgets/scroll";
 import { SliverChildBuilderDelegate, SliverList } from "@/lib/widgets/sliver";
 import { Column, Container, Row, SingleChildScrollView } from "@/lib/widgets/widgets";
-import MyPost from "../test";
+import MyPost from "../poster";
 
 
 /**

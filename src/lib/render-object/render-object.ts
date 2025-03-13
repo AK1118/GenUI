@@ -35,7 +35,7 @@ import {
 } from "./basic";
 import { SliverConstraints, SliverGeometry } from "./slivers";
 
-export class Layer {}
+export class Layer { }
 export class OffsetLayer {
   constructor(offset: Vector) {
     this.offset = offset;
@@ -46,7 +46,7 @@ export class LayerHandler<T extends Layer> {
   layer: T;
 }
 
-export class ParentData {}
+export class ParentData { }
 
 export abstract class AbstractNode {
   public key: string = Math.random().toString(16).substring(3);
@@ -73,7 +73,7 @@ export abstract class AbstractNode {
     child.depth = this.depth + 1;
     child?.reDepthChildren?.();
   }
-  protected reDepthChildren() {}
+  protected reDepthChildren() { }
   protected dropChild(child: AbstractNode) {
     if (!child) return;
     child!.parent = null;
@@ -240,28 +240,20 @@ export abstract class RenderView extends AbstractNode implements HitTestTarget {
   public hitTest(result: HitTestResult, position: Vector): boolean {
     return;
   }
-  handleEvent(event: PointerEvent, entry: HitTestEntry): void {}
-  /**
-   * 获取相对于ancestor的变换矩阵，如果没有指定ancestor则默认相对于root节点。
-   * 子节点通过调用该方法获取所有父节点使用的变换矩阵，然后通过将I矩阵变换矩阵计算。
-   * @applyPaintTransform 使用方法参考 @RenderTransformBox
-   */
-  getTransformTo(ancestor?: RenderView): Matrix4 {
+  handleEvent(event: PointerEvent, entry: HitTestEntry): void { }
+  private getAncestorRenderers(ancestor?: RenderView): RenderView[] {
     const ancestorSpecified = ancestor !== undefined;
     if (!this.attached) {
       throw new Error("RenderObject is not attached.");
     }
-
     if (!ancestor) {
       const rootNode = (this.owner as PipelineOwner)?.renderView;
       if (rootNode instanceof RenderView) {
         ancestor = rootNode;
       }
     }
-
     const renderers: Array<RenderView> = new Array();
     let renderer: RenderView = this;
-
     while (renderer !== ancestor) {
       renderers.push(renderer);
       if (!renderer.parent) {
@@ -272,14 +264,23 @@ export abstract class RenderView extends AbstractNode implements HitTestTarget {
     if (ancestorSpecified) {
       renderers.push(ancestor!);
     }
+    return renderers;
+  }
+  /**
+   * 获取相对于ancestor的变换矩阵，如果没有指定ancestor则默认相对于root节点。
+   * 子节点通过调用该方法获取所有父节点使用的变换矩阵，然后通过将I矩阵变换矩阵计算。
+   * @applyPaintTransform 使用方法参考 @RenderTransformBox
+   */
+  getTransformTo(ancestor?: RenderView): Matrix4 {
+    const renderers = this.getAncestorRenderers(ancestor);
     const transform = new Matrix4().identity();
     for (let index = renderers.length - 1; index > 0; index--) {
       renderers[index].applyPaintTransform(renderers[index - 1], transform);
     }
     return transform;
   }
-  localToGlobal(offset:Vector,ancestor?:RenderView){
-    return MatrixUtils.transformPoint(this.getTransformTo(ancestor),offset);
+  localToGlobal(offset: Vector, ancestor?: RenderView) {
+    return MatrixUtils.transformPoint(this.getTransformTo(ancestor), offset);
   }
-  applyPaintTransform(child: RenderView, transform: Matrix4): void {}
+  applyPaintTransform(child: RenderView, transform: Matrix4): void { }
 }

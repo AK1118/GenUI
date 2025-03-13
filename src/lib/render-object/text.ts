@@ -29,8 +29,8 @@ export class EditTextRenderView extends SingleChildRenderView {
   private _editingConnection: TextEditingConnection;
   private needClip: boolean;
   private onTap: TapGestureRecognizer;
-  private onDrag:PanDragGestureRecognizer;
-  private selection: TextSelection=TextSelection.empty;
+  private onDrag: PanDragGestureRecognizer;
+  private selection: TextSelection = TextSelection.empty;
   get textPainter(): TextPainter {
     return this._textPainter;
   }
@@ -39,107 +39,83 @@ export class EditTextRenderView extends SingleChildRenderView {
     this._textPainter = value;
     super.markNeedsLayout();
   }
-  constructor( _editingConnection: TextEditingConnection,indicatorPainter: EditTextIndicatorPainter,textPainter: TextPainter) {
+  constructor(_editingConnection: TextEditingConnection, indicatorPainter: EditTextIndicatorPainter, textPainter: TextPainter) {
     super();
     this._editingConnection = _editingConnection;
-    this.indicatorPainter=indicatorPainter;
-    this.textPainter=textPainter;
+    this.indicatorPainter = indicatorPainter;
+    this.textPainter = textPainter;
   }
   protected dropChild(child: AbstractNode): void {
     super.dropChild(child);
     this.onTap = new TapGestureRecognizer();
     this.onTap.onTapDown = this.handleTapDown.bind(this);
-    this.onDrag=new PanDragGestureRecognizer();
-    this.onDrag.onPanStart=this.handleDragStart.bind(this);
-    this.onDrag.onPanUpdate=this.handleDragUpdate.bind(this);
-    this.onDrag.onPanEnd=this.handleDragEnd.bind(this);
+    this.onDrag = new PanDragGestureRecognizer();
+    // this.onDrag.onPanStart = this.handleDragStart.bind(this);
+    // this.onDrag.onPanUpdate = this.handleDragUpdate.bind(this);
+    // this.onDrag.onPanEnd = this.handleDragEnd.bind(this);
   }
-  private handleDragStart(event:PanZoomStartPointerEvent){
+  private handleDragStart(event: PanZoomStartPointerEvent) {
   }
-  private handleDragUpdate(event:PanZoomUpdatePointerEvent){
-    const pointer_position=event.position;
-    const currently_textPoint=this.textPainter.getTextPointForOffset(pointer_position);
-    if(!currently_textPoint)return;
+  private handleDragUpdate(event: PanZoomUpdatePointerEvent) {
+    const pointer_position = event.position;
+    const currently_textPoint = this.textPainter.getTextPointForOffset(pointer_position);
+    if (!currently_textPoint) return;
     let selectionIndex = currently_textPoint.parentData.index;
-    this.selection=TextSelection.fromPosition(new Offset(this.selection.baseOffset,selectionIndex))
+    this.selection = TextSelection.fromPosition(new Offset(this.selection.baseOffset, selectionIndex))
   }
-  private handleDragEnd(event:PanZoomEndPointerEvent){
-    
+  private handleDragEnd(event: PanZoomEndPointerEvent) {
+
   }
   get isRepaintBoundary(): boolean {
-      return false;
+    return false;
   }
-  private handleTapDown(event: DownPointerEvent){
-
-    const parentData:BoxParentData=this.parentData as BoxParentData; 
-    if(!parentData)return;
-    const parentOffset:Vector=this.localToGlobal(Vector.zero);
-    console.log("原始",this.getTransformTo());
-    const parent=this.parent as RenderView;
-    const tapPosition:Vector=event.position;
-    const transform:Matrix4=this.getTransformTo().inverted();
-    console.log("父变换后",transform,parentOffset)
-    const transformedPosition=MatrixUtils.transformPoint(transform,tapPosition);
-    console.log("点击",tapPosition,transformedPosition)
+  private handleTapDown(event: DownPointerEvent) {
+    const parentData: BoxParentData = this.parentData as BoxParentData;
+    if (!parentData) return;
+    const tapPosition: Vector = event.position;
+    const transform: Matrix4 = this.getTransformTo().inverted();
+    const transformedPosition = MatrixUtils.transformPoint(transform, tapPosition);
     const textPoint = this.textPainter.getTextPointForOffset(transformedPosition);
-    
+
     if (!textPoint) return;
     let selectionIndex = textPoint.parentData.index;
     this._editingConnection.show();
 
     const textGeometry = textPoint.parentData.box;
-    const isRightIndicator=this.isRightIndicator(textGeometry,transformedPosition);
-    if(!isRightIndicator){
-      selectionIndex=Math.max(0,selectionIndex-1);
+    const isRightIndicator = this.isRightIndicator(textGeometry, transformedPosition);
+    if (!isRightIndicator) {
+      selectionIndex = Math.max(0, selectionIndex - 1);
     }
-    const selection=new TextSelection(selectionIndex, selectionIndex);
+    const selection = new TextSelection(selectionIndex, selectionIndex);
     this._editingConnection.setSelection(selection);
-    const [box]=this.textPainter.getTextBoxesForRange(selection);
-    if(box){
-      this.handleUpdateIndicatorPositionByRect(box,transformedPosition);
+    const [box] = this.textPainter.getTextBoxesForRange(selection);
+    if (box) {
+      this.handleUpdateIndicatorPositionByRect(box, transformedPosition);
     }
   }
   //指示器是否在文字右边
-  private isRightIndicator(rect: Rect,position:Offset):boolean{
-    const boxWidth=rect.width*.5;
-    return position.x-rect.x>boxWidth;
+  private isRightIndicator(rect: Rect, position: Offset): boolean {
+    const boxWidth = rect.width * .5;
+    return position.x - rect.x > boxWidth;
   }
-  private handleUpdateIndicatorPositionByRect(rect: Rect, position: Offset): boolean {
-    let selectionOffset = false;
+  private handleUpdateIndicatorPositionByRect(rect: Rect, position: Offset) {
     const boxWidth = rect.width * 0.5;
     const offset = rect.offset;
 
     // 判断偏移逻辑
     if (position.x - rect.x > boxWidth) {
-        offset.x = rect.right;
-        selectionOffset = true;
+      offset.x = rect.right;
     }
 
-    // 获取父组件的变换矩阵
-    const parentTransformMatrix = this.getTransformTo();
-
-    // 如果存在旋转中心偏差，调整 offset 的基准点
-    const rotationCenter = new Vector(rect.x + rect.width / 2, rect.y + rect.height / 2); // 中心点
-    const relativeOffset = offset.toVector().sub(rotationCenter); // 相对中心点的偏移
-
-    // 应用父矩阵变换
-    const transformedOffset = MatrixUtils.transformPoint(parentTransformMatrix, relativeOffset.toVector());
-
-    // 转回原坐标系
-    const finalOffset = transformedOffset.add(rotationCenter);
-
-    // 更新指示器的偏移和高度
-    this.indicatorPainter.offset = finalOffset;
+    this.indicatorPainter.offset = offset;// finalOffset;
     this.indicatorPainter.height = rect.height;
-
-    return selectionOffset;
-}
+  }
 
   handleEvent(event: PointerEvent, entry: HitTestEntry): void {
     super.handleEvent(event, entry);
     if (event instanceof DownPointerEvent) {
       this.onTap.addPointer(event);
-      this.onDrag.addPointer(event);  
+      this.onDrag.addPointer(event);
     }
   }
   performLayout(): void {
@@ -160,6 +136,7 @@ export class EditTextRenderView extends SingleChildRenderView {
     this.size = this.constraints.constrain(textSize);
   }
   render(context: PaintingContext, offset?: Vector): void {
+
     if (!context.paint) return;
     if (this.needClip) {
       context.clipRectAndPaint(
@@ -179,8 +156,10 @@ export class EditTextRenderView extends SingleChildRenderView {
     } else {
       this.hightLightPainter.render(context?.paint, this.size);
       this.textPainter.paint(context?.paint, offset);
+      this.indicatorPainter.parentOffset = offset;
       this.indicatorPainter.render(context?.paint, this.size);
     }
+    super.render(context, offset);
   }
   debugRender(context: PaintingContext, offset?: Offset): void {
     if (!context.paint) return;
@@ -202,6 +181,7 @@ export class EditTextRenderView extends SingleChildRenderView {
     } else {
       this.hightLightPainter.render(context?.paint, this.size);
       this.textPainter.paint(context?.paint, offset, true);
+      this.indicatorPainter.parentOffset = offset;
       this.indicatorPainter.render(context?.paint, this.size);
     }
   }
