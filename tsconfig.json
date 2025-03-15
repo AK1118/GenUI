@@ -10,6 +10,7 @@
     "declarationMap": false,
     "declaration": true, // 不需要自动生成声明文件，自动生成的文件太过冗余
     "baseUrl": "src/",
+    "experimentalDecorators": true,
     "paths": {
       "@/lib/*": ["lib/*"],
       "@/*": ["*"]

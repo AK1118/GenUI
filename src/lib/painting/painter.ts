@@ -8,7 +8,7 @@ export enum PaintingStyle {
 /*
 	使用代理模式重写Painter，兼容原生Painter
 */
-class Painter implements Painter {
+class Painter {
   private static _paint:
     | CanvasRenderingContext2D
     | OffscreenCanvasRenderingContext2D = null;

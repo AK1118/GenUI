@@ -92,19 +92,25 @@ import EditText, { Editable, EditableText } from "@/lib/widgets/text";
 import { NativeTextInputHandler, TextInput } from "@/lib/native/text-input";
 //@ts-ignore
 import eruda from "eruda";
-import Stream from "@/lib/core/stream";
+import Stream, { AsyncStream } from "@/lib/core/stream";
 import ScreenUtils from "../screen-utils";
 import MyPost from "../poster";
 import { NativeInputStream, TextNativeInputAdapter } from "./text-input-stream";
-import {TextStyle} from "@/lib/painting/text-painter"
+import { TextStyle } from "@/lib/painting/text-painter"
 import {
   MultiChildRenderObjectWidget,
+  RenderObjectElement,
+  SingleChildRenderObjectElement,
+  SingleChildRenderObjectWidget,
   State,
   StatefulWidget,
   StatelessWidget,
   Widget,
 } from "@/lib/basic/framework";
 import ScrollSliverListExample from "./scroll-sliver";
+import { DefaultNativeStrategies } from "@/lib/native/native-strategies";
+import { PaintingContext, SingleChildRenderView } from "@/lib/render-object/basic";
+import { RenderView } from "@/lib/render-object/render-object";
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
 
@@ -128,6 +134,7 @@ GenPlatformConfig.InitInstance({
   debug: false,
   canvas: canvas,
   renderContext: g,
+  strategies: new DefaultNativeStrategies()
 });
 
 const eventCaller = new NativeEventsBindingHandler();
@@ -170,13 +177,13 @@ nativeTextInputHandler.blurHandler(() => {
   inputBar.blur();
 });
 nativeTextInputHandler.focusHandler(() => {
-  setTimeout(()=>{
+  setTimeout(() => {
     inputBar.focus();
-  },100)
+  }, 100)
 });
 
 const syncStream = Stream.withAsync<string>(NativeInputStream());
-const handler: TextNativeInputAdapter = new TextNativeInputAdapter(syncStream,inputBar.value );
+const handler: TextNativeInputAdapter = new TextNativeInputAdapter(syncStream, inputBar.value);
 
 handler.addListener(() => {
   // console.log("handler",handler.payload)
@@ -198,95 +205,106 @@ export const screenUtil = new ScreenUtils({
 });
 
 
-class Test extends StatefulWidget{
+class Test extends StatefulWidget {
   createState(): State {
     return new TestState();
   }
 }
 
-class TestState extends State<Test>{
+class TestState extends State<Test> {
   build(context: BuildContext): Widget {
     return new Container({
-      constraints:new BoxConstraints({
-        maxWidth:100,
+      constraints: new BoxConstraints({
+        maxWidth: 100,
       }),
       width: canvas.width,
       height: canvas.height,
       color: Colors.white,
-      padding:{
-        left:10,
-        top:30,
+      padding: {
+        left: 10,
+        top: 30,
       },
       // alignment:Alignment.center,
-      child:Transform.rotate({
-        angle:Math.PI*0,
+      child: Transform.rotate({
+        angle: Math.PI * 0,
 
-        child:Transform.translate({
-          x:10,
-          y:10,
+        child: Transform.translate({
+          x: 10,
+          y: 10,
           child: new ColoredBox(
             {
-              color:Colors.gray.withOpacity(0.2),
-              child:new EditText()
+              color: Colors.gray.withOpacity(0.2),
+              child: new EditText()
             }
           )
         })
       })
-     
+
     })
   }
 }
-
 const controller = new ScrollController();
+
+abstract class ImageProvider {
+  
+  createStream() {
+    return new AsyncStream<Uint8Array>((async function* (): AsyncGenerator<Uint8Array> {
+      const res = await fetch("https://picsum.photos5000");
+      console.log(res.headers.get("content-length"))
+      const reader = res.body.getReader();
+      while (true) {
+        const { done, value } = await reader.read();
+        yield value;
+        if (done) break;
+      }
+    })());
+  }
+
+  load(): AsyncStream<Uint8Array> {
+    return this.createStream();
+  }
+}
+
+class NetWorkImageProvider extends ImageProvider { }
+
+const imageProvider = new NetWorkImageProvider();
+const chunks = [];
+let countLength = 0;
+imageProvider.load().forEach(async (e) => {
+  if (!e) return;
+  console.log(e)
+  countLength += e.length;
+  chunks.push(e);
+}).then(async () => {
+  const unit8Array = new Uint8Array(countLength);
+  let position = 0;
+  for (let chunk of chunks) {
+    unit8Array.set(chunk, position);
+    position += chunk.length;
+  }
+  console.log("load", unit8Array)
+  const size: Size = await GenPlatformConfig.instance.strategies.getImageStrategy().getImageSize(unit8Array);
+  console.log(size.toObject())
+  g.drawImage(await createImageBitmap(new Blob([unit8Array])), 0, 0, 300,300)
+});
+
+
+
 
 // runApp(
 //   new Container({
-//     width:canvas.width,
-//     height:canvas.height,
-//     child:new ScrollSliverListExample(),
-//     // child: new SingleChildScrollView({
-//     //   axisDirection: AxisDirection.down,
-//     //   controller,
-//     //   // physics: new BouncingScrollPhysics(),
-//     //   child: new SliverList({
-//     //     autoKeepAlive: true,
-//     //     childDelegate: new SliverChildBuilderDelegate({
-//     //       builder: (context, index) => {
-//     //         return new Text(`${index}`)
-//     //       },
-//     //     }),
-//     //   }),
-//     //   // child:new Container({
-//     //   //   width:canvas.width,
-//     //   //   child:new Column({
-//     //   //     crossAxisAlignment:CrossAxisAlignment.stretch,
-//     //   //     children:Array.from(new Array(2000)).map(_=>{
-//     //   //         return new Padding({
-//     //   //           padding:{
-//     //   //             bottom:10,
-//     //   //           },
-//     //   //           child: new Test()
-//     //   //         });
-//     //   //       })
-//     //   //   })
-//     //   // })
-//     // }),
+//     width: canvas.width,
+//     height: canvas.height,
+//     color: Colors.orange,
+//     child: new Test()
+//     // child:new Text("11111111",{
+//     //   style:new TextStyle({
+//     //     color:Colors.darkGray,
+//     //     textAlign:TextAlign.center
+//     //   })
+//     // })
 //   })
 // );
-runApp(
-  new Container({
-    width: canvas.width,
-    height: canvas.height,
-    color: Colors.orange,
-    child:new Test()
-    // child:new Text("11111111",{
-    //   style:new TextStyle({
-    //     color:Colors.darkGray,
-    //     textAlign:TextAlign.center
-    //   })
-    // })
-  })
-);
 // nativeTextInputHandler.updateEditingValue(inputBar.value, 0, 0);
 
 

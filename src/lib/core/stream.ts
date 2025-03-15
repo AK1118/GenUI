@@ -89,10 +89,6 @@ export class AsyncStream<T> extends Stream<T> {
     }
     return new AsyncStream<T>(generator());
   }
-  gg(): AsyncGenerator<T> {
-    console.log("AsyncStream iterator",typeof this.generator);
-    return this.generator;
-  }
   [Symbol.asyncIterator](): AsyncGenerator<T> {
     console.log("AsyncStream iterator",typeof this.generator);
     return this.generator;

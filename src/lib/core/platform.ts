@@ -1,3 +1,4 @@
+import { NativeStrategies } from "../native/native-strategies";
 import Painter from "../painting/painter";
 
 
@@ -7,7 +8,8 @@ interface BaseConfig {
   devicePixelRatio: number;
   debug?: boolean;
   canvas?: HTMLCanvasElement;
-  renderContext?:CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D 
+  renderContext?: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+  strategies: NativeStrategies,
 }
 
 export class GenPlatformConfig {
@@ -47,11 +49,17 @@ export class GenPlatformConfig {
     return this.baseConfig?.debug;
   }
 
-  get painter():Painter{
-    return new Painter(this.baseConfig?.renderContext);
+  get strategies(): NativeStrategies {
+    return this.baseConfig?.strategies;
   }
 
-  get canvas():HTMLCanvasElement{
+  get painter(): Painter {
+    const painterStrategy = this.strategies?.getPainterStrategy();
+    const painter = painterStrategy.getPainter(this.baseConfig?.renderContext);
+    return painter;
+  }
+
+  get canvas(): HTMLCanvasElement {
     return this.baseConfig?.canvas;
   }
 }
