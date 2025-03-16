@@ -2063,6 +2063,7 @@ export class ImageRenderView extends SingleChildRenderView {
     this.decoration = new ImageDecoration(args);
     this.width = args?.width;
     this.height = args?.height;
+
   }
 
   set width(value: number) {

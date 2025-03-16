@@ -3,19 +3,21 @@ import Vector from "../math/vector";
 import Alignment from "./alignment";
 import { applyBoxFit, BoxFit } from "./box-fit";
 import { BoxPainter, Decoration } from "./decoration";
+import { ImageProvider } from "./image-provider";
 import Painter from "./painter";
 
 interface ImageSourceArguments {
   width: number;
   height: number;
   image:
-    | HTMLImageElement
-    | SVGImageElement
-    | HTMLVideoElement
-    | HTMLCanvasElement
-    | ImageBitmap
-    | OffscreenCanvas;
+  | HTMLImageElement
+  | SVGImageElement
+  | HTMLVideoElement
+  | HTMLCanvasElement
+  | ImageBitmap
+  | OffscreenCanvas;
   url: string;
+  imageProvider: ImageProvider
 }
 
 export class ImageSource implements ImageSourceArguments {
@@ -41,21 +43,8 @@ export class ImageSource implements ImageSourceArguments {
     if (!this.image) {
       throw new Error("Image can not be null");
     }
-    if (
-      !(
-        this.image instanceof HTMLImageElement ||
-        this.image instanceof SVGImageElement ||
-        this.image instanceof HTMLVideoElement ||
-        this.image instanceof HTMLCanvasElement ||
-        this.image instanceof ImageBitmap ||
-        this.image instanceof OffscreenCanvas
-      )
-    ) {
-      throw new Error(
-        "Image type is not supported, please use one of the following types: HTMLImageElement | SVGImageElement | HTMLVideoElement | HTMLCanvasElement | ImageBitmap | OffscreenCanvas"
-      );
-    }
   }
+  imageProvider: ImageProvider;
 }
 
 export interface ImageDecorationArguments {
@@ -88,10 +77,17 @@ export class ImageDecorationPainter extends BoxPainter {
   private decoration: ImageDecoration;
   private sourceRect: Rect = Rect.zero;
   private destinationRect: Rect = Rect.zero;
+  private _image;
   constructor(decoration: ImageDecoration, onChanged: VoidFunction) {
     super(onChanged);
     this.decoration = decoration;
     this.onChanged = onChanged;
+    this.loadImage();
+  }
+  async loadImage() {
+    const { size, image } = await this.decoration.imageSource.imageProvider.load();
+    this._image = image;
+    this.onChanged();
   }
   layout(size: Size): Size {
     const inputSize = new Size(
@@ -122,8 +118,8 @@ export class ImageDecorationPainter extends BoxPainter {
       y = offset.y + this.destinationRect.y;
     const sx = this.sourceRect.x,
       sy = this.sourceRect.y;
-    paint.drawImage(
-      this.decoration.imageSource.image,
+    if(this._image)paint.drawImage(
+      this._image,
       sx,
       sy,
       this.sourceRect.width,

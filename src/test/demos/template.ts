@@ -111,6 +111,8 @@ import ScrollSliverListExample from "./scroll-sliver";
 import { DefaultNativeStrategies } from "@/lib/native/native-strategies";
 import { PaintingContext, SingleChildRenderView } from "@/lib/render-object/basic";
 import { RenderView } from "@/lib/render-object/render-object";
+import { GenNative } from "@/types/native";
+import { NetWorkImageProvider } from "@/lib/painting/image-provider";
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
 
@@ -245,66 +247,42 @@ class TestState extends State<Test> {
 }
 const controller = new ScrollController();
 
-abstract class ImageProvider {
-  
-  createStream() {
-    return new AsyncStream<Uint8Array>((async function* (): AsyncGenerator<Uint8Array> {
-      const res = await fetch("https://picsum.photos5000");
-      console.log(res.headers.get("content-length"))
-      const reader = res.body.getReader();
-      while (true) {
-        const { done, value } = await reader.read();
-        yield value;
-        if (done) break;
-      }
-    })());
-  }
 
-  load(): AsyncStream<Uint8Array> {
-    return this.createStream();
-  }
-}
-
-class NetWorkImageProvider extends ImageProvider { }
-
-const imageProvider = new NetWorkImageProvider();
-const chunks = [];
-let countLength = 0;
-imageProvider.load().forEach(async (e) => {
-  if (!e) return;
-  console.log(e)
-  countLength += e.length;
-  chunks.push(e);
-}).then(async () => {
-  const unit8Array = new Uint8Array(countLength);
-  let position = 0;
-  for (let chunk of chunks) {
-    unit8Array.set(chunk, position);
-    position += chunk.length;
-  }
-  console.log("load", unit8Array)
-  const size: Size = await GenPlatformConfig.instance.strategies.getImageStrategy().getImageSize(unit8Array);
-  console.log(size.toObject())
-  g.drawImage(await createImageBitmap(new Blob([unit8Array])), 0, 0, 300,300)
+const imageProvider = new NetWorkImageProvider({
+  url: "https://picsum.photos/5000"
 });
+// imageProvider.load().then(e=>{
+//   g.drawImage(e , 0, 0, 300, 300)
+// })
 
 
 
 
-// runApp(
-//   new Container({
-//     width: canvas.width,
-//     height: canvas.height,
-//     color: Colors.orange,
-//     child: new Test()
-//     // child:new Text("11111111",{
-//     //   style:new TextStyle({
-//     //     color:Colors.darkGray,
-//     //     textAlign:TextAlign.center
-//     //   })
-//     // })
-//   })
-// );
+
+runApp(
+  new Container({
+    width: canvas.width,
+    height: canvas.height,
+    color: Colors.white,
+    child: new Image({
+      width:300,
+      height:300,
+      imageSource: {
+        imageProvider: imageProvider,
+        width: 100,
+        height: 100,
+        image: undefined,
+        url: ""
+      }
+    })
+    // child:new Text("11111111",{
+    //   style:new TextStyle({
+    //     color:Colors.darkGray,
+    //     textAlign:TextAlign.center
+    //   })
+    // })
+  })
+);
 // nativeTextInputHandler.updateEditingValue(inputBar.value, 0, 0);
 
 
