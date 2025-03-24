@@ -5,6 +5,7 @@ import {
   ClipPath,
   ClipRRect,
   ColoredBox,
+  ConstrainedBox,
   CustomPaint,
   DecoratedBox,
   Expanded,
@@ -249,7 +250,7 @@ const controller = new ScrollController();
 
 
 const imageProvider = new NetWorkImageProvider({
-  url: "https://picsum.photos/5000"
+  url: "https://images.unsplash.com/photo-1726487536376-846cd82fbd78?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
 });
 // imageProvider.load().then(e=>{
 //   g.drawImage(e , 0, 0, 300, 300)
@@ -264,16 +265,34 @@ runApp(
     width: canvas.width,
     height: canvas.height,
     color: Colors.white,
-    child: new Image({
-      width:300,
-      height:300,
-      imageSource: {
-        imageProvider: imageProvider,
-        width: 100,
-        height: 100,
-        image: undefined,
-        url: ""
-      }
+    child: new Column({
+      children: [
+        new Image({
+          fit: BoxFit.fill,
+          // width:100,
+          // height:100,
+          imageSource: new ImageSource({
+            imageProvider: imageProvider,
+          })
+        }),
+        new GestureDetector({
+          onTap: () => {
+            console.log("下一张")
+          },
+          child: new Container({
+            color: Colors.pink,
+            padding: {
+              bottom: 30,
+              top: 30
+            },
+            child: new Text("下一个张", {
+              style: new TextStyle({
+                color: Colors.white
+              })
+            })
+          })
+        })
+      ]
     })
     // child:new Text("11111111",{
     //   style:new TextStyle({

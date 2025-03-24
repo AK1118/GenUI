@@ -9,40 +9,18 @@ import Painter from "./painter";
 interface ImageSourceArguments {
   width: number;
   height: number;
-  image:
-  | HTMLImageElement
-  | SVGImageElement
-  | HTMLVideoElement
-  | HTMLCanvasElement
-  | ImageBitmap
-  | OffscreenCanvas;
-  url: string;
   imageProvider: ImageProvider
 }
-
 export class ImageSource implements ImageSourceArguments {
   width: number;
   height: number;
-  image:
-    | HTMLImageElement
-    | SVGImageElement
-    | HTMLVideoElement
-    | HTMLCanvasElement
-    | ImageBitmap
-    | OffscreenCanvas;
-  url: string;
   constructor(args: Partial<ImageSourceArguments>) {
     this.width = args?.width;
     this.height = args?.height;
-    this.image = args?.image;
-    this.url = args?.url;
-
-    if (this.width === 0 || this.height === 0) {
-      throw new Error("Width or height can not be zero");
-    }
-    if (!this.image) {
-      throw new Error("Image can not be null");
-    }
+    this.imageProvider = args?.imageProvider;
+    // if (this.width === 0 || this.height === 0) {
+    //   throw new Error("Width or height can not be zero");
+    // }
   }
   imageProvider: ImageProvider;
 }
@@ -77,7 +55,8 @@ export class ImageDecorationPainter extends BoxPainter {
   private decoration: ImageDecoration;
   private sourceRect: Rect = Rect.zero;
   private destinationRect: Rect = Rect.zero;
-  private _image;
+  private _image: any;
+  private sourceImageSize: Size = Size.zero;
   constructor(decoration: ImageDecoration, onChanged: VoidFunction) {
     super(onChanged);
     this.decoration = decoration;
@@ -87,13 +66,17 @@ export class ImageDecorationPainter extends BoxPainter {
   async loadImage() {
     const { size, image } = await this.decoration.imageSource.imageProvider.load();
     this._image = image;
+    this.sourceImageSize = size;
     this.onChanged();
   }
+  get width() {
+    return this.sourceImageSize.width;
+  }
+  get height() {
+    return this.sourceImageSize.height;
+  }
   layout(size: Size): Size {
-    const inputSize = new Size(
-      this.decoration.imageSource.width,
-      this.decoration.imageSource.height
-    );
+    const inputSize = this.sourceImageSize;
     const outputSize = size;
     const fittedSizes = applyBoxFit(this.decoration.fit, inputSize, outputSize);
     const sourceSize = fittedSizes.source;
@@ -118,7 +101,7 @@ export class ImageDecorationPainter extends BoxPainter {
       y = offset.y + this.destinationRect.y;
     const sx = this.sourceRect.x,
       sy = this.sourceRect.y;
-    if(this._image)paint.drawImage(
+    if (this._image) paint.drawImage(
       this._image,
       sx,
       sy,

@@ -423,7 +423,6 @@ class ProductImageBoxState extends State<ProductImageBox> {
     image.onload = () => {
       this.setState(() => {
         this.imageSource = new ImageSource({
-          image,
           width: image.width,
           height: image.height,
         });

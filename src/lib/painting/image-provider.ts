@@ -36,6 +36,8 @@ export class NetWorkImageProvider extends ImageProvider {
         await bufferLoader.forEach((payload) => {
             total += payload.value.length;
             chunks.push(payload.value);
+            console.log("payload.progress: ", payload.progress, "payload.total: ", payload.total)
+
         });
         const uint8Array = new Uint8Array(total);
         let position = 0;
