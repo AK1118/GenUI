@@ -134,7 +134,7 @@ GenPlatformConfig.InitInstance({
   screenWidth: width,
   screenHeight: height,
   devicePixelRatio: dev,
-  debug: false,
+  debug: true,
   canvas: canvas,
   renderContext: g,
   strategies: new DefaultNativeStrategies()
@@ -266,21 +266,24 @@ class Item extends StatelessWidget {
   });
   build(context: BuildContext): Widget {
     return new Container({
+      width:100,
+      height:100,
       decoration: new BoxDecoration({
-        borderRadius: BorderRadius.all(20)
+        borderRadius: BorderRadius.all(20),
+        backgroundColor:Colors.gray
       }),
-      child: new ImageWidget({
-        width: 100,
-        height: 100,
-        fit: BoxFit.fill,
-        imageProvider: new AssetImageProvider({
-          assetsImageBuilder() {
-            const image = new Image();
-            image.src = 'https://picsum.photos/100';
-            return image;
-          },
-        }),
-      })
+      // child: new ImageWidget({
+      //   width: 100,
+      //   height: 100,
+      //   fit: BoxFit.fill,
+      //   imageProvider: new AssetImageProvider({
+      //     assetsImageBuilder() {
+      //       const image = new Image();
+      //       image.src = 'https://picsum.photos/100';
+      //       return image;
+      //     },
+      //   }),
+      // })
     });
   }
 }
@@ -289,7 +292,7 @@ class Item extends StatelessWidget {
 runApp(
   new Container({
     width: canvas.width,
-    height: canvas.width,
+    height: canvas.width/2,
     color: Colors.white,
     child: new SingleChildScrollView({
       child: new WidgetToSliverAdapter({

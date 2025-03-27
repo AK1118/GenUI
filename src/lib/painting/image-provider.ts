@@ -61,7 +61,7 @@ export class AssetImageProvider extends ImageProvider {
         this.assetsImageBuilder = assetsImageBuilder;
     }
     load(): Promise<ImageLoadPayload> {
-        const assetsImage = this.assetsImageBuilder();
+        const assetsImage=this.assetsImageBuilder();
         return new Promise((resolve) => {
             assetsImage.onload = () => {
                 resolve({

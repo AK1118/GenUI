@@ -1766,11 +1766,12 @@ export class WrapRenderView extends MultiChildRenderView {
 
     let containerMainAxisExtent: number = 0;
     let containerCrossAxisExtent: number = 0;
-
+      console.log("子高度",crossAxisExtent)
     if (this.direction === Axis.horizontal) {
       this.size = constraints.constrain(
-        new Size(mainAxisExtent, crossAxisExtent)
+        new Size(mainAxisExtent, crossAxisExtent+100)
       );
+      console.log("容器高度",this.size.height)
       containerMainAxisExtent = this.size.width;
       containerCrossAxisExtent = this.size.height;
     } else if (this.direction === Axis.vertical) {
