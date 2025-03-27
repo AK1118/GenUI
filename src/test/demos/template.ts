@@ -11,7 +11,8 @@ import {
   Expanded,
   Flex,
   GestureDetector,
-  Image,
+  Image as ImageWidget,
+
   Listener,
   Padding,
   Positioned,
@@ -52,7 +53,6 @@ import {
   ScrollView,
   SingleChildScrollView,
 } from "@/lib/widgets/widgets";
-import { ImageSource } from "@/lib/painting/image";
 import { BoxFit } from "@/lib/painting/box-fit";
 import { ChangeNotifier, Listenable } from "@/lib/core/change-notifier";
 import { ScrollPosition } from "@/lib/render-object/viewport";
@@ -113,7 +113,7 @@ import { DefaultNativeStrategies } from "@/lib/native/native-strategies";
 import { PaintingContext, SingleChildRenderView } from "@/lib/render-object/basic";
 import { RenderView } from "@/lib/render-object/render-object";
 import { GenNative } from "@/types/native";
-import { NetWorkImageProvider } from "@/lib/painting/image-provider";
+import { AssetImageProvider, ImageProvider, NetWorkImageProvider } from "@/lib/painting/image-provider";
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
 
@@ -250,55 +250,97 @@ const controller = new ScrollController();
 
 
 const imageProvider = new NetWorkImageProvider({
-  url: "https://images.unsplash.com/photo-1726487536376-846cd82fbd78?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+  // url: "https://images.unsplash.com/photo-1726487536376-846cd82fbd78?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+  url: 'http://localhost:1118/img/bg.jpg'
 });
 // imageProvider.load().then(e=>{
 //   g.drawImage(e , 0, 0, 300, 300)
 // })
 
 
-
+class Item extends StatelessWidget {
+  private imageProvider: ImageProvider = new NetWorkImageProvider({
+    url: 'https://picsum.photos/100',
+    //url: "https://images.unsplash.com/photo-1726487536376-846cd82fbd78?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+    // url: 'http://localhost:1118/img/bg.jpg'
+  });
+  build(context: BuildContext): Widget {
+    return new Container({
+      decoration: new BoxDecoration({
+        borderRadius: BorderRadius.all(20)
+      }),
+      child: new ImageWidget({
+        width: 100,
+        height: 100,
+        fit: BoxFit.fill,
+        imageProvider: new AssetImageProvider({
+          assetsImageBuilder() {
+            const image = new Image();
+            image.src = 'https://picsum.photos/100';
+            return image;
+          },
+        }),
+      })
+    });
+  }
+}
 
 
 runApp(
   new Container({
     width: canvas.width,
-    height: canvas.height,
+    height: canvas.width,
     color: Colors.white,
-    child: new Column({
-      children: [
-        new Image({
-          fit: BoxFit.fill,
-          // width:100,
-          // height:100,
-          imageSource: new ImageSource({
-            imageProvider: imageProvider,
-          })
-        }),
-        new GestureDetector({
-          onTap: () => {
-            console.log("下一张")
-          },
-          child: new Container({
-            color: Colors.pink,
-            padding: {
-              bottom: 30,
-              top: 30
-            },
-            child: new Text("下一个张", {
-              style: new TextStyle({
-                color: Colors.white
-              })
-            })
-          })
+    child: new SingleChildScrollView({
+      child: new WidgetToSliverAdapter({
+        child: new Wrap({
+          runSpacing: 10,
+          // spacing: 10,
+          children: Array.from({
+            length: 10
+          }).map(() => new Item()),
         })
-      ]
+      })
     })
-    // child:new Text("11111111",{
-    //   style:new TextStyle({
-    //     color:Colors.darkGray,
-    //     textAlign:TextAlign.center
+    // child: new Wrap({
+    //   children: Array.from({
+    //     length: 10
+    //   }).map(() => new Item()),
+    // children: [
+    //   new Image({
+    //     fit: BoxFit.fill,
+    //     // width:100,
+    //     // height:100,
+    //     imageSource: new ImageSource({
+    //       imageProvider: imageProvider,
+    //     })
+    //   }),
+    //   new Image({
+    //     fit: BoxFit.fill,
+    //     // width:100,
+    //     // height:100,
+    //     imageSource: new ImageSource({
+    //       imageProvider: imageProvider,
+    //     })
+    //   }),
+    //   new GestureDetector({
+    //     onTap: () => {
+    //       console.log("下一张")
+    //     },
+    //     child: new Container({
+    //       color: Colors.pink,
+    //       padding: {
+    //         bottom: 30,
+    //         top: 30
+    //       },
+    //       child: new Text("下一个张", {
+    //         style: new TextStyle({
+    //           color: Colors.white
+    //         })
+    //       })
+    //     })
     //   })
+    // ]
     // })
   })
 );

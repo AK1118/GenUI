@@ -1,6 +1,6 @@
 import Painter from "@/lib/painting/painter";
 import Alignment from "@/lib/painting/alignment";
-import { Offset, Size } from "@/lib/basic/rect";
+import Rect, { Offset, Size } from "@/lib/basic/rect";
 import Constraints, { BoxConstraints } from "@/lib/rendering/constraints";
 import Vector from "@/lib/math/vector";
 import { TextPainter, TextSpan } from "../painting/text-painter";
@@ -25,7 +25,6 @@ import {
   ImageDecoration,
   ImageDecorationArguments,
   ImageDecorationPainter,
-  ImageSource,
 } from "../painting/image";
 import { ChangeNotifier } from "../core/change-notifier";
 import {
@@ -131,6 +130,9 @@ export abstract class RenderView extends AbstractNode implements HitTestTarget {
   }
   get isRepaintBoundary(): boolean {
     return false;
+  }
+  get renderBounds(): Rect {
+    return Rect.compose(Offset.zero, this._size);
   }
   /**
    * 派生类必须实现该方法才会被正常渲染，并且在渲染child时必须使用 `context.paintChild` 方法渲染child，这是

@@ -25,6 +25,7 @@ import {
 import {
   Axis,
   AxisDirection,
+  Clip,
   CrossAxisAlignment,
   MainAxisAlignment,
 } from "../core/base-types";
@@ -54,6 +55,7 @@ import {
 import VelocityTracker from "../utils/velocity-ticker";
 import {
   Align,
+  ClipRRect,
   ColoredBox,
   ConstrainedBox,
   DecoratedBox,

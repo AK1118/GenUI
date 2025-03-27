@@ -11,11 +11,13 @@ import { BoxDecoration } from "@/lib/painting/decoration";
 import { BorderRadius } from "@/lib/painting/radius";
 import BoxShadow from "@/lib/painting/shadow";
 import { TextStyle } from "@/lib/painting/text-painter";
-import { Align, Expanded, GestureDetector, Padding, Positioned, SizedBox, Stack, Text, Transform } from "@/lib/widgets/basic";
+import { Align, Expanded, GestureDetector, Image, Padding, Positioned, SizedBox, Stack, Text, Transform } from "@/lib/widgets/basic";
 import { ScrollBar, ScrollController } from "@/lib/widgets/scroll";
 import { SliverChildBuilderDelegate, SliverList } from "@/lib/widgets/sliver";
 import { Column, Container, Row, SingleChildScrollView } from "@/lib/widgets/widgets";
 import MyPost from "../poster";
+import { BoxFit } from "@/lib/painting/box-fit";
+import { NetWorkImageProvider } from "@/lib/painting/image-provider";
 
 
 /**
@@ -25,7 +27,7 @@ import MyPost from "../poster";
 export default class ScrollSliverListExample extends StatelessWidget {
     private _controller: ScrollController = new ScrollController();
     private get autoKeepAlive(): boolean {
-        return false;
+        return true;
     };
 
     private get itemCount(): number {
@@ -219,8 +221,8 @@ class AnimatedColorBoxState extends State<AnimatedColorBox> {
                         child: new Align({
                             child: new GestureDetector({
                                 onTap: () => {
-                                    this.setState(()=>{
-                                        this.randomColor=this.getRandomColor()
+                                    this.setState(() => {
+                                        this.randomColor = this.getRandomColor()
                                     });
                                 },
                                 child: this.buildUser()
@@ -251,14 +253,24 @@ class AnimatedColorBoxState extends State<AnimatedColorBox> {
                             borderRadius: BorderRadius.all(10)
                         }),
                         alignment: Alignment.center,
-                        child: new Text(`${this.widget.index}`, {
-                            style: new TextStyle({
-                                overflow: TextOverflow.ellipsis,
-                                color: Colors.white,
-                                maxLines: 1,
-                                fontSize: 16,
-                            })
+                        child: new Image({
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.fill,
+                            imageProvider: new NetWorkImageProvider({
+                                url: 'https://picsum.photos/100',
+                                //url: "https://images.unsplash.com/photo-1726487536376-846cd82fbd78?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                                // url: 'http://localhost:1118/img/bg.jpg'
+                            }),
                         })
+                        // child: new Text(`${this.widget.index}`, {
+                        //     style: new TextStyle({
+                        //         overflow: TextOverflow.ellipsis,
+                        //         color: Colors.white,
+                        //         maxLines: 1,
+                        //         fontSize: 16,
+                        //     })
+                        // })
                     }),
                     new SizedBox({
                         width: 10,

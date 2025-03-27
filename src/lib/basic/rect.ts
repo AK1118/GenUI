@@ -73,6 +73,9 @@ class Rect {
     this._width = isNaN(width) ? 0 : width;
     this._height = isNaN(height) ? 0 : height;
   }
+  static compose(offset: Offset, size: Size):Rect{
+    return new Rect(offset.x, offset.y, size.width, size.height);
+  }
   public update({
     x = 0,
     y = 0,

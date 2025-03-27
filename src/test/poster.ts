@@ -16,8 +16,7 @@ import Alignment from "@/lib/painting/alignment";
 import { Border } from "@/lib/painting/borders";
 import { BoxFit } from "@/lib/painting/box-fit";
 import { BoxDecoration } from "@/lib/painting/decoration";
-import { ImageSource } from "@/lib/painting/image";
-import {BorderRadius} from "@/lib/painting/radius";
+import { BorderRadius } from "@/lib/painting/radius";
 import BoxShadow from "@/lib/painting/shadow";
 import { TextSpan, TextStyle } from "@/lib/painting/text-painter";
 import {
@@ -26,6 +25,7 @@ import {
   ClipRRect,
   Expanded,
   Flex,
+  Image,
   Image as ImageWidget,
   Padding,
   Text,
@@ -33,9 +33,10 @@ import {
   Transform,
 } from "@/lib/widgets/basic";
 import { Column, Container, Row } from "@/lib/widgets/widgets";
-import {Color,Colors } from "@/lib/painting/color";
+import { Color, Colors } from "@/lib/painting/color";
 import { RadialGradient } from "@/lib/painting/gradient";
 import { screenUtil } from "./demos/template";
+import { NetWorkImageProvider } from "@/lib/painting/image-provider";
 const scale = 2;
 const sp = (value: number) => screenUtil.setSp(value * scale);
 const sw = (value: number) => screenUtil.setWidth(value * scale);
@@ -45,10 +46,10 @@ export default class MyPost extends StatelessWidget {
     return new Container({
       width: sw(252.5),
       decoration: new BoxDecoration({
-        backgroundColor:Colors.white,
+        backgroundColor: Colors.white,
         gradient: new RadialGradient({
           center: Alignment.center,
-          colors: [Colors.white,new Color(0xffe8e8e8)],
+          colors: [Colors.white, new Color(0xffe8e8e8)],
         }),
         shadows: [
           new BoxShadow({
@@ -294,9 +295,9 @@ export default class MyPost extends StatelessWidget {
         new Column({
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            
+
             new ClipRRect({
-              borderRadius:BorderRadius.all(sp(90)),
+              borderRadius: BorderRadius.all(sp(90)),
               child: new Container({
                 width: sw(20),
                 height: sw(20),
@@ -404,38 +405,18 @@ class TransformedLine extends StatelessWidget {
   }
 }
 
-class ProductImageBox extends StatefulWidget {
+class ProductImageBox extends StatelessWidget {
   public src: string = "";
   constructor(src: string) {
     super();
     this.src = src;
   }
-  createState(): State {
-    return new ProductImageBoxState();
-  }
-}
-
-class ProductImageBoxState extends State<ProductImageBox> {
-  private imageSource: ImageSource = null;
-  public initState(): void {
-    super.initState();
-    const image = new Image();
-    image.onload = () => {
-      this.setState(() => {
-        this.imageSource = new ImageSource({
-          width: image.width,
-          height: image.height,
-        });
-      });
-    };
-    image.src = this.widget.src;
-  }
   build(context: BuildContext): Widget {
-    if (!this.imageSource) return null;
-    return new ImageWidget({
-      fit: BoxFit.fitWidth,
-      alignment: Alignment.center,
-      imageSource: this.imageSource,
+    return new Image({
+      imageProvider: new NetWorkImageProvider({
+        url: this.src,
+      }),
+      fit: BoxFit.fill
     });
   }
 }

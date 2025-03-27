@@ -6,45 +6,28 @@ import { BoxPainter, Decoration } from "./decoration";
 import { ImageProvider } from "./image-provider";
 import Painter from "./painter";
 
-interface ImageSourceArguments {
-  width: number;
-  height: number;
-  imageProvider: ImageProvider
-}
-export class ImageSource implements ImageSourceArguments {
-  width: number;
-  height: number;
-  constructor(args: Partial<ImageSourceArguments>) {
-    this.width = args?.width;
-    this.height = args?.height;
-    this.imageProvider = args?.imageProvider;
-    // if (this.width === 0 || this.height === 0) {
-    //   throw new Error("Width or height can not be zero");
-    // }
-  }
-  imageProvider: ImageProvider;
-}
 
 export interface ImageDecorationArguments {
-  imageSource: ImageSource;
+  imageProvider: ImageProvider
   fit: BoxFit;
   alignment: Alignment;
   width: number;
   height: number;
 }
 
-export class ImageDecoration extends Decoration {
-  imageSource: ImageSource;
+export class ImageDecoration extends Decoration implements ImageDecorationArguments{
+  imageProvider: ImageProvider;
+  width: number;
+  height: number;
   fit: BoxFit;
   alignment: Alignment;
   constructor(args: Partial<ImageDecorationArguments>) {
     super();
-    this.imageSource = args?.imageSource;
-    if (!this.imageSource) {
-      throw new Error("Image can not be null");
-    }
     this.fit = args?.fit ?? BoxFit.none;
     this.alignment = args?.alignment ?? Alignment.center;
+    this.imageProvider = args?.imageProvider;
+    this.width = args?.width ?? 0;
+    this.height = args?.height ?? 0;
   }
   createBoxPainter(onChanged: VoidFunction): ImageDecorationPainter {
     return new ImageDecorationPainter(this, onChanged);
@@ -64,7 +47,7 @@ export class ImageDecorationPainter extends BoxPainter {
     this.loadImage();
   }
   async loadImage() {
-    const { size, image } = await this.decoration.imageSource.imageProvider.load();
+    const { size, image } = await this.decoration.imageProvider.load();
     this._image = image;
     this.sourceImageSize = size;
     this.onChanged();

@@ -1,6 +1,6 @@
 import Painter from "@/lib/painting/painter";
 import Alignment from "@/lib/painting/alignment";
-import { Offset, Size } from "@/lib/basic/rect";
+import Rect, { Offset, Size } from "@/lib/basic/rect";
 import Constraints, { BoxConstraints } from "@/lib/rendering/constraints";
 import Vector from "@/lib/math/vector";
 import { TextPainter, TextSpan } from "../painting/text-painter";
@@ -25,7 +25,6 @@ import {
   ImageDecoration,
   ImageDecorationArguments,
   ImageDecorationPainter,
-  ImageSource,
 } from "../painting/image";
 import { ChangeNotifier } from "../core/change-notifier";
 import {
@@ -50,6 +49,7 @@ import { CustomClipper, CustomPainter } from "../rendering/custom";
 import { Path2D } from "../rendering/path-2D";
 import { Color } from "../painting/color";
 import { BorderRadius } from "../painting/radius";
+import { GenPlatformConfig } from "../core/platform";
 
 export interface RenderViewOption {
   child: RenderBox;
@@ -277,6 +277,7 @@ export abstract class SingleChildRenderView extends RenderBox {
       }
       context.paintChildDebug(this.child!, resultOffset);
     }
+    this.checkRenderBoundary(context, offset);
   }
   render(context: PaintingContext, offset?: Vector) {
     if (this.child) {
@@ -286,6 +287,37 @@ export abstract class SingleChildRenderView extends RenderBox {
         resultOffset = Vector.add(offset, parentData.offset);
       }
       context.paintChild(this.child!, resultOffset);
+    }
+    this.checkRenderBoundary(context, offset);
+  }
+  /**
+   * # 检查边界溢出情况，并绘制超出部分
+   *   - 绘制超出父容器部分的背景色域，并绘制条纹效果
+   *   - 检测范围 [RenderBox] ,它不具备滚动特性。
+   * @param context 
+   * @param offset 
+   * @returns 
+   */
+  private checkRenderBoundary(context: PaintingContext, offset: Offset) {
+    if (!this.parent || !(this.parent instanceof RenderBox)||!GenPlatformConfig.instance.isDebug) return;
+
+    const parentSize = this.parent.size;
+    if (this.size.width > parentSize.width) {
+      console.log("超出父容器宽度了", this.size.width - parentSize.width);
+    }
+    if (this.size.height > parentSize.height) {
+      const overflow = this.size.height - parentSize.height;
+      const paint = context.paint;
+      paint.save();
+      paint.fillStyle = "yellow";
+      paint.fillRect(offset.x, this.size.height - overflow, this.size.width, overflow);
+      paint.transform(Matrix4.skewY(-.8).matrix);
+      paint.fillStyle = "black";
+      for (let i = 0; i < this.size.width / 10; i++) {
+        paint.translate(20, 0);
+        paint.fillRect(offset.x, this.size.height - overflow, 10, overflow)
+      }
+      paint.restore();
     }
   }
   performLayout(): void {
@@ -742,6 +774,11 @@ export abstract class ClipContext {
 }
 
 export class PaintingContext extends ClipContext {
+  private estimatedBounds: Rect;
+  constructor(paint: Painter, estimatedBounds: Rect) {
+    super(paint);
+    this.estimatedBounds = estimatedBounds;
+  }
   paintChildDebug(child: RenderView, offset: Vector = Vector.zero): void {
     child?.debugRender(this, offset);
   }
@@ -2089,8 +2126,8 @@ export class ImageRenderView extends SingleChildRenderView {
     const imageSize = new Size(
       // this.decorationPainter.width,
       // this.decorationPainter.height
-      this._width??this.decorationPainter.width,
-      this._height??this.decorationPainter.height,
+      this._width ?? this.decorationPainter.width,
+      this._height ?? this.decorationPainter.height,
     );
     this.constraints = BoxConstraints.tightFor(null, null).enforce(
       this.constraints

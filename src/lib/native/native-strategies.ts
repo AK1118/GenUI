@@ -10,7 +10,7 @@ export abstract class Strategy { }
  *   - 不论使用什么方法，只返回一个Uint8Array即可渲染图片。
  */
 export abstract class NativeNetWorkImageStrategy extends Strategy {
-    abstract loadBuffer(configuration: GenNative.ImageLoader.ImageProviderLoadConfiguration): AsyncStream<GenNative.ImageLoader.ImageStreamPayload>;
+    abstract loadBuffer(configuration?: GenNative.ImageLoader.ImageProviderLoadConfiguration): AsyncStream<GenNative.ImageLoader.ImageStreamPayload>;
     abstract getImageSize(arrayBuffer: Uint8Array): Promise<Size>;
     abstract load(configuration: GenNative.ImageLoader.ImageProviderLoadConfiguration, arrayBuffer: Uint8Array): Promise<any>;
 }

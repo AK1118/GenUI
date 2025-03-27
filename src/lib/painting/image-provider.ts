@@ -2,6 +2,7 @@ import { GenNative } from "@/types/native";
 import { GenPlatformConfig } from "../core/platform";
 import { AsyncStream } from "../core/stream";
 import { Size } from "../basic/rect";
+import { Image } from "../widgets/basic";
 
 type ImageStreamPayload = GenNative.ImageLoader.ImageStreamPayload;
 type ImageProviderLoadConfiguration = GenNative.ImageLoader.ImageProviderLoadConfiguration;
@@ -11,7 +12,7 @@ type ImageLoadPayload = {
 }
 export abstract class ImageProvider {
     // static cacheMap: Map<string, any> = new Map();
-    constructor(protected readonly configuration: ImageProviderLoadConfiguration) { }
+    constructor(protected readonly configuration?: ImageProviderLoadConfiguration) { }
     protected get loadStrategy() {
         return GenPlatformConfig.instance.strategies.getImageStrategy();
     }
@@ -36,8 +37,6 @@ export class NetWorkImageProvider extends ImageProvider {
         await bufferLoader.forEach((payload) => {
             total += payload.value.length;
             chunks.push(payload.value);
-            console.log("payload.progress: ", payload.progress, "payload.total: ", payload.total)
-
         });
         const uint8Array = new Uint8Array(total);
         let position = 0;
@@ -51,5 +50,27 @@ export class NetWorkImageProvider extends ImageProvider {
             size,
             image,
         };
+    }
+}
+
+type AssetsImageBuilder = () => any;
+export class AssetImageProvider extends ImageProvider {
+    private assetsImageBuilder: AssetsImageBuilder;
+    constructor({ assetsImageBuilder }: { assetsImageBuilder: AssetsImageBuilder }) {
+        super();
+        this.assetsImageBuilder = assetsImageBuilder;
+    }
+    load(): Promise<ImageLoadPayload> {
+        const assetsImage = this.assetsImageBuilder();
+        return new Promise((resolve) => {
+            assetsImage.onload = () => {
+                resolve({
+                    size: new Size(
+                        assetsImage.width,
+                        assetsImage.height,
+                    ), image: assetsImage
+                });
+            }
+        });
     }
 }

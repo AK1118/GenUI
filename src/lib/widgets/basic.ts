@@ -85,7 +85,7 @@ import PanDragGestureRecognizer, {
 import { BoxDecoration } from "../painting/decoration";
 import { TextSpan, TextStyle } from "../painting/text-painter";
 import { BoxConstraints } from "../rendering/constraints";
-import { ImageDecorationArguments, ImageSource } from "../painting/image";
+import { ImageDecorationArguments } from "../painting/image";
 import { Key } from "../basic/key";
 import { BoxFit } from "../painting/box-fit";
 import { RenderView } from "../render-object/render-object";
@@ -107,8 +107,9 @@ import {
   WrapCrossAlignment,
 } from "../core/base-types";
 import { CustomClipper, CustomPainter } from "../rendering/custom";
-import {Color } from "../painting/color";
-import {BorderRadius} from "../painting/radius";
+import { Color } from "../painting/color";
+import { BorderRadius } from "../painting/radius";
+import { ImageProvider } from "../painting/image-provider";
 export interface ColoredBoxOption {
   color: Color;
 }
@@ -226,7 +227,7 @@ export class RootWidget extends SingleChildRenderObjectWidget {
   createElement(): Element {
     return new RootRenderObjectElement(this);
   }
-  updateRenderObject(context: BuildContext, renderView: RenderView) {}
+  updateRenderObject(context: BuildContext, renderView: RenderView) { }
 }
 export class Expanded extends ParentDataWidget<FlexParentData> {
   private flex: number = 0;
@@ -321,7 +322,7 @@ export class ClipRect extends SizedBox {
   }
 }
 export class ClipRRect extends ClipRect {
-  private borderRadius: BorderRadius =BorderRadius.zero;
+  private borderRadius: BorderRadius = BorderRadius.zero;
   constructor(
     option: Partial<
       ClipRRectArguments & SizedBoxOption & SingleChildRenderObjectWidget
@@ -561,14 +562,13 @@ export class Transform extends SingleChildRenderObjectWidget {
 
 interface GestureDetectorArguments
   extends TapGestureRecognizerArguments,
-    DoubleTapGestureRecognizerArguments,
-    LongPressGestureRecognizerArguments,
-    PanDragGestureRecognizerArguments {}
+  DoubleTapGestureRecognizerArguments,
+  LongPressGestureRecognizerArguments,
+  PanDragGestureRecognizerArguments { }
 
 export class GestureDetector
   extends StatelessWidget
-  implements GestureDetectorArguments
-{
+  implements GestureDetectorArguments {
   private gestureRecognizers: Map<any, GestureRecognizer> = new Map();
   private child: Widget;
   onDoubleTap: VoidFunction;
@@ -789,20 +789,19 @@ export class TextRich extends SingleChildRenderObjectWidget {
 
 export class Image
   extends SingleChildRenderObjectWidget
-  implements ImageDecorationArguments
-{
-  imageSource: ImageSource;
+  implements ImageDecorationArguments {
+  imageProvider: ImageProvider;
   fit: BoxFit;
   alignment: Alignment;
   width: number;
   height: number;
   constructor(option: Partial<ImageDecorationArguments & { key: Key }>) {
     super(null, option?.key);
-    this.imageSource = option?.imageSource;
     this.fit = option?.fit ?? BoxFit.none;
     this.alignment = option?.alignment ?? Alignment.center;
     this.width = option?.width;
     this.height = option?.height;
+    this.imageProvider = option?.imageProvider;
   }
 
   createRenderObject(): RenderView {
@@ -810,7 +809,7 @@ export class Image
   }
   get imageDecorationArgs(): Partial<ImageDecorationArguments> {
     return {
-      imageSource: this.imageSource,
+      imageProvider: this.imageProvider,
       fit: this.fit,
       alignment: this.alignment,
       width: this.width,
@@ -853,7 +852,7 @@ export class WidgetToSliverAdapter extends SingleChildRenderObjectWidget {
   constructor(option: Partial<SingleChildRenderObjectWidgetArguments>) {
     super(option?.child, option?.key);
   }
-  updateRenderObject(context: BuildContext, renderView: RenderView): void {}
+  updateRenderObject(context: BuildContext, renderView: RenderView): void { }
 
   createRenderObject(): RenderView {
     return new RenderSliverBoxAdapter();
@@ -878,7 +877,7 @@ export class CustomPaint extends SingleChildRenderObjectWidget {
       foregroundPainter: this.foregroundPainter,
     });
   }
-  updateRenderObject(context: BuildContext, renderView: RenderView): void {}
+  updateRenderObject(context: BuildContext, renderView: RenderView): void { }
 }
 
 export class ClipPath extends SingleChildRenderObjectWidget {

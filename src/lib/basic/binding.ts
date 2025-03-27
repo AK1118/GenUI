@@ -13,7 +13,8 @@ import {
 } from "../gesture/hit_test";
 import { GestureBinding } from "../gesture/binding";
 import { AbstractNode, RenderView } from "../render-object/render-object";
-import {GenPlatformConfig} from "../core/platform";
+import { GenPlatformConfig } from "../core/platform";
+import Rect from "./rect";
 
 type FrameCallback = (timestamp: number) => void;
 type AnimationFrame = (callback: FrameCallback) => void;
@@ -153,10 +154,10 @@ class SchedulerBinding extends BindingBase {
     this.handleCleanCanvas();
   }
   private handleCleanCanvas() {
-    const paint =GenPlatformConfig.instance.painter;
+    const paint = GenPlatformConfig.instance.painter;
     const width = GenPlatformConfig.instance.screenWidth,
       height = GenPlatformConfig.instance.screenHeight;
-    paint.clearRect(0, 0,width,height);
+    paint.clearRect(0, 0, width, height);
   }
 }
 
@@ -180,7 +181,7 @@ export class PipelineOwner {
       const layer = _.layerHandler?.layer;
       if (_.needsRePaint) {
         _?.paintWidthContext(
-          new PaintingContext(GenPlatformConfig.instance.painter),
+          new PaintingContext(GenPlatformConfig.instance.painter, Rect.zero),
           layer?.offset || Vector.zero
         );
       }
@@ -214,15 +215,15 @@ class FrameUpdater {
   private lastFrameTime: number;
   private frameCount: number;
   private fps: number;
-  private painter: Painter= GenPlatformConfig.instance.painter;
+  private painter: Painter = GenPlatformConfig.instance.painter;
   constructor() {
     this.lastFrameTime = performance.now();
     this.frameCount = 0;
     this.fps = 0;
   }
   private render(frame: number) {
-    const screenWidth =  GenPlatformConfig.instance.screenWidth;
-    
+    const screenWidth = GenPlatformConfig.instance.screenWidth;
+
     this.painter.save();
     this.painter.globalAlpha = 0.5;
     // 设置字体样式

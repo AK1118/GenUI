@@ -114,16 +114,28 @@ export class Matrix4 extends Matrix {
     transform.matrix[4] = Math.tan(alpha);
     return transform;
   }
+  skewX(alpha: number): Matrix4 {
+    this.multiply(Matrix4.skewX(alpha));
+    return this;
+  }
   static skewY(beta: number): Matrix4 {
     const transform = Matrix4.zero.identity();
     transform.matrix[4] = Math.tan(beta);
     return transform;
   }
-  static skew(alpha: number,beta:number): Matrix4 {
+  skewY(beta: number): Matrix4 {
+    this.multiply(Matrix4.skewY(beta));
+    return this;
+  }
+  static skew(alpha: number, beta: number): Matrix4 {
     const transform = Matrix4.zero.identity();
     transform.matrix[4] = Math.tan(alpha);
     transform.matrix[1] = Math.tan(beta);
     return transform;
+  }
+  skew(alpha: number, beta: number): Matrix4 {
+    this.multiply(Matrix4.skew(alpha, beta));
+    return this;
   }
   translateValues(x: number = 0, y: number = 0, z: number = 0) {
     this.matrix[12] = x;
