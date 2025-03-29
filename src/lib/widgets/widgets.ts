@@ -40,7 +40,7 @@ import {
 import { min } from "../math/math";
 import Alignment from "../painting/alignment";
 import { BoxDecoration } from "../painting/decoration";
-import { AlignArguments, RectTLRB } from "../render-object/basic";
+import { AlignArguments, FlexOption, RectTLRB } from "../render-object/basic";
 import {
   axisDirectionIsReversed,
   axisDirectionToAxis,
@@ -108,7 +108,7 @@ export class Container extends StatelessWidget implements ContainerArguments {
     this.constraints =
       this.width !== null || this.height !== null
         ? this.constraints?.tighten(this.width, this.height) ??
-          BoxConstraints.tightFor(this.width, this.height)
+        BoxConstraints.tightFor(this.width, this.height)
         : this.constraints;
   }
   /**
@@ -168,10 +168,7 @@ export class Container extends StatelessWidget implements ContainerArguments {
   }
 }
 
-type RowArguments = {
-  mainAxisAlignment: MainAxisAlignment;
-  crossAxisAlignment: CrossAxisAlignment;
-};
+type RowArguments = Omit<FlexOption, 'direction'>;
 
 export class Row extends Flex {
   constructor(
@@ -184,10 +181,7 @@ export class Row extends Flex {
   }
 }
 
-type ColumnArguments = {
-  mainAxisAlignment: MainAxisAlignment;
-  crossAxisAlignment: CrossAxisAlignment;
-};
+type ColumnArguments = Omit<FlexOption, 'direction'>;
 
 export class Column extends Flex {
   constructor(
@@ -286,7 +280,7 @@ interface ScrollViewArguments {
   physics: ScrollPhysics;
 }
 
-interface SingleChildScrollViewArguments extends ScrollViewArguments {}
+interface SingleChildScrollViewArguments extends ScrollViewArguments { }
 
 export abstract class ScrollView extends StatelessWidget {
   private controller: ScrollController;

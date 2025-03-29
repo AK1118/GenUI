@@ -93,6 +93,7 @@ export interface FlexOption {
   direction: Axis;
   mainAxisAlignment: MainAxisAlignment;
   crossAxisAlignment: CrossAxisAlignment;
+  spacing: number;
 }
 
 export interface LayoutSizes {
@@ -299,27 +300,85 @@ export abstract class SingleChildRenderView extends RenderBox {
    * @returns 
    */
   private checkRenderBoundary(context: PaintingContext, offset: Offset) {
-    if (!this.parent || !(this.parent instanceof RenderBox) || !GenPlatformConfig.instance.isDebug) return;
-
+    if (!this.parent || !(this.parent instanceof RenderBox)) return;
     const parentSize = this.parent.size;
-    if (this.size.width > parentSize.width) {
-      console.log("超出父容器宽度了", this.size.width - parentSize.width);
+    const { x, y } = offset;
+    const { width, height } = this.size;
+    const { width: maxWidth, height: maxHeight } = parentSize;
+    const paint = context.paint;
+
+    paint.save();
+    paint.fillStyle = "yellow";
+
+
+    // 下方溢出 (Bottom Overflow)
+    const bottomOverflow = height - maxHeight;
+    if (bottomOverflow > 0) {
+      console.log("下方溢出", bottomOverflow);
+      const paintAlertOffset = y + height - bottomOverflow - 20;
+      paint.fillRect(x, paintAlertOffset, width, 20);
+      this.drawSkewedStripes(paint, x, paintAlertOffset, width, bottomOverflow, "vertical");
     }
-    if (this.size.height > parentSize.height) {
-      const overflow = this.size.height - parentSize.height;
-      const paint = context.paint;
-      paint.save();
-      paint.fillStyle = "yellow";
-      paint.fillRect(offset.x, this.size.height - overflow, this.size.width, overflow);
-      paint.transform(Matrix4.skewY(-.8).matrix);
-      paint.fillStyle = "black";
-      for (let i = 0; i < this.size.width / 10; i++) {
-        paint.translate(20, 0);
-        paint.fillRect(offset.x, this.size.height - overflow, 10, overflow)
-      }
-      paint.restore();
+
+    // 上方溢出 (Top Overflow)
+    // if (y < 0) {
+    //   console.log("上方溢出", this);
+    //   paint.fillRect(x, y, width, Math.abs(y));
+    //   this.drawSkewedStripes(paint, x, y, width, Math.abs(y), "vertical");
+    // }
+
+    // // 左侧溢出 (Left Overflow)
+    // if (x < 0) {
+    //   console.log("左侧溢出", this);
+    //   paint.fillRect(x, y, Math.abs(x), height);
+    //   this.drawSkewedStripes(paint, x, y, Math.abs(x), height, "horizontal");
+    // }
+
+    // 右侧溢出 (Right Overflow)
+    const rightOverflow = width - maxWidth;
+    if (rightOverflow > 0) {
+      console.log("右侧溢出", this);
+      paint.fillRect(x + width - rightOverflow, y, rightOverflow, height);
+      this.drawSkewedStripes(paint, x + width - rightOverflow, y, rightOverflow, height, "horizontal");
     }
+
+    paint.restore();
   }
+
+  /**
+   * 绘制倾斜的条纹用于警示溢出区域
+   * @param paint 画笔对象
+   * @param x 溢出矩形的 x 坐标
+   * @param y 溢出矩形的 y 坐标
+   * @param width 溢出区域宽度
+   * @param height 溢出区域高度
+   * @param direction "horizontal" | "vertical"
+   */
+  private drawSkewedStripes(paint: Painter, x: number, y: number, width: number, height: number, direction: "horizontal" | "vertical") {
+    paint.save();
+    paint.fillStyle = "black";
+
+    if (direction === "vertical") {
+      const translate = new Matrix4();
+      paint.rect(x,y,width,height);
+      paint.clip();
+      translate.translate(x-20, 0).skewY(-0.8);
+      paint.transform(translate.matrix);
+      for (let i = 0; i < width / 10; i++) {
+        paint.fillRect(x, y, 10, 20);
+        paint.translate(20, 0);
+      }
+    } else {
+      paint.transform(Matrix4.skewX(-0.8).matrix);
+      for (let i = 0; i < height / 10; i++) {
+        paint.translate(0, 20);
+        paint.fillRect(x, y, width, 10);
+      }
+    }
+
+    paint.restore();
+  }
+
   performLayout(): void {
     if (this.child) {
       this.child.layout(this.constraints, true);
@@ -993,13 +1052,15 @@ export class FlexRenderView extends MultiChildRenderView<RenderView, ContainerRe
   public _direction: Axis = Axis.horizontal;
   public _mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.start;
   public _crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.start;
+  private _spacing: number = 0;
   constructor(option: Partial<FlexOption & MultiChildRenderViewOption>) {
-    const { direction, children, mainAxisAlignment, crossAxisAlignment } =
+    const { direction, children, mainAxisAlignment, crossAxisAlignment, spacing } =
       option;
     super(children);
     this.direction = direction;
     this.mainAxisAlignment = mainAxisAlignment;
     this.crossAxisAlignment = crossAxisAlignment;
+    this.spacing = spacing ?? 0;
   }
   set direction(value: Axis) {
     if (!value || this._direction === value) return;
@@ -1016,6 +1077,11 @@ export class FlexRenderView extends MultiChildRenderView<RenderView, ContainerRe
     this._crossAxisAlignment = value;
     this.markNeedsLayout();
   }
+  set spacing(value: number) {
+    if (value == this.spacing) return;
+    this._spacing = value;
+    this.markNeedsLayout();
+  }
   get direction(): Axis {
     return this._direction;
   }
@@ -1025,6 +1091,7 @@ export class FlexRenderView extends MultiChildRenderView<RenderView, ContainerRe
   get crossAxisAlignment(): CrossAxisAlignment {
     return this._crossAxisAlignment;
   }
+  get spacing(): number { return this._spacing; }
   performLayout(): void {
     const computeSize: LayoutSizes = this.computeSize(this.constraints);
     if (this.direction === Axis.horizontal) {
@@ -1071,7 +1138,8 @@ export class FlexRenderView extends MultiChildRenderView<RenderView, ContainerRe
         betweenSpace = remainingSpace / (this.childCount + 1);
         leadingSpace = betweenSpace;
     }
-
+    // 每个子元素之间的间距加上间距
+    betweenSpace += this.spacing;
     let child = this.firstChild;
     let childMainPosition: number = leadingSpace,
       childCrossPosition: number = 0;
@@ -1114,8 +1182,8 @@ export class FlexRenderView extends MultiChildRenderView<RenderView, ContainerRe
       canFlex: boolean,
       child = this.firstChild,
       crossSize: number = 0,
-      allocatedSize: number = 0;
-
+      allocatedSize: number = 0,
+      spacing = this.spacing;
     maxMainSize =
       this.direction === Axis.horizontal
         ? constraints.maxWidth
@@ -1123,6 +1191,7 @@ export class FlexRenderView extends MultiChildRenderView<RenderView, ContainerRe
     //盒子主轴值无限时不能被flex布局
     canFlex = maxMainSize < Infinity;
 
+    let currentChildNdx: number = 0;
     while (child != null) {
       const parentData =
         child.parentData as ContainerRenderViewParentData<RenderView>;
@@ -1158,9 +1227,14 @@ export class FlexRenderView extends MultiChildRenderView<RenderView, ContainerRe
         }
         child.layout(innerConstraint);
         const childSize = child?.size || Size.zero;
-
         allocatedSize += this.getMainSize(childSize);
+        // 子盒子间距处理
+        // 间距的累加次数应该始终保持为childCount-1，因为最后一个不需要累加间距
+        if (currentChildNdx > 0) {
+          allocatedSize += spacing;
+        }
         crossSize = Math.max(crossSize, this.getCrossSize(childSize));
+        currentChildNdx += 1;
       }
 
       child = parentData?.nextSibling;
@@ -1744,7 +1818,7 @@ export class WrapRenderView extends MultiChildRenderView {
         );
         runMainAxisExtent = 0;
         runCrossAxisExtent = 0;
-        currentChildNdx=0;
+        currentChildNdx = 0;
       }
       runMainAxisExtent += childMainAxisExtent;
       runCrossAxisExtent = Math.max(runCrossAxisExtent, childCrossAxisExtent);

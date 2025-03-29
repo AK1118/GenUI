@@ -251,27 +251,31 @@ export class Flex extends MultiChildRenderObjectWidget {
   public direction: Axis = Axis.horizontal;
   public mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.start;
   public crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.center;
+  public spacing: number = 0;
   constructor(
     option: Partial<FlexOption & MultiChildRenderObjectWidgetArguments>
   ) {
-    const { direction, children, mainAxisAlignment, crossAxisAlignment } =
+    const { direction, children, mainAxisAlignment, crossAxisAlignment, spacing } =
       option;
     super(children, option.key);
     this.direction = direction ?? this.direction;
     this.mainAxisAlignment = mainAxisAlignment ?? this.mainAxisAlignment;
     this.crossAxisAlignment = crossAxisAlignment ?? this.crossAxisAlignment;
+    this.spacing = spacing;
   }
   createRenderObject(): RenderView {
     return new FlexRenderView({
       direction: this.direction,
       mainAxisAlignment: this.mainAxisAlignment,
       crossAxisAlignment: this.crossAxisAlignment,
+      spacing: this.spacing,
     });
   }
   updateRenderObject(context: BuildContext, renderView: FlexRenderView): void {
     renderView.direction = this.direction;
     renderView.mainAxisAlignment = this.mainAxisAlignment;
     renderView.crossAxisAlignment = this.crossAxisAlignment;
+    renderView.spacing = this.spacing;
   }
 }
 
@@ -795,7 +799,9 @@ export class Image
   alignment: Alignment;
   width: number;
   height: number;
-  constructor(option: Partial<ImageDecorationArguments & { key: Key }>) {
+  constructor(option: Partial<Omit<ImageDecorationArguments, "imageProvider"> & { key: Key }> & Required<{
+    imageProvider: ImageProvider;
+  }>) {
     super(null, option?.key);
     this.fit = option?.fit ?? BoxFit.none;
     this.alignment = option?.alignment ?? Alignment.center;

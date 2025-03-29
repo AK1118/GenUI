@@ -136,7 +136,7 @@ GenPlatformConfig.InitInstance({
   screenWidth: width,
   screenHeight: height,
   devicePixelRatio: dev,
-  debug: true,
+  debug: false,
   canvas: canvas,
   renderContext: g,
   strategies: new DefaultNativeStrategies()
@@ -269,7 +269,7 @@ class Item extends StatelessWidget {
   build(context: BuildContext): Widget {
     return new Container({
       width: 50,
-      height: 50,
+      height: 120,
       decoration: new BoxDecoration({
         // borderRadius: BorderRadius.all(20),
         backgroundColor: Colors.gray
@@ -292,19 +292,44 @@ class Item extends StatelessWidget {
 runApp(
   new Container({
     width: canvas.width,
-    height: canvas.width,
+    height: canvas.height / 2,
     color: Colors.white,
-    child: new SingleChildScrollView({
-      child: new WidgetToSliverAdapter({
-        child: new Wrap({
-          alignment:WrapAlignment.spaceAround,
-          runSpacing:10,
-          spacing: 10,
-          children: Array.from({
-            length: 1500
-          }).map(() => new Item()),
-        })
-      })
+    padding:{
+top:100,
+left:40,
+    },
+    child: new Column({
+      children: [
+        new Container(
+          {
+            width: 30,
+            height:300 ,
+            color:Colors.orange,
+          }
+        ),
+        // new ImageWidget({
+        //   // height: 200,
+        //   // width:300,
+        //   fit: BoxFit.fitWidth,
+        //   imageProvider: imageProvider,
+        // }), 
+        // new ImageWidget({
+        //   height: 200,
+        //   fit: BoxFit.fitHeight,
+        //   imageProvider: imageProvider,
+        // }), new ImageWidget({
+        //   height: 200,
+        //   fit: BoxFit.fitHeight,
+        //   imageProvider: imageProvider,
+        // })
+
+        // ...Array.from({
+        //   length: 3
+        // }).map((item,ndx) => new Item()),
+        // new Expanded({
+        //   child: new Item()
+        // })
+      ],
     })
     // child: new Wrap({
     //   children: Array.from({
