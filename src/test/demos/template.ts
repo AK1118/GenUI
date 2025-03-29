@@ -69,6 +69,8 @@ import {
   MainAxisAlignment,
   StackFit,
   TextAlign,
+  WrapAlignment,
+  WrapCrossAlignment,
 } from "@/lib/core/base-types";
 import { ScrollBar, ScrollController } from "@/lib/widgets/scroll";
 import { CustomClipper, CustomPainter } from "@/lib/rendering/custom";
@@ -246,7 +248,7 @@ class TestState extends State<Test> {
     })
   }
 }
-const controller = new ScrollController();
+
 
 
 const imageProvider = new NetWorkImageProvider({
@@ -266,11 +268,11 @@ class Item extends StatelessWidget {
   });
   build(context: BuildContext): Widget {
     return new Container({
-      width:100,
-      height:100,
+      width: 50,
+      height: 50,
       decoration: new BoxDecoration({
-        borderRadius: BorderRadius.all(20),
-        backgroundColor:Colors.gray
+        // borderRadius: BorderRadius.all(20),
+        backgroundColor: Colors.gray
       }),
       // child: new ImageWidget({
       //   width: 100,
@@ -287,20 +289,19 @@ class Item extends StatelessWidget {
     });
   }
 }
-
-
 runApp(
   new Container({
     width: canvas.width,
-    height: canvas.width/2,
+    height: canvas.width,
     color: Colors.white,
     child: new SingleChildScrollView({
       child: new WidgetToSliverAdapter({
         child: new Wrap({
-          runSpacing: 10,
-          // spacing: 10,
+          alignment:WrapAlignment.spaceAround,
+          runSpacing:10,
+          spacing: 10,
           children: Array.from({
-            length: 10
+            length: 1500
           }).map(() => new Item()),
         })
       })

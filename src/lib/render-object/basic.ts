@@ -299,7 +299,7 @@ export abstract class SingleChildRenderView extends RenderBox {
    * @returns 
    */
   private checkRenderBoundary(context: PaintingContext, offset: Offset) {
-    if (!this.parent || !(this.parent instanceof RenderBox)||!GenPlatformConfig.instance.isDebug) return;
+    if (!this.parent || !(this.parent instanceof RenderBox) || !GenPlatformConfig.instance.isDebug) return;
 
     const parentSize = this.parent.size;
     if (this.size.width > parentSize.width) {
@@ -1548,6 +1548,10 @@ class WrapParentData extends ContainerRenderViewParentData {
   runIndex: number = 0;
 }
 
+/**
+ * # @WrapRenderView 布局几何数据
+ *   - 存储每一行的高度和宽度，以及子元素数量等信息，用于后续的布局计算。
+ */
 class RunMetrics {
   constructor(
     mainAxisExtent: number,
@@ -1713,7 +1717,7 @@ export class WrapRenderView extends MultiChildRenderView {
      */
     let runMainAxisExtent: number = 0;
     let runCrossAxisExtent: number = 0;
-    //当前处理main
+    //当前处理main序列索引,每换行后重置为0;每处理一个元素，currentChildNdx+1;
     let currentChildNdx: number = 0;
     /**
      * 对于处理的一个单位（即不同方向时的不同列|行），记录其大小，用于计算每个单元的偏移量，并需要记录每个单元的个数，用于计算每行|列的宽度
@@ -1724,6 +1728,7 @@ export class WrapRenderView extends MultiChildRenderView {
       const childSize = child.size;
       const childMainAxisExtent = this.getMainAxisExtent(childSize);
       const childCrossAxisExtent = this.getCrossAxisExtent(childSize);
+      // 换行处理
       if (
         currentChildNdx > 0 &&
         runMainAxisExtent + childMainAxisExtent + this.spacing > mainAxisLimit
@@ -1733,16 +1738,17 @@ export class WrapRenderView extends MultiChildRenderView {
         runMetrics.push(
           new RunMetrics(
             runMainAxisExtent,
-            runCrossAxisExtent + this.runSpacing,
+            runCrossAxisExtent,
             currentChildNdx
           )
         );
         runMainAxisExtent = 0;
         runCrossAxisExtent = 0;
-        currentChildNdx = 0;
+        currentChildNdx=0;
       }
       runMainAxisExtent += childMainAxisExtent;
       runCrossAxisExtent = Math.max(runCrossAxisExtent, childCrossAxisExtent);
+      // 如果不是第一个元素，则需要加上间距
       if (currentChildNdx > 0) {
         runMainAxisExtent += this.spacing;
       }
@@ -1751,27 +1757,27 @@ export class WrapRenderView extends MultiChildRenderView {
       parentData.runIndex = runMetrics.length;
       child = parentData.nextSibling;
     }
+
     //最后一行,如果currentChildNdx不为0，说明最新的一行
     if (currentChildNdx > 0) {
       mainAxisExtent += runMainAxisExtent;
-      crossAxisExtent += runCrossAxisExtent + this.runSpacing;
+      crossAxisExtent += runCrossAxisExtent;
       runMetrics.push(
         new RunMetrics(
           runMainAxisExtent,
-          runCrossAxisExtent + this.runSpacing,
+          runCrossAxisExtent,
           currentChildNdx
         )
       );
     }
 
+
     let containerMainAxisExtent: number = 0;
     let containerCrossAxisExtent: number = 0;
-      console.log("子高度",crossAxisExtent)
     if (this.direction === Axis.horizontal) {
       this.size = constraints.constrain(
-        new Size(mainAxisExtent, crossAxisExtent+100)
+        new Size(mainAxisExtent, crossAxisExtent)
       );
-      console.log("容器高度",this.size.height)
       containerMainAxisExtent = this.size.width;
       containerCrossAxisExtent = this.size.height;
     } else if (this.direction === Axis.vertical) {
@@ -1848,7 +1854,6 @@ export class WrapRenderView extends MultiChildRenderView {
       runMainBetween += this.spacing;
 
       let childMainPosition: number = runMainLeading;
-
       while (child) {
         const parentData = child.parentData as WrapParentData;
         if (parentData.runIndex !== i) {
