@@ -22,6 +22,7 @@ class B {
 }
 // new User().name="测试2";
 
+
 const fetchImage = async () => {
     const res = await fetch("https://dummyimage.com/200x300/000/fff");
     const blob = await res.arrayBuffer();
@@ -36,3 +37,5 @@ const fetchImage = async () => {
 }
 
 fetchImage();
+
+

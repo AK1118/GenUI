@@ -353,10 +353,9 @@ export class SingleChildScrollView extends StatelessWidget {
       offset: position,
       axisDirection: position.axisDirection,
       children: [
-        this.child,
-        // new WidgetToSliverAdapter({
-        //   child: this.child,
-        // }),
+        new WidgetToSliverAdapter({
+          child: this.child,
+        }),
       ],
     });
   }

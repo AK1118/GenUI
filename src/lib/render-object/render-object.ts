@@ -113,7 +113,7 @@ export abstract class RenderView extends AbstractNode implements HitTestTarget {
    * 例如在 @Stack 内会被 @StackParentData 赋值，在 @Flex 内会被 @FlexParentData 赋值。
    */
   public parentData: ParentData = null;
-  public _size: Size = Size.zero;
+  private _size: Size = Size.zero;
   public needsRePaint: boolean = false;
   public needsReLayout: boolean = false;
   get size(): Size {
@@ -131,6 +131,7 @@ export abstract class RenderView extends AbstractNode implements HitTestTarget {
   get isRepaintBoundary(): boolean {
     return false;
   }
+
   get renderBounds(): Rect {
     return Rect.compose(Offset.zero, this._size);
   }

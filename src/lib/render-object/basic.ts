@@ -154,6 +154,10 @@ export class FlexParentData extends ContainerRenderViewParentData<RenderView> {
 }
 
 export abstract class RenderBox extends RenderView {
+  protected _renderOffset: Offset = Offset.zero;
+  get renderBounds(): Rect {
+    return Rect.compose(this._renderOffset, this.size);
+  }
   protected constraints: BoxConstraints = BoxConstraints.zero;
   layout(constraints: BoxConstraints, parentUseSize?: boolean): void {
     this.constraints = constraints;
@@ -194,6 +198,7 @@ export abstract class RenderBox extends RenderView {
     return false;
   }
   public hitTestChildren(result: HitTestResult, position: Vector): boolean {
+    // 调用默认方法处理子对象的碰撞检测
     return this.defaultHitTestChildren(result, position);
   }
   public hitTestSelf(result: HitTestResult, position: Vector): boolean {
@@ -265,6 +270,7 @@ export abstract class ParentDataRenderView<
 }
 
 export abstract class SingleChildRenderView extends RenderBox {
+
   constructor(child?: RenderBox) {
     super();
     this.child = child;
@@ -281,6 +287,7 @@ export abstract class SingleChildRenderView extends RenderBox {
     this.checkRenderBoundary(context, offset);
   }
   render(context: PaintingContext, offset?: Vector) {
+    this._renderOffset = offset;
     if (this.child) {
       const parentData: BoxParentData = this.child?.parentData as BoxParentData;
       let resultOffset = Vector.zero;
@@ -301,20 +308,20 @@ export abstract class SingleChildRenderView extends RenderBox {
    */
   private checkRenderBoundary(context: PaintingContext, offset: Offset) {
     if (!this.parent || !(this.parent instanceof RenderBox)) return;
-    const parentSize = this.parent.size;
+    const parentSize = this.parent.renderBounds;
     const { x, y } = offset;
     const { width, height } = this.size;
-    const { width: maxWidth, height: maxHeight } = parentSize;
+    const { width: maxWidth, height: maxHeight, x: parentX, y: parentY } = parentSize;
     const paint = context.paint;
 
     paint.save();
     paint.fillStyle = "yellow";
 
-
     // 下方溢出 (Bottom Overflow)
     const bottomOverflow = height - maxHeight;
     if (bottomOverflow > 0) {
-      console.log("下方溢出", bottomOverflow);
+      
+    console.log("下发溢出",x)
       const paintAlertOffset = y + height - bottomOverflow - 20;
       paint.fillRect(x, paintAlertOffset, width, 20);
       this.drawSkewedStripes(paint, x, paintAlertOffset, width, bottomOverflow, "vertical");
@@ -327,7 +334,8 @@ export abstract class SingleChildRenderView extends RenderBox {
     //   this.drawSkewedStripes(paint, x, y, width, Math.abs(y), "vertical");
     // }
 
-    // // 左侧溢出 (Left Overflow)
+    // 左侧溢出 (Left Overflow)
+    // console.log(x)
     // if (x < 0) {
     //   console.log("左侧溢出", this);
     //   paint.fillRect(x, y, Math.abs(x), height);
@@ -337,11 +345,10 @@ export abstract class SingleChildRenderView extends RenderBox {
     // 右侧溢出 (Right Overflow)
     const rightOverflow = width - maxWidth;
     if (rightOverflow > 0) {
-      console.log("右侧溢出", this);
-      paint.fillRect(x + width - rightOverflow, y, rightOverflow, height);
-      this.drawSkewedStripes(paint, x + width - rightOverflow, y, rightOverflow, height, "horizontal");
+      const paintAlertOffset = x + width - rightOverflow - 20;
+      paint.fillRect(paintAlertOffset, y, 20, height);
+      this.drawSkewedStripes(paint, paintAlertOffset, y, rightOverflow, height, "horizontal");
     }
-
     paint.restore();
   }
 
@@ -356,26 +363,27 @@ export abstract class SingleChildRenderView extends RenderBox {
    */
   private drawSkewedStripes(paint: Painter, x: number, y: number, width: number, height: number, direction: "horizontal" | "vertical") {
     paint.save();
+    paint.rect(x, y, width, height);
+    paint.clip();
     paint.fillStyle = "black";
-
+    const translate = new Matrix4();
     if (direction === "vertical") {
-      const translate = new Matrix4();
-      paint.rect(x,y,width,height);
-      paint.clip();
-      translate.translate(x-20, 0).skewY(-0.8);
+      translate.translate(0, y).skewX(-0.8);
       paint.transform(translate.matrix);
-      for (let i = 0; i < width / 10; i++) {
-        paint.fillRect(x, y, 10, 20);
+      for (let i = 0; i < width / 10 + 1; i++) {
+        paint.fillRect(x, 0, 10, 20);
         paint.translate(20, 0);
       }
     } else {
-      paint.transform(Matrix4.skewX(-0.8).matrix);
-      for (let i = 0; i < height / 10; i++) {
+      translate.translate(x, 0).skewY(-0.8);
+      paint.transform(translate.matrix);
+      for (let i = 0; i < height / 10 + 1; i++) {
+        paint.save();
+        paint.fillRect(0, y, 20, 10);
+        paint.restore();
         paint.translate(0, 20);
-        paint.fillRect(x, y, width, 10);
       }
     }
-
     paint.restore();
   }
 

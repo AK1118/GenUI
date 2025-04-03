@@ -120,7 +120,7 @@ export class Matrix4 extends Matrix {
   }
   static skewY(beta: number): Matrix4 {
     const transform = Matrix4.zero.identity();
-    transform.matrix[4] = Math.tan(beta);
+    transform.matrix[1] = Math.tan(beta);
     return transform;
   }
   skewY(beta: number): Matrix4 {
@@ -129,8 +129,8 @@ export class Matrix4 extends Matrix {
   }
   static skew(alpha: number, beta: number): Matrix4 {
     const transform = Matrix4.zero.identity();
-    transform.matrix[4] = Math.tan(alpha);
-    transform.matrix[1] = Math.tan(beta);
+    transform.matrix[4] = Math.tan(alpha);//X
+    transform.matrix[1] = Math.tan(beta);//Y
     return transform;
   }
   skew(alpha: number, beta: number): Matrix4 {

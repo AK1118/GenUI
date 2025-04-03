@@ -116,6 +116,7 @@ import { PaintingContext, SingleChildRenderView } from "@/lib/render-object/basi
 import { RenderView } from "@/lib/render-object/render-object";
 import { GenNative } from "@/types/native";
 import { AssetImageProvider, ImageProvider, NetWorkImageProvider } from "@/lib/painting/image-provider";
+import { RenderSliverBoxAdapter } from "@/lib/render-object/slivers";
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
 
@@ -232,7 +233,6 @@ class TestState extends State<Test> {
       // alignment:Alignment.center,
       child: Transform.rotate({
         angle: Math.PI * 0,
-
         child: Transform.translate({
           x: 10,
           y: 10,
@@ -267,110 +267,53 @@ class Item extends StatelessWidget {
     // url: 'http://localhost:1118/img/bg.jpg'
   });
   build(context: BuildContext): Widget {
-    return new Container({
-      width: 50,
-      height: 120,
-      decoration: new BoxDecoration({
-        // borderRadius: BorderRadius.all(20),
-        backgroundColor: Colors.gray
-      }),
-      // child: new ImageWidget({
-      //   width: 100,
-      //   height: 100,
-      //   fit: BoxFit.fill,
-      //   imageProvider: new AssetImageProvider({
-      //     assetsImageBuilder() {
-      //       const image = new Image();
-      //       image.src = 'https://picsum.photos/100';
-      //       return image;
-      //     },
-      //   }),
-      // })
+    return new Row({
+      children: [
+        new Container({
+          width: 400,
+          height: 50,
+          decoration: new BoxDecoration({
+            // borderRadius: BorderRadius.all(20),
+            backgroundColor: Colors.gray
+          }),
+          child: new ImageWidget({
+            width: 100,
+            height: 100,
+            fit: BoxFit.fitHeight,
+            imageProvider: new AssetImageProvider({
+              assetsImageBuilder() {
+                const image = new Image();
+                image.src = 'https://picsum.photos/100';
+                return image;
+              },
+            }),
+          })
+        })
+      ]
     });
   }
 }
+
+class CustomException extends Error {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
 runApp(
   new Container({
     width: canvas.width,
-    height: canvas.height / 2,
+    height: canvas.height,
     color: Colors.white,
-    padding:{
-top:100,
-left:40,
-    },
-    child: new Column({
-      children: [
-        new Container(
-          {
-            width: 30,
-            height:300 ,
-            color:Colors.orange,
-          }
-        ),
-        // new ImageWidget({
-        //   // height: 200,
-        //   // width:300,
-        //   fit: BoxFit.fitWidth,
-        //   imageProvider: imageProvider,
-        // }), 
-        // new ImageWidget({
-        //   height: 200,
-        //   fit: BoxFit.fitHeight,
-        //   imageProvider: imageProvider,
-        // }), new ImageWidget({
-        //   height: 200,
-        //   fit: BoxFit.fitHeight,
-        //   imageProvider: imageProvider,
-        // })
-
-        // ...Array.from({
-        //   length: 3
-        // }).map((item,ndx) => new Item()),
-        // new Expanded({
-        //   child: new Item()
-        // })
-      ],
+    child: new SingleChildScrollView({
+      child: new Wrap({
+        spacing: 10,
+        runSpacing: 10,
+        children: Array.from({
+          length: 10
+        }).map(() => new Item()),
+      })
     })
-    // child: new Wrap({
-    //   children: Array.from({
-    //     length: 10
-    //   }).map(() => new Item()),
-    // children: [
-    //   new Image({
-    //     fit: BoxFit.fill,
-    //     // width:100,
-    //     // height:100,
-    //     imageSource: new ImageSource({
-    //       imageProvider: imageProvider,
-    //     })
-    //   }),
-    //   new Image({
-    //     fit: BoxFit.fill,
-    //     // width:100,
-    //     // height:100,
-    //     imageSource: new ImageSource({
-    //       imageProvider: imageProvider,
-    //     })
-    //   }),
-    //   new GestureDetector({
-    //     onTap: () => {
-    //       console.log("下一张")
-    //     },
-    //     child: new Container({
-    //       color: Colors.pink,
-    //       padding: {
-    //         bottom: 30,
-    //         top: 30
-    //       },
-    //       child: new Text("下一个张", {
-    //         style: new TextStyle({
-    //           color: Colors.white
-    //         })
-    //       })
-    //     })
-    //   })
-    // ]
-    // })
   })
 );
 // nativeTextInputHandler.updateEditingValue(inputBar.value, 0, 0);
