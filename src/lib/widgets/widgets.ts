@@ -1,11 +1,11 @@
 /*
  * @Author: AK1118
  * @Date: 2024-09-16 09:49:49
- * @Last Modified by: AK1118
- * @Last Modified time: 2024-09-16 17:54:29
+ * @Last Modified by: mikey.zhaopeng
+ * @Last Modified time: 2025-04-03 10:25:07
  * @Description: 组合类组件
  */
-import { BuildContext } from "../basic/elements";
+import { BuildContext, Element } from "../basic/elements";
 import {
   MultiChildRenderObjectWidgetArguments,
   SingleChildRenderObjectWidget,
@@ -368,3 +368,5 @@ export class SingleChildScrollView extends StatelessWidget {
     });
   }
 }
+
+

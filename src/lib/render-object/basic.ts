@@ -316,12 +316,9 @@ export abstract class SingleChildRenderView extends RenderBox {
 
     paint.save();
     paint.fillStyle = "yellow";
-
     // 下方溢出 (Bottom Overflow)
     const bottomOverflow = height - maxHeight;
     if (bottomOverflow > 0) {
-      
-    console.log("下发溢出",x)
       const paintAlertOffset = y + height - bottomOverflow - 20;
       paint.fillRect(x, paintAlertOffset, width, 20);
       this.drawSkewedStripes(paint, x, paintAlertOffset, width, bottomOverflow, "vertical");
@@ -2343,3 +2340,4 @@ export class ClipPathRenderView extends CustomClipperRenderView {
     }
   }
 }
+

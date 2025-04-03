@@ -4,6 +4,8 @@ import {
   MultiChildRenderObjectWidget,
   MultiChildRenderObjectWidgetArguments,
   ParentDataWidget,
+  RenderObjectElement,
+  RenderObjectWidget,
   RootRenderObjectElement,
   SingleChildRenderObjectWidget,
   SingleChildRenderObjectWidgetArguments,
@@ -37,15 +39,18 @@ import {
   onPointerUpCallback,
   PaddingOption,
   PaddingRenderView,
+  PaintingContext,
   ParagraphView,
   ParentDataRenderView,
   PositionedArguments,
   RectTLRB,
+  RenderBox,
   RenderPointerListener,
   RenderPointerListenerArguments,
   RenderTransformArguments,
   RenderTransformBox,
   RootRenderView,
+  SingleChildRenderView,
   StackOption,
   StackParentData,
   StackRenderView,
@@ -912,3 +917,4 @@ export class ClipPath extends SingleChildRenderObjectWidget {
     renderView.clipBehavior = this.clipBehavior;
   }
 }
+

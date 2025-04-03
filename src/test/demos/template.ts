@@ -12,7 +12,6 @@ import {
   Flex,
   GestureDetector,
   Image as ImageWidget,
-
   Listener,
   Padding,
   Positioned,
@@ -117,6 +116,7 @@ import { RenderView } from "@/lib/render-object/render-object";
 import { GenNative } from "@/types/native";
 import { AssetImageProvider, ImageProvider, NetWorkImageProvider } from "@/lib/painting/image-provider";
 import { RenderSliverBoxAdapter } from "@/lib/render-object/slivers";
+import { LayoutBuilder } from "@/lib/widgets/layout-builder";
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
 
@@ -260,33 +260,78 @@ const imageProvider = new NetWorkImageProvider({
 // })
 
 
-class Item extends StatelessWidget {
+class Item extends StatefulWidget {
+  createState(): State<Item> {
+    return new ItemState();
+  }
+}
+
+class ItemState extends State<Item> {
   private imageProvider: ImageProvider = new NetWorkImageProvider({
     url: 'https://picsum.photos/100',
-    //url: "https://images.unsplash.com/photo-1726487536376-846cd82fbd78?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-    // url: 'http://localhost:1118/img/bg.jpg'
   });
+  private _scale = 2;
+  animation = new AnimationController({
+    duration: new Duration({
+      second: 1,
+    })
+  });
+
+  public initState(): void {
+    super.initState();
+    this.animation.addListener(() => {
+      this.setState(() => { });
+      if (this.animation.isCompleted) {
+        this.animation.reverse();
+      }
+      if (this.animation.isDismissed) {
+        this.animation.forward();
+      }
+    });
+    this.animation.forward();
+  }
+
   build(context: BuildContext): Widget {
     return new Row({
+      mainAxisAlignment:MainAxisAlignment.center,
       children: [
-        new Container({
-          width: 400,
-          height: 50,
-          decoration: new BoxDecoration({
-            // borderRadius: BorderRadius.all(20),
-            backgroundColor: Colors.gray
-          }),
-          child: new ImageWidget({
-            width: 100,
-            height: 100,
-            fit: BoxFit.fitHeight,
-            imageProvider: new AssetImageProvider({
-              assetsImageBuilder() {
-                const image = new Image();
-                image.src = 'https://picsum.photos/100';
-                return image;
-              },
+        new GestureDetector({
+          onTap: () => {
+            this.setState(() => {
+              this._scale += .1;
+            })
+          },
+          child: new Container({
+            width: 150 * (this._scale * this.animation.value),
+            height: 50,
+            decoration: new BoxDecoration({
+              // borderRadius: BorderRadius.all(20),
+              backgroundColor: Colors.gray
             }),
+            child: new LayoutBuilder({
+              builder: (context, constraints) => {
+                return new Align({
+                  child: new Container({
+                    height: 10,
+                    width: constraints.maxWidth * (1 - this.animation.value),
+                    color: Colors.white
+                  })
+                });
+                // return new Text("Width" + constraints.maxWidth)
+                // return new ImageWidget({
+                //   width: constraints.maxWidth,
+                //   height: 100,
+                //   fit: BoxFit.fill,
+                //   imageProvider: new AssetImageProvider({
+                //     assetsImageBuilder() {
+                //       const image = new Image();
+                //       image.src = 'https://picsum.photos/100';
+                //       return image;
+                //     },
+                //   }),
+                // });
+              }
+            })
           })
         })
       ]

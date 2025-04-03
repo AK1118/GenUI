@@ -16,7 +16,7 @@ export abstract class BindingBase {
   constructor() {
     this.initInstance();
   }
-  protected initInstance() {}
+  protected initInstance() { }
 }
 
 export interface WidgetArguments {
@@ -36,7 +36,7 @@ export abstract class Widget {
     return this.constructor;
   }
   constructor(key?: Key) {
-    if(key&&!(key instanceof Key)){
+    if (key && !(key instanceof Key)) {
       throw new Error("key must be instance of Key")
     }
     this.key = key;
@@ -152,14 +152,14 @@ export abstract class State<T extends StatefulWidget = StatefulWidget> {
   get mounted(): boolean {
     return this.element != null;
   }
-  public initState(): void {}
+  public initState(): void { }
   protected setState(fn: VoidFunction): void {
     fn();
     this.element.markNeedsBuild();
   }
   abstract build(context: BuildContext): Widget;
-  public unmount() {}
-  public didUpdateWidget(oldWidget: Widget) {}
+  public unmount() { }
+  public didUpdateWidget(oldWidget: Widget) { }
 }
 
 /**
@@ -209,7 +209,7 @@ export abstract class RenderObjectElement extends Element {
   protected findAncestorParentDataElement(): ParentDataElement {
     let ancestor: Element = this.parent;
     let result: ParentDataElement;
-    while (ancestor != null&&!(ancestor instanceof RenderObjectElement)) {
+    while (ancestor != null && !(ancestor instanceof RenderObjectElement)) {
       if (ancestor instanceof ParentDataElement) {
         result = ancestor;
         break;
@@ -266,7 +266,7 @@ export abstract class RenderObjectElement extends Element {
     }
     this.slot = null;
   }
-  protected removeRenderViewChild(child: RenderView, slot?: Object): void {}
+  protected removeRenderViewChild(child: RenderView, slot?: Object): void { }
   /**
    * 这个方法 updateChildren 的目的是将一组旧的元素数组（oldChildren）与新的小部件数组（newWidgets）进行比较，
    * 并更新旧的元素以生成一个新的元素数组（newChildren），从而反映新小部件的变化。
@@ -381,11 +381,11 @@ export abstract class RenderObjectWidget extends Widget {
     super(key);
     this.child = child;
   }
-  abstract createRenderObject(context?:BuildContext): RenderView;
-  abstract updateRenderObject(
+  abstract createRenderObject(context?: BuildContext): RenderView;
+  updateRenderObject(
     context: BuildContext,
     renderView: RenderView
-  ): void;
+  ): void { };
 }
 
 export abstract class SingleChildRenderObjectWidget extends RenderObjectWidget {
