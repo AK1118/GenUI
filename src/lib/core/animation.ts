@@ -48,7 +48,7 @@ class Cubic extends Curve {
   }
 }
 
-class Learn extends Curve {
+class Linear extends Curve {
   transformInternal(t: number): number {
     return t;
   }
@@ -63,7 +63,7 @@ export class Curves {
   static readonly easeInQuad = new Cubic(0.55, 0.085, 0.68, 0.53);
   static readonly easeOut = new Cubic(0.0, 0.0, 0.58, 1.0);
   static readonly easeInBack = new Cubic(0.6, -0.28, 0.735, 0.045);
-  static readonly linear = new Learn();
+  static readonly linear = new Linear();
   static bezier(p0: number, p1: number, p2: number, t: number): number {
     const k = 1 - t;
     return k * k * p0 + 2 * k * t * p1 + t * t * p2;
@@ -275,14 +275,14 @@ export class AnimationController extends Animation<number> {
     if (this.isAnimating) return;
     let value =
       this.direction === AnimationDirection.forward ? this.begin : this.end;
-    this.startSimulation(
+    setTimeout(() => this.startSimulation(
       new InterpolationSimulation(
         value,
         target,
         duration ?? this.duration,
         curve
       )
-    );
+    ));
   }
   forward(from?: number): void {
     this.direction = AnimationDirection.forward;
@@ -308,9 +308,9 @@ export class AnimationController extends Animation<number> {
     this.ticker.stop(canceled);
     this.status = AnimationStatus.dismissed;
   }
-  cancel(){
+  cancel() {
     this.stop();
-    this.simulation=null;
+    this.simulation = null;
   }
 }
 
@@ -580,7 +580,7 @@ export class BouncingSimulation extends Simulation {
   private offsetTime: number = 0;
   private simulation(time: number): Simulation {
     let simulation: Simulation;
-    if (time > this.springTime+this.springTime*0.1) {
+    if (time > this.springTime + this.springTime * 0.1) {
       this.offsetTime = isFinite(this.springTime) ? this.springTime : 0;
       simulation = this.springSimulation;
     } else {

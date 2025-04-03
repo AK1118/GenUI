@@ -14,10 +14,12 @@ import { TextStyle } from "@/lib/painting/text-painter";
 import { Align, Expanded, GestureDetector, Image, Padding, Positioned, SizedBox, Stack, Text, Transform } from "@/lib/widgets/basic";
 import { ScrollBar, ScrollController } from "@/lib/widgets/scroll";
 import { SliverChildBuilderDelegate, SliverList } from "@/lib/widgets/sliver";
-import { Column, Container, Row, SingleChildScrollView } from "@/lib/widgets/widgets";
 import MyPost from "../poster";
 import { BoxFit } from "@/lib/painting/box-fit";
 import { NetWorkImageProvider } from "@/lib/painting/image-provider";
+import { SingleChildScrollView } from "@/lib/widgets/scroll-child-scroll-view";
+import { Column, Row } from "@/lib/widgets/flex";
+import { Container } from "@/lib/widgets/container";
 
 
 /**

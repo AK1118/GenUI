@@ -24,8 +24,6 @@ import {
   TextInputClient,
   TextSelection,
 } from "../services/text-editing";
-import { ColoredBox, SizedBox, Text, WidgetToSliverAdapter } from "./basic";
-import { Column, Container, SingleChildScrollView } from "./widgets";
 
 interface EditableArguments {
   text: TextSpan;

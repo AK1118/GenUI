@@ -1,41 +1,12 @@
 import { Binding } from "./lib/basic/binding";
 import { Widget } from "./lib/basic/framework";
-export * from "./lib/painting/radius";
-export * from "./lib/core/base-types";
-export * from "./lib/painting/painter";
-export * from "./lib/basic/binding";
-export * from "./lib/basic/elements";
-export * from "./lib/basic/rect";
-export * from "./lib/widgets/basic";
-export * from "./lib/basic/framework";
-export * from "./lib/painting/alignment";
-export * from "./lib/rendering/constraints";
-export * from "./lib/math/vector";
-export * from "./index";
-export * from "./lib/math/math";
-export * from "./lib/basic/key";
-export * from "./lib/utils/utils";
-export * from "./lib/math/matrix";
-export * from "./lib/painting/decoration";
-export * from "./lib/painting/radius";
-export * from "./lib/painting/borders";
-export * from "./lib/painting/shadow";
-export * from "./lib/painting/text-painter";
-export * from "./lib/widgets/widgets";
-export * from "./lib/painting/image";
-export * from "./lib/painting/box-fit";
-export * from "./lib/core/change-notifier";
-export * from "./lib/render-object/viewport";
-export * from "./lib/core/scroll-physics";
-export * from "./lib/core/animation";
-export * from "./lib/core/duration";
-export * from "./lib/widgets/scroll";
-export * from "./lib/rendering/custom";
-export * from "./lib/rendering/path-2D";
-export * from "./lib/core/platform";
-export * from "./lib/painting/color";
-export * from "./lib/painting/gradient";
-export * from "./lib/core/platform";
+
+export * from "./lib/render-object/index";
+export * from "./lib/widgets/index";
+export * from "./lib/painting/index";
+export * from "./lib/rendering/index";
+export * from "./lib/basic/index";
+
 const runApp = (rootWidget: Widget) => {
   const binding = Binding.getInstance();
   binding.elementBinding.attachRootWidget(rootWidget);

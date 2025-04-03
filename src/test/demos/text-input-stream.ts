@@ -25,10 +25,6 @@ import { Offset } from "@/lib/basic/rect";
 import { ChangeNotifier } from "@/lib/core/change-notifier";
 import Stream from "@/lib/core/stream";
 import { TextRange } from "@/lib/services/text-editing";
-//@ts-ignore
-import eruda from "eruda";
-
-eruda.init();
 
 export async function* NativeInputStream(): AsyncGenerator<string> {
   const text: HTMLInputElement = document.querySelector("#inputbar");

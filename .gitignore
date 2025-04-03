@@ -7,3 +7,4 @@ public
 *.7z
 *.rar
 */node_modules
+example/node_modules

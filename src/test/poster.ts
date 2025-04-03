@@ -32,7 +32,7 @@ import {
   TextRich,
   Transform,
 } from "@/lib/widgets/basic";
-import { Column, Container, Row } from "@/lib/widgets/widgets";
+import { Column, Container, Row } from "@/lib/widgets/index";
 import { Color, Colors } from "@/lib/painting/color";
 import { RadialGradient } from "@/lib/painting/gradient";
 import { screenUtil } from "./demos/template";

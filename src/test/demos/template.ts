@@ -28,7 +28,6 @@ import {
 import Alignment from "@/lib/painting/alignment";
 import { BoxConstraints } from "@/lib/rendering/constraints";
 import Vector from "@/lib/math/vector";
-import runApp, { BuildContext } from "@/index";
 import {
   abs,
   cos,
@@ -51,7 +50,7 @@ import {
   Scrollable,
   ScrollView,
   SingleChildScrollView,
-} from "@/lib/widgets/widgets";
+} from "@/lib/widgets/index";
 import { BoxFit } from "@/lib/painting/box-fit";
 import { ChangeNotifier, Listenable } from "@/lib/core/change-notifier";
 import { ScrollPosition } from "@/lib/render-object/viewport";
@@ -59,7 +58,7 @@ import {
   BouncingScrollPhysics,
   SimpleScrollPhysics,
 } from "@/lib/core/scroll-physics";
-import { AnimationController, AnimationStatus } from "@/lib/core/animation";
+import { AnimationController, AnimationStatus, Curves } from "@/lib/core/animation";
 import { Duration } from "@/lib/core/duration";
 import {
   Axis,
@@ -117,6 +116,8 @@ import { GenNative } from "@/types/native";
 import { AssetImageProvider, ImageProvider, NetWorkImageProvider } from "@/lib/painting/image-provider";
 import { RenderSliverBoxAdapter } from "@/lib/render-object/slivers";
 import { LayoutBuilder } from "@/lib/widgets/layout-builder";
+import { BuildContext } from "@/lib/basic/elements";
+import runApp from "@/index";
 const canvas: HTMLCanvasElement = document.querySelector("#canvas");
 const img2: HTMLImageElement = document.querySelector("#bg");
 
@@ -274,7 +275,9 @@ class ItemState extends State<Item> {
   animation = new AnimationController({
     duration: new Duration({
       second: 1,
-    })
+     
+    }),
+    curve:Curves.easeIn,
   });
 
   public initState(): void {
@@ -283,8 +286,10 @@ class ItemState extends State<Item> {
       this.setState(() => { });
       if (this.animation.isCompleted) {
         this.animation.reverse();
+        console.log("回拨")
       }
       if (this.animation.isDismissed) {
+        console.log("正播")
         this.animation.forward();
       }
     });
