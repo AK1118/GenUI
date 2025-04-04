@@ -9,7 +9,7 @@ const __dirname=dirname(__filename);
 
 export default (env,{mode})=>{
   //If this mode is "development",you must be set entry to test path,and mode "production" never won't use.
-  const entry='./src/index.ts'//mode==='development'?"./src/test/index.ts":"./src/index.ts";
+  const entry=mode==='development'?"./src/test/index.ts":"./src/index.ts";
   return {
     entry,
     output: {

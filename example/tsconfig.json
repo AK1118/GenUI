@@ -1,9 +1,14 @@
 {
   "compilerOptions": {
-    "target": "ES6",
+    "moduleResolution": "node",
     "module": "ESNext",
+    "target": "ESNext",
+    "jsx": "preserve",
     "strict": true,
-    "outDir": "./dist",
-    "rootDir": "./src"
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true
   }
 }
