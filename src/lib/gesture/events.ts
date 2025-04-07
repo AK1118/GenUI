@@ -86,28 +86,6 @@ export class PointerEventHandler {
     }else{
       console.warn("NativeEventsBinding.instance is null");
     }
-    //browser event listener
-    // if (window) {
-    //   if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-    //     // Touch events for mobile devices
-    //     window.addEventListener("touchstart", this.handleTouchStart.bind(this));
-    //     window.addEventListener("touchmove", this.handleTouchMove.bind(this));
-    //     window.addEventListener("touchend", this.handleTouchEnd.bind(this));
-    //     window.addEventListener(
-    //       "touchcancel",
-    //       this.handleTouchCancel.bind(this)
-    //     );
-    //   } else {
-    //     window.addEventListener("mousedown", this.handlePointerDown.bind(this));
-    //     window.addEventListener("mouseup", this.handlePointerUp.bind(this));
-    //     window.addEventListener("mousemove", this.handlePointerMove.bind(this));
-    //     window.addEventListener(
-    //       "mouseout",
-    //       this.handlePointerCancel.bind(this)
-    //     );
-    //     window.addEventListener("wheel", this.handleWheel.bind(this));
-    //   }
-    // }
   }
 
   private handlePointerDown(event: MouseEvent) {

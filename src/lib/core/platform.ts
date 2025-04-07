@@ -10,6 +10,7 @@ interface BaseConfig {
   canvas?: HTMLCanvasElement;
   renderContext?: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   strategies: NativeStrategies,
+  showBanner?: boolean,
 }
 
 export class GenPlatformConfig {
@@ -17,6 +18,9 @@ export class GenPlatformConfig {
   private baseConfig: BaseConfig;
   constructor(args: BaseConfig) {
     this.baseConfig = args;
+    if (this.screenWidth <= 0 || this.screenHeight <= 0 || this.devicePixelRatio <= 0) {
+      throw new Error("screenWidth, screenHeight and devicePixelRatio must be greater than 0");
+    }
   }
   public static InitInstance(args: BaseConfig): GenPlatformConfig {
     if (!GenPlatformConfig._instance) {
@@ -48,6 +52,11 @@ export class GenPlatformConfig {
   get isDebug() {
     return this.baseConfig?.debug;
   }
+
+  get showBanner() {
+    return this.baseConfig?.showBanner;
+  }
+
 
   get strategies(): NativeStrategies {
     return this.baseConfig?.strategies;

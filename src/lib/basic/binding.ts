@@ -97,7 +97,7 @@ export class SchedulerFrameManager {
       }
     });
     //更新fps
-    this.frameUpdater.update();
+    if (GenPlatformConfig.instance.showBanner) this.frameUpdater.update();
     // 清空所有的回调函数
     this.frameCallbacks.clear();
     // 标记当前没有请求帧
@@ -223,7 +223,6 @@ class FrameUpdater {
   }
   private render(frame: number) {
     const screenWidth = GenPlatformConfig.instance.screenWidth;
-
     this.painter.save();
     this.painter.globalAlpha = 0.5;
     // 设置字体样式

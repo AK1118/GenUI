@@ -35,8 +35,16 @@ import {
 import { Column, Container, Row } from "@/lib/widgets/index";
 import { Color, Colors } from "@/lib/painting/color";
 import { RadialGradient } from "@/lib/painting/gradient";
-import { screenUtil } from "./demos/template";
 import { NetWorkImageProvider } from "@/lib/painting/image-provider";
+import ScreenUtils from "./screen-utils";
+
+
+export const screenUtil = new ScreenUtils({
+  canvasWidth: 300,
+  canvasHeight: 300,
+  devicePixelRatio: 2,
+});
+
 const scale = 2;
 const sp = (value: number) => screenUtil.setSp(value * scale);
 const sw = (value: number) => screenUtil.setWidth(value * scale);
