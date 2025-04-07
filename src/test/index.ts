@@ -1,15 +1,15 @@
 // import { TextInputStreamDemo } from "./demos/text-input-stream";
 import "./demos/template"
 // // TextInputStreamDemo();
-// //@ts-ignore
-// import eruda from "eruda";
-
+//@ts-ignore
+import eruda from "eruda";
+eruda.init();
 import runApp, { Colors, Container, GestureDetector } from "@/index";
 import { GenPlatformConfig } from "@/lib/core/platform";
 import { NativeEventsBindingHandler } from "@/lib/native/events";
 import { DefaultNativeStrategies } from "@/lib/native/native-strategies";
 
-// // eruda.init();
+
 
 // // function readonly(target: User, key: string,): void {
 // //     console.log("注解生效", target, key);

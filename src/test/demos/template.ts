@@ -9,18 +9,19 @@ import {
 import { GenPlatformConfig } from "@/lib/core/platform";
 import { Colors, } from "@/lib/painting/color";
 import { NativeEventsBindingHandler } from "@/lib/native/events";
-import { NativeTextInputHandler,  } from "@/lib/native/text-input";
+import { NativeTextInputHandler, } from "@/lib/native/text-input";
 //@ts-ignore
 import eruda from "eruda";
 import Stream from "@/lib/core/stream";
 import { NativeInputStream, TextNativeInputAdapter } from "./text-input-stream";
 import { DefaultNativeStrategies } from "@/lib/native/native-strategies";
 import runApp from "@/index";
+import Vector from "@/lib/math/vector";
 
 const canvas = document.createElement("canvas");
 const dev = window.devicePixelRatio;
-const width= 300;
-const height= 300;
+const width = 300;
+const height = 300;
 canvas.width = width * dev;
 canvas.height = height * dev;
 canvas.style.width = width + "px";
@@ -38,13 +39,21 @@ GenPlatformConfig.InitInstance({
   canvas: canvas,
   renderContext: g,
   strategies: new DefaultNativeStrategies(),
-  showBanner:true
+  showBanner: true
 });
 
-const eventCaller = new NativeEventsBindingHandler();
+class CustomNativeEventsBindingHandler extends NativeEventsBindingHandler{
+  protected adapter(data: any) {
+      return data;
+  }
+}
+
+
+const eventCaller = new CustomNativeEventsBindingHandler();
 if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
   // Touch events for mobile devices
   window.addEventListener("touchstart", (e) => {
+    console.log(e.touches[0].identifier)
     eventCaller.applyEvent("touchstart", e);
   });
   window.addEventListener("touchmove", (e) => {

@@ -1,5 +1,6 @@
 import { BindingBase } from "../basic/framework";
 import { ChangeNotifier, Listenable } from "../core/change-notifier";
+import { Offset } from "../math/vector";
 
 export type EventListenType =
   | "mousedown"
@@ -13,6 +14,38 @@ export type EventListenType =
   | "touchcancel";
 type EventData = any;
 type EventDataCallback = (data: EventData) => void;
+
+
+export class GenPointerEvent{
+  identifier: number;
+  pointer: Offset;
+}
+
+export interface GenUnifiedEvent {
+  pointer: GenPointerEvent;
+  pointers: Array<GenPointerEvent>;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  shiftKey?: boolean;
+  delta?: Offset;
+}
+
+export class GenUnifiedPointerEvent implements GenUnifiedEvent {
+  pointer: GenPointerEvent;
+  pointers: GenPointerEvent[];
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  shiftKey?: boolean;
+  delta?: Offset;
+  constructor(args:GenUnifiedEvent){
+    this.pointer = args.pointer;
+    this.pointers = args.pointers;
+    this.ctrlKey = args?.ctrlKey;
+    this.metaKey = args?.metaKey;
+    this.shiftKey = args?.shiftKey;
+    this.delta = args?.delta;
+  }
+}
 
 export class NativeEventsBinding extends BindingBase {
   static instance: NativeEventsBinding;
