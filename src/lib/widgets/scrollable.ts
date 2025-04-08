@@ -134,16 +134,16 @@ type ViewportBuilder = (
           this.position.scrollStart();
         },
         child: new GestureDetector({
-          onPanStart: () => {
+          onDragStart: () => {
             this.position.scrollStart();
           },
-          onPanUpdate: (event) => {
+          onDragUpdate: (event) => {
             this.applyUserOffset(event.delta);
             this.position.scrollUpdate(
               new Offset(event.position.x, event.position.y)
             );
           },
-          onPanEnd: () => {
+          onDragEnd: () => {
             this.position.scrollEnd();
           },
           child: this.widget.viewportBuilder(context, this.position),

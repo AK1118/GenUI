@@ -37,6 +37,7 @@ import {
   onPointerDownCallback,
   onPointerMoveCallback,
   onPointerUpCallback,
+  onSignalPointerCallback,
   PaddingOption,
   PaddingRenderView,
   PaintingContext,
@@ -115,6 +116,7 @@ import { CustomClipper, CustomPainter } from "../rendering/custom";
 import { Color } from "../painting/color";
 import { BorderRadius } from "../painting/radius";
 import { ImageProvider } from "../painting/image-provider";
+import { PanZoomGestureRecognizer, PanZoomGestureRecognizerArguments } from "../gesture/recognizers/pan-zoom";
 export interface ColoredBoxOption {
   color: Color;
 }
@@ -417,6 +419,7 @@ export class Listener extends SingleChildRenderObjectWidget {
   private _onPointerMove: onPointerMoveCallback;
   private _onPointerUp: onPointerUpCallback;
   private _onPointerCancel: onPointerCancelCallback;
+  private _onSignalPointer: onSignalPointerCallback;
   constructor(
     option: Partial<
       RenderPointerListenerArguments & SingleChildRenderObjectWidget
@@ -427,6 +430,7 @@ export class Listener extends SingleChildRenderObjectWidget {
     this._onPointerMove = option.onPointerMove;
     this._onPointerUp = option.onPointerUp;
     this._onPointerCancel = option.onPointerCancel;
+    this._onSignalPointer = option.onSignalPointer;
   }
   createRenderObject(): RenderView {
     return new RenderPointerListener({
@@ -434,6 +438,7 @@ export class Listener extends SingleChildRenderObjectWidget {
       onPointerMove: this._onPointerMove,
       onPointerUp: this._onPointerUp,
       onPointerCancel: this._onPointerCancel,
+      onSignalPointer: this._onSignalPointer,
     });
   }
   updateRenderObject(
@@ -444,6 +449,7 @@ export class Listener extends SingleChildRenderObjectWidget {
     renderView.onPointerMove = this._onPointerMove;
     renderView.onPointerUp = this._onPointerUp;
     renderView.onPointerCancel = this._onPointerCancel;
+    renderView.onSignalPointer = this._onSignalPointer;
   }
 }
 
@@ -573,7 +579,8 @@ interface GestureDetectorArguments
   extends TapGestureRecognizerArguments,
   DoubleTapGestureRecognizerArguments,
   LongPressGestureRecognizerArguments,
-  PanDragGestureRecognizerArguments { }
+  PanDragGestureRecognizerArguments,
+  PanZoomGestureRecognizerArguments { }
 
 export class GestureDetector
   extends StatelessWidget
@@ -582,9 +589,17 @@ export class GestureDetector
   private child: Widget;
   onDoubleTap: VoidFunction;
   onLongPress: VoidFunction;
-  onPanStart: (event: PanZoomStartPointerEvent) => void;
-  onPanUpdate: (event: PanZoomUpdatePointerEvent) => void;
-  onPanEnd: (event: PanZoomEndPointerEvent) => void;
+  onPanZoomStart: (event: PanZoomStartPointerEvent) => void;
+  onPanZoomUpdate: (event: PanZoomUpdatePointerEvent) => void;
+  onPanZoomEnd: (event: PanZoomEndPointerEvent) => void;
+  onTap: EventCallback<PointerEvent>;
+  onTapDown: EventCallback<DownPointerEvent>;
+  onTapUp: EventCallback<UpPointerEvent>;
+  onTapCancel: VoidFunction;
+  onLongPressUpdate: (event: UpPointerEvent) => void;
+  onLongPressStart: (event: UpPointerEvent) => void;
+  onLongPressEnd: (event: UpPointerEvent) => void;
+
   constructor(
     option?: Partial<
       GestureDetectorArguments & SingleChildRenderObjectWidgetArguments
@@ -598,17 +613,17 @@ export class GestureDetector
     this.onTapCancel = option?.onTapCancel;
     this.onDoubleTap = option?.onDoubleTap;
     this.onLongPress = option?.onLongPress;
-    this.onPanStart = option?.onPanStart;
-    this.onPanUpdate = option?.onPanUpdate;
-    this.onPanEnd = option?.onPanEnd;
+    this.onDragStart = option?.onDragStart;
+    this.onDragUpdate = option?.onDragUpdate;
+    this.onDragEnd = option?.onDragEnd;
+    this.onPanZoomStart = option?.onPanZoomStart;
+    this.onPanZoomUpdate = option?.onPanZoomUpdate;
+    this.onPanZoomEnd = option?.onPanZoomEnd;
   }
-  onTap: EventCallback<PointerEvent>;
-  onTapDown: EventCallback<DownPointerEvent>;
-  onTapUp: EventCallback<UpPointerEvent>;
-  onTapCancel: VoidFunction;
-  onLongPressUpdate: (event: UpPointerEvent) => void;
-  onLongPressStart: (event: UpPointerEvent) => void;
-  onLongPressEnd: (event: UpPointerEvent) => void;
+  onDragStart: (event: DownPointerEvent) => void;
+  onDragUpdate: (event: MovePointerEvent) => void;
+  onDragEnd: (event: UpPointerEvent) => void;
+
 
   build(context: BuildContext): Widget {
     const gestures: Map<
@@ -650,12 +665,20 @@ export class GestureDetector
       new GestureRecognizerFactory(
         () => new PanDragGestureRecognizer(),
         (instance) => {
-          instance.onPanEnd = this.onPanEnd;
-          instance.onPanStart = this.onPanStart;
-          instance.onPanUpdate = this.onPanUpdate;
+          instance.onDragEnd = this.onDragEnd;
+          instance.onDragStart = this.onDragStart;
+          instance.onDragUpdate = this.onDragUpdate;
         }
       )
     );
+    gestures.set(PanZoomGestureRecognizer, new GestureRecognizerFactory(
+      () => new PanZoomGestureRecognizer(), (instance) => {
+        instance.onPanZoomStart = this.onPanZoomStart;
+        instance.onPanZoomUpdate = this.onPanZoomUpdate;
+        instance.onPanZoomEnd = this.onPanZoomEnd;
+      }
+
+    ));
 
     return new RawGestureDetector({
       gestures: gestures,

@@ -11,22 +11,22 @@ import {
 import { OnePointerGestureRecognizer } from "./gesture-recognizer";
 
 export interface PanDragGestureRecognizerArguments {
-  onPanStart: (event: PanZoomStartPointerEvent) => void;
-  onPanUpdate: (event: PanZoomUpdatePointerEvent) => void;
-  onPanEnd: (event: PanZoomEndPointerEvent) => void;
+  onDragStart: (event: DownPointerEvent) => void;
+  onDragUpdate: (event: MovePointerEvent) => void;
+  onDragEnd: (event: UpPointerEvent) => void;
 }
 
 class PanDragGestureRecognizer
   extends OnePointerGestureRecognizer
-  implements PanDragGestureRecognizerArguments
-{
-  onPanStart: (event: PanZoomStartPointerEvent) => void;
-  onPanUpdate: (event: PanZoomUpdatePointerEvent) => void;
-  onPanEnd: (event: PanZoomEndPointerEvent) => void;
+  implements PanDragGestureRecognizerArguments {
+  onDragStart: (event: DownPointerEvent) => void;
+  onDragUpdate: (event: MovePointerEvent) => void;
+  onDragEnd: (event: UpPointerEvent) => void;
+ 
   private startEvent: PanZoomStartPointerEvent;
   private moved: boolean = false;
   isAllowedPointer(event: DownPointerEvent): boolean {
-    return !!(this.onPanEnd || this.onPanStart || this.onPanUpdate);
+    return !!(this.onDragStart || this.onDragUpdate || this.onDragEnd);
   }
   handleEvent(event: PointerEvent): void {
     if (event instanceof DownPointerEvent) {
@@ -42,15 +42,15 @@ class PanDragGestureRecognizer
       }
     }
     if (event instanceof UpPointerEvent && this.moved && this.startEvent) {
-        super.resolve(GestureDisposition.rejected);
-        this.handlePanDragEnd(event);
-        this.reset();
-        this.stopTrackingPointer(event.pointer);
+      super.resolve(GestureDisposition.rejected);
+      this.handlePanDragEnd(event);
+      this.reset();
+      this.stopTrackingPointer(event.pointer);
     }
   }
   rejectGesture(pointer: number): void {
-      super.rejectGesture(pointer);
-      this.reset();
+    super.rejectGesture(pointer);
+    this.reset();
   }
 
   private reset() {
@@ -59,24 +59,24 @@ class PanDragGestureRecognizer
   }
 
 
-  private handlePanDragEnd(event: PanZoomEndPointerEvent): void {
+  private handlePanDragEnd(event: UpPointerEvent): void {
     this.invokeCallback("onPanEnd", () => {
-      this.onPanEnd?.(event);
+      this.onDragEnd?.(event);
     });
   }
 
-  private handlePanDragStart(event: PanZoomStartPointerEvent): void {
+  private handlePanDragStart(event: DownPointerEvent): void {
     this.invokeCallback("onPanStart", () => {
-      this.onPanStart?.(event);
+      this.onDragStart?.(event);
     });
   }
 
-  private handlePanDragUpdate(event: PanZoomUpdatePointerEvent): void {
+  private handlePanDragUpdate(event: MovePointerEvent): void {
     this.invokeCallback("onPanUpdate", () => {
-      this.onPanUpdate?.(event);
+      this.onDragUpdate?.(event);
     });
   }
-  
+
 }
 
 export default PanDragGestureRecognizer;

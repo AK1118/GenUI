@@ -41,6 +41,8 @@ export abstract class GestureRecognizer extends GestureArenaMember {
   }
 }
 
+
+
 /**
  * GestureArenaMember 为参赛人员
  * GestureArenaEntry  入场券

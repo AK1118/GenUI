@@ -5,6 +5,7 @@ import GestureArenaManager from "./arena-manager";
 import {
   DownPointerEvent,
   GenPointerData,
+  HoverPointerEvent,
   PointerEvent,
   PointerEventConverter,
   PointerEventHandler,
@@ -51,7 +52,7 @@ export class GestureBinding extends BindingBase implements HitTestTarget {
   private performPointerEventHandle(event: PointerEvent) {
     let hisTestResult: HitTestResult = new HitTestResult();
     this.hitTest(hisTestResult, event.position);
-    if (event instanceof DownPointerEvent) {
+    if (event instanceof DownPointerEvent||event instanceof HoverPointerEvent||event instanceof UpPointerEvent) {
       this.hitTestPointer.set(event.pointer, hisTestResult);
     } else if (event instanceof UpPointerEvent) {
       hisTestResult = this.hitTestPointer.get(event.pointer);

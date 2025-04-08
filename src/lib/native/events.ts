@@ -33,7 +33,9 @@ export interface GenUnifiedEvent {
   ctrlKey?: boolean;
   metaKey?: boolean;
   shiftKey?: boolean;
-  delta?: Offset;
+  deltaX?: number;
+  deltaY?: number;
+  deltaZ?: number;
 }
 
 export class GenUnifiedPointerEvent implements GenUnifiedEvent {
@@ -42,15 +44,18 @@ export class GenUnifiedPointerEvent implements GenUnifiedEvent {
   ctrlKey?: boolean;
   metaKey?: boolean;
   shiftKey?: boolean;
-  delta?: Offset;
+  deltaX?: number;
+  deltaY?: number;
+  deltaZ?: number;
   constructor(args: GenUnifiedEvent) {
     this.pointer = args.pointer;
     this.pointers = args.pointers;
     this.ctrlKey = args?.ctrlKey;
     this.metaKey = args?.metaKey;
     this.shiftKey = args?.shiftKey;
-    this.delta = args?.delta;
-
+    this.deltaX = args?.deltaX;
+    this.deltaY = args?.deltaY;
+    this.deltaZ = args?.deltaZ;
     this.pointer!.parent = this;
     this.pointers?.forEach(item => {
       item.parent = this;

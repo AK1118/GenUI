@@ -16,6 +16,7 @@ import {
   DownPointerEvent,
   MovePointerEvent,
   PointerEvent,
+  SignalPointerEvent,
   UpPointerEvent,
 } from "../gesture/events";
 import { Matrix, Matrix4 } from "../math/matrix";
@@ -1968,12 +1969,14 @@ export type onPointerDownCallback = (event: DownPointerEvent) => void;
 export type onPointerMoveCallback = (event: MovePointerEvent) => void;
 export type onPointerUpCallback = (event: UpPointerEvent) => void;
 export type onPointerCancelCallback = (event: UpPointerEvent) => void;
+export type onSignalPointerCallback = (event: SignalPointerEvent) => void;
 
 export interface RenderPointerListenerArguments {
   onPointerDown: onPointerDownCallback;
   onPointerMove: onPointerMoveCallback;
   onPointerUp: onPointerUpCallback;
   onPointerCancel: onPointerCancelCallback;
+  onSignalPointer: onSignalPointerCallback;
 }
 
 export class RenderPointerListener extends SingleChildRenderView {
@@ -1981,6 +1984,12 @@ export class RenderPointerListener extends SingleChildRenderView {
   private _onPointerMove: onPointerMoveCallback;
   private _onPointerUp: onPointerUpCallback;
   private _onPointerCancel: onPointerCancelCallback;
+  private _onSignalPointer: onSignalPointerCallback;
+
+  set onSignalPointer(value: onSignalPointerCallback) {
+    this._onSignalPointer = value;
+  }
+
   set onPointerDown(value: onPointerDownCallback) {
     this._onPointerDown = value;
   }
@@ -2004,6 +2013,7 @@ export class RenderPointerListener extends SingleChildRenderView {
     this._onPointerMove = option?.onPointerMove;
     this._onPointerUp = option?.onPointerUp;
     this._onPointerCancel = option?.onPointerCancel;
+    this._onSignalPointer = option?.onSignalPointer;
   }
   handleEvent(event: PointerEvent, entry: HitTestEntry): void {
     if (event instanceof DownPointerEvent) {
@@ -2014,7 +2024,10 @@ export class RenderPointerListener extends SingleChildRenderView {
       this._onPointerUp?.(event);
     } else if (event instanceof CancelPointerEvent) {
       this._onPointerCancel?.(event);
+    } else if (event instanceof SignalPointerEvent) {
+      this._onSignalPointer?.(event);
     }
+
   }
   public hitTestSelf(result: HitTestResult, position: Vector): boolean {
     return this.hitTestChildren(result, position);

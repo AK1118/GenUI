@@ -8,16 +8,17 @@ import { GenPointerEvent, GenUnifiedEvent, NativeEventsBinding } from "../native
 export const G_postAcceptSlopTolerance: number = 18;
 
 export enum PointerChange {
-  cancel,
-  add,
-  remove,
-  hover,
-  down,
-  move,
-  up,
-  panZoomStart,
-  panZoomUpdate,
-  panZoomEnd,
+  cancel = "cancel",
+  add = "add",
+  remove = "remove",
+  hover = "hover",
+  signal = "signal",
+  down = "down",
+  move = "move",
+  up = "up",
+  panZoomStart = "panZoomStart",
+  panZoomUpdate = "panZoomUpdate",
+  panZoomEnd = "panZoomEnd",
 }
 export class GenPointerData {
   public change: PointerChange;
@@ -127,18 +128,19 @@ export class PointerEventHandler {
     if (this.isPointerDown) {
       this.handlePointerEvent(PointerChange.panZoomUpdate, event.pointer);
     } else {
-      this.handlePointerEvent(PointerChange.hover, event.pointer);
+      this.handlePointerEvent(PointerChange.signal, event.pointer);
     }
   }
 
   private handleTouchStart(event: GenUnifiedEvent) {
     this.isPointerDown = true;
     this.isPanZoom = event.pointers.length > 1; // Pan/zoom if more than one finger
-    if (this.isPanZoom) {
-
-    }
     Array.from(event.pointers).forEach((touch) => {
-      this.handlePointerEvent(PointerChange.down, touch);
+      if (this.isPanZoom) {
+        this.handlePointerEvent(PointerChange.panZoomStart, touch);
+      } else {
+        this.handlePointerEvent(PointerChange.down, touch);
+      }
     });
   }
 
@@ -156,11 +158,11 @@ export class PointerEventHandler {
   private handleTouchEnd(event: GenUnifiedEvent) {
     this.isPointerDown = false;
     Array.from(event.pointers).forEach((touch) => {
-      this.handlePointerEvent(PointerChange.up, touch);
       if (this.isPanZoom) {
         this.handlePointerEvent(PointerChange.panZoomEnd, touch);
         this.isPanZoom = false;
       }
+      this.handlePointerEvent(PointerChange.up, touch);
     });
   }
 
@@ -254,15 +256,32 @@ export abstract class PointerEvent {
     this.pointers = option.pointers;
   }
 }
+export abstract class PanZoomPointerEvent extends PointerEvent { }
 
 export class DownPointerEvent extends PointerEvent { }
 export class UpPointerEvent extends PointerEvent { }
 export class MovePointerEvent extends PointerEvent { }
 export class HoverPointerEvent extends PointerEvent { }
 export class CancelPointerEvent extends PointerEvent { }
-export class PanZoomStartPointerEvent extends PointerEvent { }
-export class PanZoomUpdatePointerEvent extends PointerEvent { }
-export class PanZoomEndPointerEvent extends PointerEvent { }
+export class SignalPointerEvent extends PointerEvent {
+  readonly deltaX: number;
+  readonly deltaY: number;
+  readonly deltaZ: number;
+  constructor(option: Partial<SignalPointerEvent>) {
+    super(option);
+    this.deltaX = option.deltaX;
+    this.deltaY = option.deltaY;
+    this.deltaZ = option.deltaZ;
+  }
+}
+export class PanZoomStartPointerEvent extends PanZoomPointerEvent { }
+export class PanZoomUpdatePointerEvent extends PanZoomPointerEvent {
+  deltaScale:number;
+  deltaRotationAngle:number;
+  scale: number;
+  rotationAngle: number;
+}
+export class PanZoomEndPointerEvent extends PanZoomPointerEvent { }
 
 export abstract class PointerEventConverter {
   static expand(data: GenPointerData): PointerEvent {
@@ -304,6 +323,14 @@ export abstract class PointerEventConverter {
         return new PanZoomUpdatePointerEvent(options);
       case PointerChange.panZoomEnd:
         return new PanZoomEndPointerEvent(options);
+      case PointerChange.signal:
+        return new SignalPointerEvent({
+          ...options,
+          deltaX: (data.unifiedEvent.deltaX ?? 0) * dpr,
+          deltaY: (data.unifiedEvent.deltaY ?? 0) * dpr,
+          deltaZ: (data.unifiedEvent.deltaZ ?? 0) * dpr
+        });
+
     }
     return null;
   }
