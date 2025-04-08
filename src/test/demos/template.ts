@@ -2,21 +2,22 @@
 import {
   GestureDetector,
   Image as ImageWidget,
+  Text,
 } from "@/lib/widgets/basic";
 import {
   Container,
 } from "@/lib/widgets/index";
 import { GenPlatformConfig } from "@/lib/core/platform";
 import { Colors, } from "@/lib/painting/color";
-import { NativeEventsBindingHandler } from "@/lib/native/events";
+import { EventListenType, GenPointerEvent, GenUnifiedPointerEvent, NativeEventsBindingHandler } from "@/lib/native/events";
 import { NativeTextInputHandler, } from "@/lib/native/text-input";
 //@ts-ignore
 import eruda from "eruda";
 import Stream from "@/lib/core/stream";
 import { NativeInputStream, TextNativeInputAdapter } from "./text-input-stream";
 import { DefaultNativeStrategies } from "@/lib/native/native-strategies";
-import runApp from "@/index";
-import Vector from "@/lib/math/vector";
+import runApp, { Widget } from "@/index";
+import Vector, { Offset } from "@/lib/math/vector";
 
 const canvas = document.createElement("canvas");
 const dev = window.devicePixelRatio;
@@ -42,18 +43,35 @@ GenPlatformConfig.InitInstance({
   showBanner: true
 });
 
-class CustomNativeEventsBindingHandler extends NativeEventsBindingHandler{
-  protected adapter(data: any) {
-      return data;
+class CustomNativeEventsBindingHandler extends NativeEventsBindingHandler {
+  protected adapter(type: EventListenType, data: TouchEvent | MouseEvent) {
+    if (data instanceof MouseEvent) {
+      return new GenUnifiedPointerEvent({
+        pointer: new GenPointerEvent({
+          pointer: new Offset(data.clientX, data.clientY),
+          identifier: 1,
+        }),
+        pointers: [],
+      });
+    }
+    return new GenUnifiedPointerEvent({
+      pointer: new GenPointerEvent({
+        pointer: Offset.zero,
+        identifier: 1,
+      }),
+      pointers: Array.from(data.touches).map((_, ndx) => new GenPointerEvent({
+        pointer: new Offset(_.clientX, _.clientY),
+        identifier: ndx,
+      })),
+    });
+
   }
 }
-
 
 const eventCaller = new CustomNativeEventsBindingHandler();
 if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
   // Touch events for mobile devices
   window.addEventListener("touchstart", (e) => {
-    console.log(e.touches[0].identifier)
     eventCaller.applyEvent("touchstart", e);
   });
   window.addEventListener("touchmove", (e) => {
@@ -119,6 +137,9 @@ if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
 // });
 
 runApp(new GestureDetector({
+  onPanStart(event) {
+    console.log("开始拖拽", event)
+  },
   onTap: () => {
     console.log("点击")
   },
@@ -130,7 +151,7 @@ runApp(new GestureDetector({
       color: Colors.white,
       width: 100,
       height: 100,
-      // child: new Text("你好"),
+      child: new Text("你好"),
     }),
   })
-}))
+},),);

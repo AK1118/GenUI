@@ -1,3 +1,4 @@
+import { AssertionError } from "../core/errors";
 import {
   BoxParentData,
   ColoredRender,
@@ -36,6 +37,9 @@ export abstract class Widget {
     return this.constructor;
   }
   constructor(key?: Key) {
+    if(!new.target){
+      throw new AssertionError("Cannot construct instances directly");
+    }
     if (key && !(key instanceof Key)) {
       throw new Error("key must be instance of Key")
     }

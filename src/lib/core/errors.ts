@@ -6,7 +6,7 @@ abstract class GenUIError extends Error {
     }
   }
   
-  // 1️⃣ 断言错误 (类似 Flutter 的 AssertionError)
+  // 1️⃣ 断言错误
   export class AssertionError extends GenUIError {
     constructor(message: string) {
       super(`Assertion failed: ${message}`);
@@ -14,7 +14,7 @@ abstract class GenUIError extends Error {
     }
   }
   
-  // 2️⃣ 格式错误 (类似 Flutter 的 FormatException)
+  // 2️⃣ 格式错误 
   export class FormatException extends GenUIError {
     constructor(message: string) {
       super(`Invalid format: ${message}`);
@@ -22,7 +22,7 @@ abstract class GenUIError extends Error {
     }
   }
   
-  // 3️⃣ 空值错误 (类似 Flutter 的 NullThrownError)
+  // 3️⃣ 空值错误
   export class NullThrownError extends GenUIError {
     constructor() {
       super("A null value was thrown.");
@@ -30,7 +30,7 @@ abstract class GenUIError extends Error {
     }
   }
   
-  // 4️⃣ 非法参数异常 (类似 Flutter 的 ArgumentError)
+  // 4️⃣ 非法参数异常
   export class ArgumentError extends GenUIError {
     constructor(message: string) {
       super(`Invalid argument: ${message}`);
@@ -38,7 +38,7 @@ abstract class GenUIError extends Error {
     }
   }
   
-  // 5️⃣ 自定义 "未实现" 异常 (类似 Flutter 的 UnimplementedError)
+  // 5️⃣ 自定义 "未实现" 异常
   export class UnimplementedError extends GenUIError {
     constructor(message: string = "This feature is not implemented.") {
       super(message);
@@ -46,7 +46,7 @@ abstract class GenUIError extends Error {
     }
   }
   
-  // 6️⃣ 运行时异常 (类似 Flutter 的 StateError)
+  // 6️⃣ 运行时异常
   export class StateError extends GenUIError {
     constructor(message: string) {
       super(`Invalid state: ${message}`);

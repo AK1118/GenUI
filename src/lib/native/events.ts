@@ -16,9 +16,15 @@ type EventData = any;
 type EventDataCallback = (data: EventData) => void;
 
 
-export class GenPointerEvent{
+export class GenPointerEvent {
   identifier: number;
   pointer: Offset;
+  parent: GenUnifiedEvent;
+  constructor(args: Partial<GenPointerEvent>) {
+    this.identifier = args.identifier;
+    this.pointer = args.pointer;
+    this.parent = args.parent;
+  }
 }
 
 export interface GenUnifiedEvent {
@@ -37,13 +43,18 @@ export class GenUnifiedPointerEvent implements GenUnifiedEvent {
   metaKey?: boolean;
   shiftKey?: boolean;
   delta?: Offset;
-  constructor(args:GenUnifiedEvent){
+  constructor(args: GenUnifiedEvent) {
     this.pointer = args.pointer;
     this.pointers = args.pointers;
     this.ctrlKey = args?.ctrlKey;
     this.metaKey = args?.metaKey;
     this.shiftKey = args?.shiftKey;
     this.delta = args?.delta;
+
+    this.pointer!.parent = this;
+    this.pointers?.forEach(item => {
+      item.parent = this;
+    })
   }
 }
 
@@ -71,15 +82,15 @@ export class NativeEventsBinding extends BindingBase {
 
 export class NativeEventsBindingHandler {
   private binding: NativeEventsBinding = new NativeEventsBinding();
-  applyEvent(type: EventListenType, data: EventData): void {
-    this.binding.applyEvent(type, this.adapter(data));
+  public applyEvent(type: EventListenType, data: EventData): void {
+    this.binding.applyEvent(type, this.adapter(type, data));
   }
   /**
    * 事件平台差异转换，转换各个平台数据到指定格式
    * 电脑端浏览器事件应满足格式 MouseEvent,详情参考 [MDN Reference](https://developer.mozilla.org/docs/Web/API/MouseEvent)
    * 移动端浏览器事件应满足格式 TouchEvent,详情参考 [MDN Reference](https://developer.mozilla.org/docs/Web/API/TouchEvent)
    */
-  protected adapter(data: EventData): EventData {
+  protected adapter(type: EventListenType, data: EventData): EventData {
     return data;
   }
 }
