@@ -586,11 +586,7 @@ export class Paragraph extends ParagraphControl {
 
       const nextTextPoint = this.textPoints[index + broCount];
       const nextCodePoint = nextTextPoint?.text?.charCodeAt(0);
-      // if(TextPainter.isNewline(codePoint)){
-      //   console.log("换行",parentData.index,broCount);
-      // }else{
-      //   console.log("不换行",textPoint.text,parentData.index,broCount,);
-      // }
+
       if (overflow < 0 || TextPainter.isNewline(codePoint)) {
         subDeltaX = offset.x * -1;
         if (lastColumn >= maxLine) {

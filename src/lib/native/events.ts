@@ -86,6 +86,9 @@ export class NativeEventsBinding extends BindingBase {
 }
 
 export class NativeEventsBindingHandler {
+  constructor() {
+    this.performBindingHandler();
+  }
   private binding: NativeEventsBinding = new NativeEventsBinding();
   public applyEvent(type: EventListenType, data: EventData): void {
     this.binding.applyEvent(type, this.adapter(type, data));
@@ -97,5 +100,8 @@ export class NativeEventsBindingHandler {
    */
   protected adapter(type: EventListenType, data: EventData): EventData {
     return data;
+  }
+  protected performBindingHandler(): void {
+
   }
 }

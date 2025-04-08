@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "dev":"webpack serve --port=1119",
     "build": "webpack",
     "start": "webpack serve --port=1119"
   },

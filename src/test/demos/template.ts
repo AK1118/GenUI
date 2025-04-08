@@ -5,6 +5,7 @@ import {
   Image as ImageWidget,
   Listener,
   Text,
+  TextRich,
   Transform,
 } from "@/lib/widgets/basic";
 import {
@@ -19,13 +20,14 @@ import eruda from "eruda";
 import Stream from "@/lib/core/stream";
 import { NativeInputStream, TextNativeInputAdapter } from "./text-input-stream";
 import { DefaultNativeStrategies } from "@/lib/native/native-strategies";
-import runApp, { BuildContext, Element, Listenable, RenderObjectElement, RenderObjectWidget, SingleChildRenderObjectElement, SingleChildRenderObjectWidgetArguments, State, StatefulWidget, Widget } from "@/index";
+import runApp, { BuildContext, Element, Listenable, RenderObjectElement, RenderObjectWidget, SingleChildRenderObjectElement, SingleChildRenderObjectWidgetArguments, State, StatefulWidget, TextOverflow, TextSpan, TextStyle, Widget } from "@/index";
 import Vector, { Offset } from "@/lib/math/vector";
 import Alignment from "@/lib/painting/alignment";
 import { RenderView } from "@/lib/render-object/render-object";
 import { RenderBox, SingleChildRenderView } from "@/lib/render-object/basic";
 import { PointerEvent, SignalPointerEvent } from "@/lib/gesture/events";
 import { HitTestEntry, HitTestResult } from "@/lib/gesture/hit_test";
+import DefaultBrowserNativeEventsBindingHandler from "@/lib/native/defaults/pointer-event-handler";
 
 const canvas = document.createElement("canvas");
 const dev = 1//window.devicePixelRatio;
@@ -51,70 +53,8 @@ GenPlatformConfig.InitInstance({
   showBanner: true
 });
 
-class CustomNativeEventsBindingHandler extends NativeEventsBindingHandler {
-  protected adapter(type: EventListenType, data: TouchEvent | MouseEvent) {
-    if (data instanceof MouseEvent || data instanceof WheelEvent) {
-      let delta = 0;
-      if (data instanceof WheelEvent) {
-        delta = data.deltaY || 0;
-      }
-      return new GenUnifiedPointerEvent({
-        pointer: new GenPointerEvent({
-          pointer: new Offset(data.clientX, data.clientY),
-          identifier: 1,
-        }),
-        pointers: [],
-        deltaY: delta
-      });
-    }
-    const touches = type === "touchend" ? data.changedTouches : data.touches;
-    return new GenUnifiedPointerEvent({
-      pointer: new GenPointerEvent({
-        pointer: Offset.zero,
-        identifier: 1,
-      }),
-      pointers: Array.from(touches).map((_, ndx) => new GenPointerEvent({
-        pointer: new Offset(_.clientX, _.clientY),
-        identifier: ndx,
-      })),
-    });
 
-  }
-}
 
-Listener
-const eventCaller = new CustomNativeEventsBindingHandler();
-if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-  // Touch events for mobile devices
-  window.addEventListener("touchstart", (e) => {
-    eventCaller.applyEvent("touchstart", e);
-  });
-  window.addEventListener("touchmove", (e) => {
-    eventCaller.applyEvent("touchmove", e);
-  });
-  window.addEventListener("touchend", (e) => {
-    eventCaller.applyEvent("touchend", e);
-  });
-  window.addEventListener("touchcancel", (e) => {
-    eventCaller.applyEvent("touchcancel", e);
-  });
-} else {
-  window.addEventListener("mousedown", (e) => {
-    eventCaller.applyEvent("mousedown", e);
-  });
-  window.addEventListener("mousemove", (e) => {
-    eventCaller.applyEvent("mousemove", e);
-  });
-  window.addEventListener("mouseup", (e) => {
-    eventCaller.applyEvent("mouseup", e);
-  });
-  window.addEventListener("mousedown", (e) => {
-    eventCaller.applyEvent("mousedown", e);
-  });
-  window.addEventListener("wheel", (e) => {
-    eventCaller.applyEvent("wheel", e);
-  });
-}
 
 // const nativeTextInputHandler = new NativeTextInputHandler();
 // const inputBar = document.querySelector("#inputbar") as HTMLInputElement;
@@ -169,7 +109,7 @@ class TestState extends State<Test> {
         // console.log(event)
         this.setState(() => {
           this.angle += event.deltaRotationAngle;
-          this.scale+=event.deltaScale;
+          this.scale += event.deltaScale;
         });
         // console.log("缩放中", event)
       },
@@ -180,7 +120,7 @@ class TestState extends State<Test> {
       onTapDown() {
         // console.log("点击")
       },
-      onDragUpdate(event){
+      onDragUpdate(event) {
         console.log(event.position)
       },
       onTapUp() {
@@ -213,7 +153,14 @@ class TestState extends State<Test> {
                   color: Colors.white,
                   width: 100,
                   height: 100,
-                  child: new Text("你好"),
+                  child: new Text("base: The main container of the card, where the header, body, and footer are placed.",{
+                    style:new TextStyle({
+                      maxLines:4,
+                      overflow: TextOverflow.ellipsis,
+                      fontSize: 12,
+                      color: Colors.black,
+                    })
+                  })
                 })
               })
             })

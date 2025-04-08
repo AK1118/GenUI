@@ -1,7 +1,11 @@
+import DefaultBrowserNativeEventsBindingHandler from "./defaults/pointer-event-handler";
+// import DefaultNativeNetWorkImageStrategy from "./defaults/network-image-handler";
 import { GenNative } from "@/types/native";
 import { Size } from "../basic/rect";
 import Painter from "../painting/painter";
 import { AsyncStream } from "../core/stream";
+import { NativeEventsBindingHandler } from "./events";
+
 
 export abstract class Strategy { }
 /**
@@ -24,22 +28,6 @@ export abstract class NativePainterStrategy extends Strategy {
         | OffscreenCanvasRenderingContext2D): Painter;
 }
 
-// abstract class NativeOffscreenCanvasStrategy extends Strategy {
-//     abstract getOffscreenCanvas(): OffscreenCanvas;
-// }
-
-/**
- * # 跨平台适配器
- *   - 将各个适配器模块封装到一起，便于管理。
- */
-export abstract class NativeStrategies {
-    abstract getImageStrategy(): NativeNetWorkImageStrategy;
-    abstract getPainterStrategy(): NativePainterStrategy;
-}
-
-/**
- * # 默认跨平台适配器实现
- */
 class DefaultNativeNetWorkImageStrategy extends NativeNetWorkImageStrategy {
     async load(configuration: GenNative.ImageLoader.ImageProviderLoadConfiguration, arrayBuffer: Uint8Array): Promise<any> {
         return await await createImageBitmap(new Blob([arrayBuffer]));
@@ -89,7 +77,30 @@ class DefaultNativeNetWorkImageStrategy extends NativeNetWorkImageStrategy {
     }
 
 }
-
+/**
+ * # 跨平台适配器
+ *   - 将各个适配器模块封装到一起，便于管理。
+ */
+export abstract class NativeStrategies {
+    constructor(){
+        this.initialization();
+    }
+    initialization() {
+        this.handleBindEventsHandler();
+    }
+    /**
+     * # 获取网络图片策略
+     */
+    abstract getImageStrategy(): NativeNetWorkImageStrategy;
+    /**
+     * # 获取绘制画布策略
+     */
+    abstract getPainterStrategy(): NativePainterStrategy;
+    /**
+     * # 绑定事件处理程序
+     */
+    abstract handleBindEventsHandler(): void;
+}
 class DefaultNativePainterStrategy extends NativePainterStrategy {
     getPainter(canvasContext2D: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D): Painter {
         return new Painter(canvasContext2D);
@@ -102,5 +113,8 @@ export class DefaultNativeStrategies extends NativeStrategies {
     }
     getPainterStrategy(): NativePainterStrategy {
         return new DefaultNativePainterStrategy();
+    }
+    handleBindEventsHandler() {
+        new DefaultBrowserNativeEventsBindingHandler();
     }
 }

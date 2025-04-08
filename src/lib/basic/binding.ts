@@ -39,11 +39,6 @@ export class SchedulerFrameManager {
     this.initAnimationFrame();
   }
   private initAnimationFrame() {
-    // this.requestAnimationFrame=(callback:FrameCallback)=>{
-    //   setTimeout(()=>{
-    //     callback(+new Date())
-    //   },1000/60);
-    // }
     if (
       typeof window !== "undefined" &&
       typeof window?.requestAnimationFrame === "function"
