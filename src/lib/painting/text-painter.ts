@@ -112,8 +112,7 @@ interface TextStyleOption extends ParagraphStyleOption, TextDecorationOption {
 
 export class TextStyle
   extends ParagraphStyle
-  implements TextStyleOption, TextDecorationOption
-{
+  implements TextStyleOption, TextDecorationOption {
   color: Color;
   fontSize: number;
   fontWeight: FontWeight = FontWeight.normal;
@@ -274,7 +273,7 @@ class TextPointParentData extends TreeNode<TextPoint> {
    * 在渲染上的盒子，某些特定字符与box可能不太一致
    * 例如：换行符 参考 @Paragraph.performLayoutTextOffset 方法内的  _.parentData.visualBox.width=constraints.width;
    */
-  public visualBox:TextBox;
+  public visualBox: TextBox;
 }
 
 class TextPoint {
@@ -314,7 +313,7 @@ interface Rowed {
   minLineHeight: number;
 }
 
-class ParagraphParentData extends TreeNode<Paragraph> {}
+class ParagraphParentData extends TreeNode<Paragraph> { }
 
 abstract class ParagraphControl {
   getTextPointForOffset(offset: Offset): TextPoint {
@@ -369,7 +368,7 @@ export class Paragraph extends ParagraphControl {
   ) {
     if (!this.text.length) return;
     //初始化切割文字
-    this.performLayoutTextOffset(paint, startOffset,constraints);
+    this.performLayoutTextOffset(paint, startOffset, constraints);
     //合成单词
     this.handleCompileWord();
     this.performConstraintsWidth(constraints, 0, 1, this.textStyle.maxLines);
@@ -556,39 +555,35 @@ export class Paragraph extends ParagraphControl {
     lastColumn: number = 1,
     maxLine: number = Infinity
   ) {
-    // let current = this.firstTextPoint;
-    // while (current != null) {
-    //   const parentData = current.parentData;
-    //   const currentTextCodePoint = current?.charCodePoint;
-    //   current = parentData.nextNode;
-    // }
-    if (lastColumn > maxLine)
+    if (lastColumn > maxLine) {
       return {
         column: lastColumn,
         subDeltaX: lastSubDeltaX,
       };
+    }
 
     let subDeltaX = lastSubDeltaX;
     const constraintsWidth = constraints.width;
     const len = this.textPoints.length;
-    let forwardColumnLastX=0;
-    //遍历所有字符串，且index随每个字符的兄弟字符(broCount)增长，broCount最小为1，即每个字符至少占据一个位置
-    for (let index = 0; index < len; index) {
+    let forwardColumnLastX = 0;
+
+    for (let index = 0; index < len;) {
       const textPoint = this.textPoints[index];
       const codePoint = textPoint.text.charCodeAt(0);
-      const parentData = textPoint?.parentData;
+      const parentData = textPoint.parentData;
       const broCount = parentData.broCount;
       let offset = parentData.offset;
       const box = parentData.box;
-      let wordWidth = (parentData.wordCountWidth || box.width) + offset.x;
+
+      const wordWidth = (parentData.wordCountWidth || box.width) + offset.x;
       const textOffsetX = wordWidth + subDeltaX;
-      const overflow = constraintsWidth - textOffsetX;
 
-      const nextTextPoint = this.textPoints[index + broCount];
-      const nextCodePoint = nextTextPoint?.text?.charCodeAt(0);
+      const isNewline = TextPainter.isNewline(codePoint);
+      const isOverflow = textOffsetX > constraintsWidth;
 
-      if (overflow < 0 || TextPainter.isNewline(codePoint)) {
-        subDeltaX = offset.x * -1;
+      const isFirstPoint = index === 0;
+      if (isOverflow || isNewline) {
+        subDeltaX = -offset.x;
         if (lastColumn >= maxLine) {
           if (this.textStyle?.overflow === TextOverflow.ellipsis) {
             this.replaceEllipsis(textPoint.parentData.preNode);
@@ -599,26 +594,37 @@ export class Paragraph extends ParagraphControl {
             subDeltaX,
           };
         }
-       
-        lastColumn += 1;
+      
+        if (!(isFirstPoint && isOverflow)) {
+          lastColumn += 1;
+        }
       }
+
+
+      // === 偏移计算 ===
       let deltaX = subDeltaX + offset.x;
       offset = new Offset(deltaX, 0);
       parentData.column = lastColumn;
-      if (TextPainter.isNewline(codePoint)) {
-        parentData.column -= 1;
-        offset.x=forwardColumnLastX;
-        subDeltaX-=box.width;
+
+      // === 保留换行符特殊处理 ===
+      if (isNewline) {
+        offset.x = forwardColumnLastX;
+        subDeltaX -= box.width;
       }
-      index += broCount || 1;
+
+      // === 布局并推进 ===
       if (broCount !== 0) {
         this.performLayoutRow(textPoint, offset, broCount);
       }
-      if(parentData.wordCountWidth===0){
-        parentData.wordCountWidth=box.width;
+
+      if (parentData.wordCountWidth === 0) {
+        parentData.wordCountWidth = box.width;
       }
+
+      forwardColumnLastX = deltaX + parentData.wordCountWidth;
       textPoint.parentData = parentData;
-      forwardColumnLastX=deltaX+parentData.wordCountWidth;
+
+      index += broCount || 1;
     }
 
     return {
@@ -626,6 +632,8 @@ export class Paragraph extends ParagraphControl {
       subDeltaX,
     };
   }
+
+
   //替换超出后文字...
   private replaceEllipsis(lastTextPoint: TextPoint) {
     if (!lastTextPoint) return;
@@ -638,7 +646,7 @@ export class Paragraph extends ParagraphControl {
       const currentBox = this.getTextBox(
         this.getMeasureText(GenPlatformConfig.instance.painter, ellipsis)
       );
-      currentBox.x=preBox.x;
+      currentBox.x = preBox.x;
       currentBox.lineHeight = preBox.lineHeight;
       if (hasCustomEllipsis) {
       } else {
@@ -667,7 +675,7 @@ export class Paragraph extends ParagraphControl {
   /**
    *  将文字处理为[TextBox]并计算每个文字的offset
    */
-  public performLayoutTextOffset(paint: Painter, startOffset: Offset,constraints:ParagraphConstraints) {
+  public performLayoutTextOffset(paint: Painter, startOffset: Offset, constraints: ParagraphConstraints) {
     // this.textPoints = [];
     // this.firstTextPoint = null;
     // this.lastTextPoint = null;
@@ -685,7 +693,7 @@ export class Paragraph extends ParagraphControl {
     this.visitTexts((_) => {
       if (TextPainter.isNewline(_.charCodePoint)) {
         _.parentData.box.width = 0;
-        _.parentData.visualBox.width=constraints.width;
+        _.parentData.visualBox.width = constraints.width;
       }
       return true;
     });
@@ -757,9 +765,9 @@ export class Paragraph extends ParagraphControl {
     const box = this.getTextBox(textMetrics);
     const textPoint = new TextPoint(text);
     const parentData = textPoint.parentData;
-    box.lineHeight=lineHeight;
+    box.lineHeight = lineHeight;
     parentData.box = box;
-    parentData.visualBox= box.copy();
+    parentData.visualBox = box.copy();
     if (after) {
       textPoint.parentData.preNode = after;
       after.parentData.nextNode = textPoint;
@@ -884,7 +892,7 @@ export class Paragraph extends ParagraphControl {
       const parentData = _textPoint.parentData;
       const lineHeight = parentData.visualBox.lineHeight;
       const textRect = _textPoint?.parentData?.box;
-      const rectWidth=_textPoint?.parentData?.visualBox.width;
+      const rectWidth = _textPoint?.parentData?.visualBox.width;
       const rect = new Rect(
         textRect.x,
         textRect.y - lineHeight,
@@ -898,13 +906,13 @@ export class Paragraph extends ParagraphControl {
       }
       return true;
     });
-    if(TextPainter.isNewline(result?.charCodePoint)){
-      const preNode= result.parentData?.preNode;
-      if(preNode) return preNode;
+    if (TextPainter.isNewline(result?.charCodePoint)) {
+      const preNode = result.parentData?.preNode;
+      if (preNode) return preNode;
     }
-    if(!result){
-      const lastNode= this.lastTextPoint;
-      if(lastNode) return lastNode;
+    if (!result) {
+      const lastNode = this.lastTextPoint;
+      if (lastNode) return lastNode;
     }
     return result;
   }
@@ -917,11 +925,11 @@ export class Paragraph extends ParagraphControl {
      * 返回的Box决定 textIndicator的渲染位置。
      * 参见 @EditTextRenderView
      */
-    const customFilterRule=(textPoint:TextPoint):TextBox=>{
+    const customFilterRule = (textPoint: TextPoint): TextBox => {
       const parentData = textPoint.parentData;
       const box = parentData.box.copy();
-      if(TextPainter.isNewline(textPoint.text.charCodeAt(0))){
-        box.offset=new Offset(0,box.offset.y+box.lineHeight);
+      if (TextPainter.isNewline(textPoint.text.charCodeAt(0))) {
+        box.offset = new Offset(0, box.offset.y + box.lineHeight);
       }
       return box;
     }
@@ -988,7 +996,7 @@ export class MulParagraph extends Paragraph {
     paint: Painter,
     startOffset?: Offset
   ) {
-    this.applyPerformLayoutHorizontalOffset(paint, startOffset,constraints);
+    this.applyPerformLayoutHorizontalOffset(paint, startOffset, constraints);
     const maxColumn = this.applyPerformLayoutConstraints(
       constraints,
       this.textStyle.maxLines
@@ -1090,13 +1098,13 @@ export class MulParagraph extends Paragraph {
   private applyPerformLayoutHorizontalOffset(
     paint: Painter,
     startOffset: Offset = Offset.zero,
-    constraints:ParagraphConstraints
+    constraints: ParagraphConstraints
   ) {
     let child = this.firstChild;
     let lastedOffset: Offset = startOffset;
     while (child != null) {
       const parentData = child.parentData;
-      child.performLayoutTextOffset(paint, lastedOffset,constraints);
+      child.performLayoutTextOffset(paint, lastedOffset, constraints);
       child.handleCompileWord();
       lastedOffset = child.getNextStartOffset();
       child = parentData.nextNode;

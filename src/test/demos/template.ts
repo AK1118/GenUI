@@ -122,7 +122,7 @@ class TestState extends State<Test> {
         // console.log("点击")
       },
       onDragUpdate(event) {
-        console.log(event.position)
+        // console.log(event.position)
       },
       onTapUp() {
         // console.log("抬起")
@@ -142,7 +142,7 @@ class TestState extends State<Test> {
         child: new Container({
           width: canvas.width,
           height: canvas.height,
-          color: Colors.gray.withAlpha(100),
+          color: Colors.gray.withAlpha(10),
           child: new Align({
             child: Transform.rotate({
               alignment: Alignment.center,
@@ -151,41 +151,12 @@ class TestState extends State<Test> {
                 alignment: Alignment.center,
                 scale: this.scale,
                 child: new Container({
+                  width:200,
                   color: Colors.white,
-                  child: new TextRich({
-                    textSpan: new TextSpan({
-                      text: `[webpack-dev-server]`,
-                      textStyle: new TextStyle({
-                        // maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        fontSize: 12,
-                        color: Colors.red,
-                        fontWeight:FontWeight.bold,
-                        
-                      }),
-                      children:[
-                        new TextSpan({
-                          text: `1111111111111111111111111111111111111111111111111111111a Server started: Hot Module Replacement enabled, Live Reloading enabled, Progress disabled, Overlay enabled.
-                      bootstrap:24 [HMR] Waiting for update signal from WDS...
-                      localhost/:1 [Intervention] Images loaded lazily and replaced with placeholders. Load events are deferred. See https://go.microsoft.com/fwlink/?linkid=2048113`,
-                          textStyle: new TextStyle({
-                            // maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            fontSize: 12,
-                            color: Colors.black,
-                            // shadow:{
-                            //   shadowColor:Colors.black,
-                            //   shadowBlur:10,
-                            //   shadowOffsetX:1,
-                            //   shadowOffsetY:1,
-                            // }
-                          }),
-                          children:[
-                            
-                          ]
-                        },)
-                      ]
-                    },)
+                  child: new Text("11211111111111111111111111111111111111111111111111111111 [webpack-dev-server] Server started: Hot Module Replacement enabled, Live Reloading enabled, Progress disabled, Overlay enabled.  We're now ready to implement the authentication feature.",{
+                    style:new TextStyle({
+                      
+                    })
                   })
                 })
               })
