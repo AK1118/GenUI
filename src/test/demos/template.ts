@@ -20,7 +20,7 @@ import eruda from "eruda";
 import Stream from "@/lib/core/stream";
 import { NativeInputStream, TextNativeInputAdapter } from "./text-input-stream";
 import { DefaultNativeStrategies } from "@/lib/native/native-strategies";
-import runApp, { BuildContext, Element, Listenable, RenderObjectElement, RenderObjectWidget, SingleChildRenderObjectElement, SingleChildRenderObjectWidgetArguments, State, StatefulWidget, TextOverflow, TextSpan, TextStyle, Widget } from "@/index";
+import runApp, { BuildContext, Element, FontWeight, Listenable, RenderObjectElement, RenderObjectWidget, SingleChildRenderObjectElement, SingleChildRenderObjectWidgetArguments, State, StatefulWidget, TextOverflow, TextSpan, TextStyle, Widget } from "@/index";
 import Vector, { Offset } from "@/lib/math/vector";
 import Alignment from "@/lib/painting/alignment";
 import { RenderView } from "@/lib/render-object/render-object";
@@ -28,6 +28,7 @@ import { RenderBox, SingleChildRenderView } from "@/lib/render-object/basic";
 import { PointerEvent, SignalPointerEvent } from "@/lib/gesture/events";
 import { HitTestEntry, HitTestResult } from "@/lib/gesture/hit_test";
 import DefaultBrowserNativeEventsBindingHandler from "@/lib/native/defaults/pointer-event-handler";
+import BoxShadow from "@/lib/painting/shadow";
 
 const canvas = document.createElement("canvas");
 const dev = 1//window.devicePixelRatio;
@@ -151,15 +152,40 @@ class TestState extends State<Test> {
                 scale: this.scale,
                 child: new Container({
                   color: Colors.white,
-                  width: 100,
-                  height: 100,
-                  child: new Text("base: The main container of the card, where the header, body, and footer are placed.",{
-                    style:new TextStyle({
-                      maxLines:4,
-                      overflow: TextOverflow.ellipsis,
-                      fontSize: 12,
-                      color: Colors.black,
-                    })
+                  child: new TextRich({
+                    textSpan: new TextSpan({
+                      text: `[webpack-dev-server]`,
+                      textStyle: new TextStyle({
+                        // maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        fontSize: 12,
+                        color: Colors.red,
+                        fontWeight:FontWeight.bold,
+                        
+                      }),
+                      children:[
+                        new TextSpan({
+                          text: `1111111111111111111111111111111111111111111111111111111a Server started: Hot Module Replacement enabled, Live Reloading enabled, Progress disabled, Overlay enabled.
+                      bootstrap:24 [HMR] Waiting for update signal from WDS...
+                      localhost/:1 [Intervention] Images loaded lazily and replaced with placeholders. Load events are deferred. See https://go.microsoft.com/fwlink/?linkid=2048113`,
+                          textStyle: new TextStyle({
+                            // maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            fontSize: 12,
+                            color: Colors.black,
+                            // shadow:{
+                            //   shadowColor:Colors.black,
+                            //   shadowBlur:10,
+                            //   shadowOffsetX:1,
+                            //   shadowOffsetY:1,
+                            // }
+                          }),
+                          children:[
+                            
+                          ]
+                        },)
+                      ]
+                    },)
                   })
                 })
               })

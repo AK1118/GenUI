@@ -599,6 +599,7 @@ export class Paragraph extends ParagraphControl {
             subDeltaX,
           };
         }
+       
         lastColumn += 1;
       }
       let deltaX = subDeltaX + offset.x;
@@ -637,13 +638,13 @@ export class Paragraph extends ParagraphControl {
       const currentBox = this.getTextBox(
         this.getMeasureText(GenPlatformConfig.instance.painter, ellipsis)
       );
+      currentBox.x=preBox.x;
       currentBox.lineHeight = preBox.lineHeight;
       if (hasCustomEllipsis) {
       } else {
         //使用默认字符时需要做对齐基线处理
         currentBox.height = preBox.lineHeight;
       }
-
       lastTextPoint.parentData.box = currentBox;
     }
   }

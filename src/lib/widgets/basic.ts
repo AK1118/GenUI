@@ -804,9 +804,9 @@ interface TextRichArguments {
 export class TextRich extends SingleChildRenderObjectWidget {
   private textSpan: TextSpan;
   constructor(
-    args: Partial<TextRichArguments & SingleChildRenderObjectWidgetArguments>
+    args: Partial<TextRichArguments & Omit<SingleChildRenderObjectWidgetArguments, "child">>
   ) {
-    super(args?.child, args.key);
+    super(null, args.key);
     this.textSpan = args?.textSpan;
   }
   createRenderObject(): RenderView {
